@@ -1,0 +1,4 @@
+interface:
+  display_name: "代码审查与测试审计"
+  short_description: "评审代码风险并输出分级问题、测试策略和测试用例。"
+  default_prompt: "使用 $code-review-test-auditor 评审这组改动并生成分级问题和测试计划。"

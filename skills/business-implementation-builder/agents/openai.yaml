@@ -1,0 +1,4 @@
+interface:
+  display_name: "业务实现构建"
+  short_description: "按架构切片实现业务功能并产出可追踪交付记录文档。"
+  default_prompt: "使用 $business-implementation-builder 按架构方案实现该功能并输出切片交付记录。"

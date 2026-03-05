@@ -1,0 +1,4 @@
+interface:
+  display_name: "UI 布局分析"
+  short_description: "根据截图与设计稿输出布局、组件和交互状态文档。"
+  default_prompt: "使用 $ui-layout-analyzer 分析这张页面图，输出布局树、组件划分和交互状态。"
