@@ -147,32 +147,30 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F4F4),
-      body: SafeArea(
-        child: Column(
-          children: [
-            _TopSummarySection(
-              yearText: '${_selectedMonth.year}年',
-              monthText:
-                  '${_selectedMonth.month.toString().padLeft(2, '0')}月 ▾',
-              incomeText: _summary.income,
-              expenseText: _summary.expense,
-              onMonthTap: _openMonthPicker,
+      backgroundColor: Colors.white,
+      body: Column(
+        children: [
+          _TopSummarySection(
+            yearText: '${_selectedMonth.year}年',
+            monthText:
+                '${_selectedMonth.month.toString().padLeft(2, '0')}月',
+            incomeText: _summary.income,
+            expenseText: _summary.expense,
+            onMonthTap: _openMonthPicker,
+          ),
+          Expanded(
+            child: _RecordList(
+              status: _pageStatus,
+              dayGroups: _dayGroups,
+              isDayGroupsLoading: _isDayGroupsLoading,
+              errorText: _errorText,
+              onRetry: () => _loadMonthData(showFullLoading: true),
+              onAddTap: _handleAddTap,
+              onRecordTap: (String transactionId) =>
+                  context.push('/transaction/$transactionId'),
             ),
-            Expanded(
-              child: _RecordList(
-                status: _pageStatus,
-                dayGroups: _dayGroups,
-                isDayGroupsLoading: _isDayGroupsLoading,
-                errorText: _errorText,
-                onRetry: () => _loadMonthData(showFullLoading: true),
-                onAddTap: _handleAddTap,
-                onRecordTap: (String transactionId) =>
-                    context.push('/transaction/$transactionId'),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
       bottomNavigationBar: _BottomNavBar(
         activeTab: _activeTab,
@@ -202,102 +200,141 @@ class _TopSummarySection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      color: const Color(0xFFE9D35E),
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+      color: const Color(0xFFFCD34D),
+      padding: const EdgeInsets.fromLTRB(20, 44, 20, 24),
       child: Column(
         children: [
+          // Status bar
           Row(
-            children: const [
-              Icon(Icons.tag_faces_outlined, size: 20),
-              Spacer(),
-              Text(
-                'One Keep',
-                style: TextStyle(fontSize: 30, fontWeight: FontWeight.w500),
-              ),
-              Spacer(),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Expanded(
-                child: _SummaryItem(
-                  widgetKey: const Key('month-selector'),
-                  label: yearText,
-                  value: monthText,
-                  isLeft: true,
-                  onTap: onMonthTap,
+              const Text(
+                '16:57',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF18181B),
                 ),
               ),
-              Expanded(
-                child: _SummaryItem(label: '收入', value: incomeText),
+              Row(
+                children: const [
+                  Text(
+                    '57%',
+                    style: TextStyle(fontSize: 12, color: Color(0xFF18181B)),
+                  ),
+                ],
               ),
-              Expanded(
-                child: _SummaryItem(label: '支出', value: expenseText),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Top row with avatar and title
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              const Text(
+                '鲨鱼记账',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF18181B),
+                ),
+              ),
+              const SizedBox(width: 32),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Date selector
+          GestureDetector(
+            key: const Key('month-selector'),
+            onTap: onMonthTap,
+            child: Row(
+              children: [
+                Text(
+                  yearText,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF52525B),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  monthText,
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF18181B),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Text(
+                  '▼',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF18181B),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Income and expense
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    '收入',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF52525B),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    incomeText,
+                    style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF18181B),
+                    ),
+                  ),
+                ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    '支出',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF52525B),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    expenseText,
+                    style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF18181B),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
         ],
       ),
-    );
-  }
-}
-
-class _SummaryItem extends StatelessWidget {
-  const _SummaryItem({
-    this.widgetKey,
-    required this.label,
-    required this.value,
-    this.isLeft = false,
-    this.onTap,
-  });
-
-  final Key? widgetKey;
-  final String label;
-  final String value;
-  final bool isLeft;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final Widget content = Container(
-      padding: EdgeInsets.only(left: isLeft ? 0 : 12),
-      decoration: isLeft
-          ? null
-          : const BoxDecoration(
-              border: Border(
-                left: BorderSide(color: Colors.black26, width: 0.5),
-              ),
-            ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(fontSize: 12, color: Colors.black54),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 34,
-              height: 1,
-              fontWeight: FontWeight.w300,
-            ),
-          ),
-        ],
-      ),
-    );
-
-    if (onTap == null) {
-      return content;
-    }
-
-    return GestureDetector(
-      key: widgetKey,
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: content,
     );
   }
 }
@@ -391,18 +428,18 @@ class _DateHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFFF7F7F7),
-      padding: const EdgeInsets.fromLTRB(14, 10, 14, 8),
+      color: Colors.white,
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
       child: Row(
         children: [
           Text(
             dateText,
-            style: const TextStyle(fontSize: 12, color: Color(0xFF9A9A9A)),
+            style: const TextStyle(fontSize: 13, color: Color(0xFF71717A)),
           ),
           const Spacer(),
           Text(
             totalText,
-            style: const TextStyle(fontSize: 12, color: Color(0xFF9A9A9A)),
+            style: const TextStyle(fontSize: 13, color: Color(0xFF71717A)),
           ),
         ],
       ),
@@ -430,9 +467,9 @@ class _RecordItem extends StatelessWidget {
       case HomeRecordKind.meal:
         return Icons.restaurant;
       case HomeRecordKind.taxi:
-        return Icons.local_taxi_outlined;
+        return Icons.local_taxi;
       case HomeRecordKind.drink:
-        return Icons.local_drink_outlined;
+        return Icons.local_cafe;
     }
   }
 
@@ -443,26 +480,28 @@ class _RecordItem extends StatelessWidget {
       onTap: onTap,
       child: Container(
         color: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         child: Row(
           children: [
-            Icon(_resolveIcon(kind), size: 22, color: const Color(0xFF5A5A5A)),
+            Icon(
+              _resolveIcon(kind),
+              size: 24,
+              color: const Color(0xFFFCD34D),
+            ),
             const SizedBox(width: 12),
             Text(
               name,
               style: const TextStyle(
-                fontSize: 25,
-                color: Color(0xFF3D3D3D),
-                fontWeight: FontWeight.w300,
+                fontSize: 15,
+                color: Color(0xFF18181B),
               ),
             ),
             const Spacer(),
             Text(
               amount,
               style: const TextStyle(
-                fontSize: 31,
-                color: Color(0xFF4A4A4A),
-                fontWeight: FontWeight.w300,
+                fontSize: 15,
+                color: Color(0xFF18181B),
               ),
             ),
           ],
@@ -485,47 +524,62 @@ class _BottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BottomAppBar(
-      color: Colors.white,
-      elevation: 6,
-      child: SizedBox(
-        height: 76,
-        child: Row(
-          children: [
-            Expanded(
-              child: _BottomItem(
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          top: BorderSide(color: Color(0xFFE5E5E5), width: 1),
+        ),
+      ),
+      child: SafeArea(
+        child: SizedBox(
+          height: 80,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _BottomItem(
                 label: '明细',
-                icon: Icons.article_outlined,
+                icon: Icons.list,
                 selected: activeTab == _BottomTab.detail,
                 onTap: () => onTabTap(_BottomTab.detail),
               ),
-            ),
-            Expanded(
-              child: _BottomItem(
+              _BottomItem(
                 label: '图表',
-                icon: Icons.pie_chart_outline,
+                icon: Icons.trending_up,
                 selected: activeTab == _BottomTab.chart,
                 onTap: () => onTabTap(_BottomTab.chart),
               ),
-            ),
-            Expanded(child: _CenterRecordEntry(onAddTap: onAddTap)),
-            Expanded(
-              child: _BottomItem(
+              GestureDetector(
+                key: const Key('add-button'),
+                onTap: onAddTap,
+                child: Container(
+                  width: 56,
+                  height: 56,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFFCD34D),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.add,
+                    size: 32,
+                    color: Color(0xFF18181B),
+                  ),
+                ),
+              ),
+              _BottomItem(
                 label: '发现',
-                icon: Icons.explore_outlined,
+                icon: Icons.explore,
                 selected: activeTab == _BottomTab.discover,
                 onTap: () => onTabTap(_BottomTab.discover),
               ),
-            ),
-            Expanded(
-              child: _BottomItem(
+              _BottomItem(
                 label: '我的',
-                icon: Icons.person_outline,
+                icon: Icons.person,
                 selected: activeTab == _BottomTab.profile,
                 onTap: () => onTabTap(_BottomTab.profile),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -548,58 +602,18 @@ class _BottomItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final Color color = selected
-        ? const Color(0xFF222222)
-        : const Color(0xFF8A8A8A);
+        ? const Color(0xFF18181B)
+        : const Color(0xFF71717A);
     return InkWell(
       onTap: onTap,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 22, color: color),
-          const SizedBox(height: 3),
-          Text(label, style: TextStyle(fontSize: 12, color: color)),
+          Icon(icon, size: 20, color: color),
+          const SizedBox(height: 4),
+          Text(label, style: TextStyle(fontSize: 11, color: color)),
         ],
       ),
-    );
-  }
-}
-
-class _CenterRecordEntry extends StatelessWidget {
-  const _CenterRecordEntry({required this.onAddTap});
-
-  final VoidCallback onAddTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      clipBehavior: Clip.none,
-      alignment: Alignment.bottomCenter,
-      children: [
-        Positioned(
-          top: -14,
-          child: GestureDetector(
-            key: const Key('add-button'),
-            onTap: onAddTap,
-            child: Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: const Color(0xFFE6CF55),
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 3),
-              ),
-              child: const Icon(Icons.add, size: 28, color: Color(0xFF333333)),
-            ),
-          ),
-        ),
-        const Positioned(
-          bottom: 2,
-          child: Text(
-            '记账',
-            style: TextStyle(fontSize: 12, color: Color(0xFF8A8A8A)),
-          ),
-        ),
-      ],
     );
   }
 }
