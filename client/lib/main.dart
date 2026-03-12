@@ -1,9 +1,20 @@
-import 'package:flutter/widgets.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import 'app/app.dart';
+import 'package:flutter/material.dart';
 
 void main() {
-  WidgetsFlutterBinding.ensureInitialized();
-  runApp(const ProviderScope(child: OneKeepApp()));
+  runApp(const OneKeepApp());
+}
+
+class OneKeepApp extends StatelessWidget {
+  const OneKeepApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const MaterialApp(
+      home: Scaffold(
+        body: Center(
+          child: Text('OneKeep'),
+        ),
+      ),
+    );
+  }
 }

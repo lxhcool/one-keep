@@ -22,7 +22,7 @@
 | 1 | $ui-layout-analyzer | 01-layout/pages/*.md | 未开始 | 待确认 |  |
 | 2 | $product-requirement-writer | 02-requirements/*.md | 未开始 | 待确认 |  |
 | 3 | $design-requirement-challenger | 03-thinking/*.md | 未开始 | 待确认 |  |
-| 4 | $ddd-architecture-designer | 04-architecture/*.md | 未开始 | 待确认 |  |
+| 4 | $ddd-client-architecture-designer + $ddd-server-architecture-designer + $ddd-admin-architecture-designer | 04-architecture/*-architecture.md | 未开始 | 待确认 |  |
 | 5 | $business-implementation-builder | 05-implementation/*.md | 未开始 | 待确认 |  |
 | 6 | $code-review-test-auditor | 06-review-test/*.md | 未开始 | 待确认 |  |
 

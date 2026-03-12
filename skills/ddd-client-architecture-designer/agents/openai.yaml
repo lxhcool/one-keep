@@ -1,0 +1,5 @@
+interface:
+  display_name: "客户端 DDD 架构设计"
+  short_description: "聚焦客户端分层、状态流、缓存与接口适配的架构设计。"
+  default_prompt: "使用 $ddd-client-architecture-designer 基于需求与页面结构设计客户端 DDD 架构与模块边界。"
+

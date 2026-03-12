@@ -1,4 +1,0 @@
-interface:
-  display_name: "DDD 架构设计"
-  short_description: "基于需求输出限界上下文、聚合模型与三端职责映射。"
-  default_prompt: "使用 $ddd-architecture-designer 基于需求设计限界上下文、聚合和三端职责分工。"

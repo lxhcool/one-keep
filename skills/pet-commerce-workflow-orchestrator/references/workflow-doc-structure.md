@@ -25,9 +25,9 @@ docs/workflows/<workflow-id>/
     recommendations.md
     pre-architecture-checklist.md
   04-architecture/
-    ddd-overview.md
-    page-architecture-mapping.md
-    contracts.md
+    client-architecture.md
+    server-architecture.md
+    admin-architecture.md
   05-implementation/
     implementation-plan.md
     slice-log.md
@@ -52,7 +52,9 @@ docs/workflows/<workflow-id>/
 
 - `02-requirements/prd.md` 定义需求编号。
 - `03-thinking/questions.md` 与 `03-thinking/recommendations.md` 记录疑问与建议。
-- `04-architecture/page-architecture-mapping.md` 建立页面到上下文/模块/API 映射。
+- `04-architecture/client-architecture.md` 定义客户端分层、状态与适配策略。
+- `04-architecture/server-architecture.md` 定义服务端上下文、聚合、契约与一致性策略。
+- `04-architecture/admin-architecture.md` 定义后台模块边界、权限与审计策略。
 - `05-implementation/slice-log.md` 建立切片与需求编号映射。
 - `06-review-test/review-report.md` 建立问题与需求/切片映射。
 - `98-stage-gates/stage-approvals.md` 记录每阶段用户确认结果与时间。

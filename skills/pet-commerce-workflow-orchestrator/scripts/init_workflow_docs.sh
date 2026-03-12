@@ -132,28 +132,31 @@ create_file "${base_dir}/03-thinking/pre-architecture-checklist.md" "# 架构前
 - [ ] 验收标准可测试
 "
 
-create_file "${base_dir}/04-architecture/ddd-overview.md" "# DDD 概览
+create_file "${base_dir}/04-architecture/client-architecture.md" "# 客户端架构
 
-## 限界上下文
+## 分层设计
 
-## 聚合与不变式
+## 页面与模块映射
 
-## 三端职责
+## 状态与适配策略
 "
 
-create_file "${base_dir}/04-architecture/page-architecture-mapping.md" "# 页面与架构映射
+create_file "${base_dir}/04-architecture/server-architecture.md" "# 服务端架构
 
-| 页面 | 限界上下文 | 服务端模块 | API/契约 | 后台模块 |
-| --- | --- | --- | --- | --- |
+## 上下文与聚合
+
+## 契约与一致性策略
+
+## 治理与可观测性
 "
 
-create_file "${base_dir}/04-architecture/contracts.md" "# 契约定义
+create_file "${base_dir}/04-architecture/admin-architecture.md" "# 后台端架构
 
-## API 契约
+## 模块边界与运营流程
 
-## 事件契约
+## 权限与审计策略
 
-## 版本策略说明
+## 风险与治理
 "
 
 create_file "${base_dir}/05-implementation/implementation-plan.md" "# 实现计划

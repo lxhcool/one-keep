@@ -2,15 +2,10 @@
   "name": "one-keep",
   "version": "0.1.0",
   "private": true,
-  "description": "OneKeep monorepo (Flutter client + Fastify server scaffold)",
+  "description": "OneKeep Flutter client scaffold",
   "scripts": {
     "dev:client": "cd client && flutter run",
     "analyze:client": "cd client && flutter analyze",
-    "test:client": "cd client && flutter test",
-    "dev:server": "npm run dev --prefix server",
-    "build:server": "npm run build --prefix server",
-    "start:server": "npm run start --prefix server",
-    "prisma:generate": "npm run prisma:generate --prefix server",
-    "prisma:migrate": "npm run prisma:migrate --prefix server"
+    "test:client": "cd client && flutter test"
   }
 }
