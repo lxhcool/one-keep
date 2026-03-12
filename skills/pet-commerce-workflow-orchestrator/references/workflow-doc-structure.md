@@ -51,6 +51,7 @@ docs/workflows/<workflow-id>/
 ## 跨文档追踪关系
 
 - `02-requirements/prd.md` 定义需求编号。
+- `01-layout/component-inventory.md` 记录组件复用检查结果（复用/新增与新增原因）。
 - `03-thinking/questions.md` 与 `03-thinking/recommendations.md` 记录疑问与建议。
 - `04-architecture/client-architecture.md` 定义客户端分层、状态与适配策略。
 - `04-architecture/server-architecture.md` 定义服务端上下文、聚合、契约与一致性策略。

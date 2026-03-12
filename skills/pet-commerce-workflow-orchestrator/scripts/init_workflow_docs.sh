@@ -87,8 +87,8 @@ create_file "${base_dir}/00-input/context.md" "# 输入上下文
 
 create_file "${base_dir}/01-layout/component-inventory.md" "# 组件清单
 
-| 组件 | 是否复用 | 覆盖页面 | 备注 |
-| --- | --- | --- | --- |
+| 组件 | 项目内是否已有 | 已有组件路径 | 决策（复用/新增） | 新增原因（若新增必填） | 覆盖页面 | 备注 |
+| --- | --- | --- | --- | --- | --- | --- |
 "
 
 create_file "${base_dir}/02-requirements/prd.md" "# PRD

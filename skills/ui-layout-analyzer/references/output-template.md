@@ -34,6 +34,13 @@ Page
 | ProductCard | 是 | image, title, price | default/hover/sold-out |  |
 | FilterPanel | 是 | filters, selected | collapsed/expanded |  |
 
+### 4.1 组件复用决策表（防重复造轮子）
+
+| 候选组件 | 是否已有 | 已有组件路径 | 决策（复用/新增） | 新增原因（若新增必填） | 备注 |
+| --- | --- | --- | --- | --- | --- |
+| ProductCard | 是 | `client/lib/features/product/presentation/widgets/product_card.dart` | 复用 |  |  |
+| SummaryBadge | 否 |  | 新增 | 现有组件不支持“图标 + 双行文本 + 状态色”组合能力 |  |
+
 ## 5. 交互与状态说明
 
 - 导航行为：
