@@ -19,9 +19,9 @@ docs/<task-id>/
     requirements.md
     interaction-spec.md
   03-development/
-    implementation-plan.md
-    change-summary.md
-    test-notes.md
+    server-implementation.md
+    client-implementation.md
+    integration-notes.md
   97-workflow/
     run-summary.md
     stage-status.md
@@ -43,7 +43,7 @@ docs/<task-id>/
 - `01-ui-analysis/component-inventory.md` 记录组件复用决策。
 - `02-requirements/requirements.md` 定义服务端与客户端需求。
 - `02-requirements/interaction-spec.md` 记录详细交互与状态说明。
-- `03-development/implementation-plan.md` 定义开发顺序与任务拆分。
-- `03-development/change-summary.md` 记录服务端与客户端的实际改动。
-- `03-development/test-notes.md` 记录最小测试与联调结果。
+- `03-development/server-implementation.md` 记录服务端实现、接口交付与未完成项。
+- `03-development/client-implementation.md` 记录客户端实现、mock/真实接口依赖与未完成项。
+- `03-development/integration-notes.md` 记录联调结果，或记录尚未联调的原因与前置条件。
 - `97-workflow/stage-status.md` 记录每阶段状态与确认结果。

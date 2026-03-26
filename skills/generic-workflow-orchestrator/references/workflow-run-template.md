@@ -21,7 +21,9 @@
 | --- | --- | --- | --- | --- | --- |
 | 1 | $ui-layout-analyzer | 01-ui-analysis/pages/*.md | 未开始 | 待确认 |  |
 | 2 | $product-requirement-writer | 02-requirements/*.md | 未开始 | 待确认 |  |
-| 3 | $business-implementation-builder | 03-development/*.md | 未开始 | 待确认 |  |
+| 3 | $business-implementation-builder | 03-development/server-implementation.md | 未开始 | 待确认 | 可只做服务端 |
+| 3 | $business-implementation-builder | 03-development/client-implementation.md | 未开始 | 待确认 | 可只做客户端 |
+| 3 | $business-implementation-builder | 03-development/integration-notes.md | 未开始 | 待确认 | 仅在需要联调时补充 |
 
 ## 阶段确认记录
 

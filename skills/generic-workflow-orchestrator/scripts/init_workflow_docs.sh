@@ -53,7 +53,7 @@ create_file "${base_dir}/README.md" "# 任务 ${task_id}
 
 - [ ] 1. UI 分析与组件拆分
 - [ ] 2. 需求文档生成
-- [ ] 3. 服务端优先的实现与联调
+- [ ] 3. 开发实现与联调
 "
 
 create_file "${base_dir}/00-input/context.md" "# 输入上下文
@@ -91,31 +91,62 @@ create_file "${base_dir}/02-requirements/interaction-spec.md" "# 交互规格
 ## 状态变化
 "
 
-create_file "${base_dir}/03-development/implementation-plan.md" "# 实现计划
+create_file "${base_dir}/03-development/server-implementation.md" "# 服务端实现
 
-## 服务端计划
+## 本轮目标
 
-## 客户端计划
+## 接口与数据改动
 
-## 联调计划
+| 需求编号 | 接口/模块 | 改动内容 | 当前状态 | 备注 |
+| --- | --- | --- | --- | --- |
+
+## 测试与验证
+
+| 类型 | 场景 | 结果 | 备注 |
+| --- | --- | --- | --- |
+
+## 未完成项与后续依赖
+
+| 项目 | 说明 | 后续动作 |
+| --- | --- | --- |
 "
 
-create_file "${base_dir}/03-development/change-summary.md" "# 变更摘要
+create_file "${base_dir}/03-development/client-implementation.md" "# 客户端实现
 
-## 服务端改动
+## 本轮目标
 
-## 客户端改动
+## 页面与交互改动
 
-## 风险与后续事项
+| 需求编号 | 页面/组件 | 改动内容 | 数据来源（真实接口/mock/静态） | 当前状态 | 备注 |
+| --- | --- | --- | --- | --- | --- |
+
+## 测试与验证
+
+| 类型 | 场景 | 结果 | 备注 |
+| --- | --- | --- | --- |
+
+## 未完成项与后续依赖
+
+| 项目 | 说明 | 后续动作 |
+| --- | --- | --- |
 "
 
-create_file "${base_dir}/03-development/test-notes.md" "# 测试记录
+create_file "${base_dir}/03-development/integration-notes.md" "# 联调记录
 
-## 已执行验证
+## 联调范围
 
-## 联调结果
+| 服务端接口/模块 | 客户端页面/组件 | 联调状态 | 备注 |
+| --- | --- | --- | --- |
 
-## 未解决问题
+## 问题与阻塞
+
+| 问题 | 影响 | 当前处理 | 下一步 |
+| --- | --- | --- | --- |
+
+## 若尚未联调
+
+| 原因 | 缺失前置条件 | 预计后续动作 |
+| --- | --- | --- |
 "
 
 create_file "${base_dir}/97-workflow/run-summary.md" "# 运行摘要
@@ -133,7 +164,7 @@ create_file "${base_dir}/97-workflow/stage-status.md" "# 阶段状态
 | --- | --- | --- | --- | --- |
 | 1 | UI 分析与组件拆分 | 未开始 | 待确认 |  |
 | 2 | 需求文档生成 | 未开始 | 待确认 |  |
-| 3 | 服务端优先的实现与联调 | 未开始 | 待确认 |  |
+| 3 | 开发实现与联调 | 未开始 | 待确认 | 支持只做服务端或客户端 |
 "
 
 create_file "${base_dir}/99-decisions/decision-log.md" "# 决策记录

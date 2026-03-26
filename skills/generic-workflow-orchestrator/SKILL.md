@@ -1,6 +1,6 @@
 ---
 name: generic-workflow-orchestrator
-description: 串联通用端到端交付流程，按固定顺序执行 UI 分析、需求文档生成、服务端优先开发与联调，并将每个阶段的结果写入 docs。各阶段也允许单独执行。
+description: 串联通用端到端交付流程，按 UI 分析、需求文档生成、开发实现三个阶段推进，并允许在开发阶段只做服务端、只做客户端或补联调记录。各阶段都可单独执行。
 ---
 
 # 通用工作流编排
@@ -12,7 +12,7 @@ description: 串联通用端到端交付流程，按固定顺序执行 UI 分析
 - 执行前先读取 `references/workflow-contract.md`。
 - 初始化目录后，所有阶段都写入同一个 `docs/<task-id>/` 目录。
 - 编排器本身不替代子技能，只负责准备目录、校验输入、串联阶段和汇总结果。
-- 第一阶段输入允许使用截图、本地导出图、MasterGo 设计稿地址或 Pencli 设计稿地址。
+- 第一阶段输入允许使用截图、本地导出图、MasterGo 设计稿地址、Pencli 设计稿地址或页面链接。
 
 ## 固定阶段顺序
 
@@ -39,6 +39,7 @@ description: 串联通用端到端交付流程，按固定顺序执行 UI 分析
 - 串联执行时必须按固定顺序推进。
 - 阶段 1 输出是阶段 2 的输入。
 - 阶段 2 输出是阶段 3 的输入。
+- 阶段 3 可根据依赖关系选择只做服务端、只做客户端，或补联调记录。
 - 若上阶段存在阻塞项，必须先记录，再决定是否继续。
 
 ### 4. 阶段确认
@@ -56,9 +57,9 @@ description: 串联通用端到端交付流程，按固定顺序执行 UI 分析
 - `docs/<task-id>/02-requirements/requirements.md`
 - `docs/<task-id>/02-requirements/interaction-spec.md`
 - 开发阶段写入：
-- `docs/<task-id>/03-development/implementation-plan.md`
-- `docs/<task-id>/03-development/change-summary.md`
-- `docs/<task-id>/03-development/test-notes.md`
+- `docs/<task-id>/03-development/server-implementation.md`
+- `docs/<task-id>/03-development/client-implementation.md`
+- `docs/<task-id>/03-development/integration-notes.md`
 - 运行摘要与决策写入：
 - `docs/<task-id>/97-workflow/run-summary.md`
 - `docs/<task-id>/97-workflow/stage-status.md`
@@ -75,4 +76,6 @@ description: 串联通用端到端交付流程，按固定顺序执行 UI 分析
 
 - 流程不绑定具体技术栈或业务领域。
 - 每个阶段都能独立运行，也能被完整流程消费。
+- 第一阶段能兼容本地图片和在线设计稿地址两种输入模式。
+- 第三阶段能兼容只做服务端、只做客户端或双端联调三种执行方式。
 - 文档结构稳定，便于追踪同一任务的分析、需求与实现结果。
