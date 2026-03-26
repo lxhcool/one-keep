@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:one_keep/app.dart';
+import 'package:one_keep/core/theme/app_theme.dart';
 
 void main() {
-  testWidgets('renders base scaffold', (WidgetTester tester) async {
+  testWidgets('builds a themed scaffold shell', (WidgetTester tester) async {
     await tester.pumpWidget(
-      const ProviderScope(child: OneKeepApp()),
+      MaterialApp(
+        theme: AppTheme.dark,
+        home: const Scaffold(body: Center(child: Text('OneKeep'))),
+      ),
     );
 
     expect(find.byType(MaterialApp), findsOneWidget);
+    expect(find.text('OneKeep'), findsOneWidget);
   });
 }

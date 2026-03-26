@@ -24,13 +24,12 @@ class AuthState {
     UserInfo? user,
     bool? isLoading,
     String? error,
-  }) =>
-      AuthState(
-        status: status ?? this.status,
-        user: user ?? this.user,
-        isLoading: isLoading ?? this.isLoading,
-        error: error,
-      );
+  }) => AuthState(
+    status: status ?? this.status,
+    user: user ?? this.user,
+    isLoading: isLoading ?? this.isLoading,
+    error: error,
+  );
 }
 
 class AuthNotifier extends StateNotifier<AuthState> {
@@ -43,18 +42,19 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> _checkAuth() async {
     final token = await ApiClient.getToken();
     state = state.copyWith(
-      status:
-          token != null ? AuthStatus.authenticated : AuthStatus.unauthenticated,
+      status: token != null
+          ? AuthStatus.authenticated
+          : AuthStatus.unauthenticated,
     );
   }
 
   Future<void> login(String email, String password) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      final res = await _api.dio.post('/api/auth/login', data: {
-        'email': email,
-        'password': password,
-      });
+      final res = await _api.dio.post(
+        '/api/auth/login',
+        data: {'email': email, 'password': password},
+      );
       final data = res.data as Map<String, dynamic>;
       await ApiClient.saveToken(data['token'] as String);
       state = state.copyWith(
@@ -63,21 +63,17 @@ class AuthNotifier extends StateNotifier<AuthState> {
         isLoading: false,
       );
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: '登录失败，请检查邮箱和密码',
-      );
+      state = state.copyWith(isLoading: false, error: '登录失败，请检查邮箱和密码');
     }
   }
 
   Future<void> register(String email, String password, String name) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      final res = await _api.dio.post('/api/auth/register', data: {
-        'email': email,
-        'password': password,
-        'name': name,
-      });
+      final res = await _api.dio.post(
+        '/api/auth/register',
+        data: {'email': email, 'password': password, 'name': name},
+      );
       final data = res.data as Map<String, dynamic>;
       await ApiClient.saveToken(data['token'] as String);
       state = state.copyWith(
@@ -86,16 +82,18 @@ class AuthNotifier extends StateNotifier<AuthState> {
         isLoading: false,
       );
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: '注册失败，请重试',
-      );
+      state = state.copyWith(isLoading: false, error: '注册失败，请重试');
     }
   }
 
   Future<void> logout() async {
     await ApiClient.clearToken();
     state = const AuthState(status: AuthStatus.unauthenticated);
+  }
+
+  void updateLocalUser({String? name}) {
+    if (state.user == null) return;
+    state = state.copyWith(user: state.user!.copyWith(name: name));
   }
 }
 

@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:lucide_icons/lucide_icons.dart';
-import '../../core/theme/app_colors.dart';
-import '../../core/providers/data_providers.dart';
-import '../../core/providers/api_provider.dart';
 
+import '../../core/providers/api_provider.dart';
+import '../../core/providers/data_providers.dart';
+import '../../core/theme/app_colors.dart';
+import '../models/models.dart';
+import 'onekeep_ui.dart';
 
 class MainShell extends ConsumerStatefulWidget {
   final Widget child;
+
   const MainShell({super.key, required this.child});
 
   @override
@@ -19,7 +21,7 @@ class MainShell extends ConsumerStatefulWidget {
 class _MainShellState extends ConsumerState<MainShell> {
   int _currentIndex = 0;
 
-  static const _paths = ['/home', '/stats', '/bills'];
+  static const _paths = ['/home', '/stats', '/bills', '/profile'];
 
   void _onTap(int index) {
     if (index == _currentIndex) return;
@@ -30,17 +32,21 @@ class _MainShellState extends ConsumerState<MainShell> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final loc = GoRouterState.of(context).matchedLocation;
-    if (loc.startsWith('/home')) {
+    final location = GoRouterState.of(context).matchedLocation;
+
+    if (location.startsWith('/home')) {
       _currentIndex = 0;
-    } else if (loc.startsWith('/stats')) {
+    } else if (location.startsWith('/stats')) {
       _currentIndex = 1;
-    } else if (loc.startsWith('/bills')) {
+    } else if (location.startsWith('/bills')) {
       _currentIndex = 2;
+    } else if (location.startsWith('/profile')) {
+      _currentIndex = 3;
     }
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBg : AppColors.lightBg,
+      backgroundColor: Colors.transparent,
+      extendBody: true,
       body: widget.child,
       bottomNavigationBar: _buildBottomBar(isDark),
       floatingActionButton: _buildFab(isDark),
@@ -49,107 +55,121 @@ class _MainShellState extends ConsumerState<MainShell> {
   }
 
   Widget _buildBottomBar(bool isDark) {
-    final accent = isDark ? AppColors.teal : AppColors.indigo;
-    final inactive =
-        isDark ? AppColors.darkTextTertiary : AppColors.lightTextTertiary;
+    final bg = isDark ? AppColors.darkBg : AppColors.lightBg;
+    final active = isDark ? AppColors.teal : AppColors.indigo;
+    final inactive = isDark
+        ? AppColors.darkTextTertiary
+        : AppColors.lightTextTertiary;
 
     return Container(
-      height: 80,
+      height: 70,
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurface : Colors.white,
-        border: Border(
-          top: BorderSide(
-            color: isDark
-                ? AppColors.darkCardBorder
-                : const Color(0xFFE5E7EB),
-            width: 0.5,
-          ),
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [bg.withValues(alpha: 0), bg.withValues(alpha: 0.84), bg],
+          stops: const [0, 0.3, 1],
         ),
       ),
       child: SafeArea(
         top: false,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _NavItem(
-              icon: LucideIcons.home,
-              label: '首页',
-              active: _currentIndex == 0,
-              activeColor: accent,
-              inactiveColor: inactive,
-              onTap: () => _onTap(0),
+        child: Center(
+          child: SizedBox(
+            height: 54,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _NavSlot(
+                      icon: Icons.home_rounded,
+                      label: '首页',
+                      active: _currentIndex == 0,
+                      activeColor: active,
+                      inactiveColor: inactive,
+                      onTap: () => _onTap(0),
+                    ),
+                  ),
+                  Expanded(
+                    child: _NavSlot(
+                      icon: Icons.bar_chart_rounded,
+                      label: '统计',
+                      active: _currentIndex == 1,
+                      activeColor: active,
+                      inactiveColor: inactive,
+                      onTap: () => _onTap(1),
+                    ),
+                  ),
+                  const Expanded(child: SizedBox()),
+                  Expanded(
+                    child: _NavSlot(
+                      icon: Icons.receipt_long_rounded,
+                      label: '账单',
+                      active: _currentIndex == 2,
+                      activeColor: active,
+                      inactiveColor: inactive,
+                      onTap: () => _onTap(2),
+                    ),
+                  ),
+                  Expanded(
+                    child: _NavSlot(
+                      icon: Icons.person_rounded,
+                      label: '我的',
+                      active: _currentIndex == 3,
+                      activeColor: active,
+                      inactiveColor: inactive,
+                      onTap: () => _onTap(3),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            _NavItem(
-              icon: LucideIcons.barChart2,
-              label: '统计',
-              active: _currentIndex == 1,
-              activeColor: accent,
-              inactiveColor: inactive,
-              onTap: () => _onTap(1),
-            ),
-            const SizedBox(width: 56), // space for FAB
-            _NavItem(
-              icon: LucideIcons.receipt,
-              label: '账单',
-              active: _currentIndex == 2,
-              activeColor: accent,
-              inactiveColor: inactive,
-              onTap: () => _onTap(2),
-            ),
-            _NavItem(
-              icon: LucideIcons.user,
-              label: '我的',
-              active: false,
-              activeColor: accent,
-              inactiveColor: inactive,
-              onTap: () {},
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildFab(bool isDark) {
-    final gradient =
-        isDark ? AppColors.fabGradientDark : AppColors.fabGradientLight;
+    final colors = isDark
+        ? AppColors.fabGradientDark
+        : AppColors.fabGradientLight;
     return GestureDetector(
       onTap: () => _showQuickAddSheet(context),
       child: Container(
-        width: 48,
-        height: 48,
+        width: 50,
+        height: 50,
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: gradient,
+            colors: colors,
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(25),
           boxShadow: [
             BoxShadow(
-              color: gradient[0].withValues(alpha: 0.3),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
+              color: colors.first.withValues(alpha: 0.32),
+              blurRadius: 14,
             ),
           ],
         ),
-        child: const Icon(LucideIcons.plus, color: Colors.white, size: 24),
+        child: const Icon(Icons.add_rounded, color: Colors.white, size: 26),
       ),
     );
   }
 
   void _showQuickAddSheet(BuildContext context) {
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => const _QuickAddSheet(),
+      barrierColor: AppColors.darkDimOverlay,
+      builder: (_) => const _QuickAddSheet(),
     );
   }
 }
 
-// ── Nav item ──
-class _NavItem extends StatelessWidget {
+class _NavSlot extends StatelessWidget {
   final IconData icon;
   final String label;
   final bool active;
@@ -157,7 +177,7 @@ class _NavItem extends StatelessWidget {
   final Color inactiveColor;
   final VoidCallback onTap;
 
-  const _NavItem({
+  const _NavSlot({
     required this.icon,
     required this.label,
     required this.active,
@@ -172,29 +192,25 @@ class _NavItem extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
-      child: SizedBox(
-        width: 56,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 22, color: color),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: active ? FontWeight.w600 : FontWeight.w400,
-                color: color,
-              ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 22, color: color),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: oneKeepInter(
+              color: color,
+              size: 10,
+              weight: active ? FontWeight.w600 : FontWeight.w400,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 }
 
-// ── Quick Add Bottom Sheet ──
 class _QuickAddSheet extends ConsumerStatefulWidget {
   const _QuickAddSheet();
 
@@ -207,353 +223,364 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet> {
   String _amount = '';
   String? _selectedCategoryId;
 
+  final TextEditingController _amountController = TextEditingController();
+  final FocusNode _amountFocusNode = FocusNode();
+
+  @override
+  void dispose() {
+    _amountController.dispose();
+    _amountFocusNode.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final accent = isDark ? AppColors.teal : AppColors.indigo;
     final categories = ref.watch(categoriesProvider);
+    final activeColor = _direction == 'expense'
+        ? AppColors.expensePink
+        : AppColors.teal;
+    final canSubmit =
+        double.tryParse(_amount) != null &&
+        double.parse(_amount) > 0 &&
+        _selectedCategoryId != null;
 
     return Container(
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkSurface : Colors.white,
-        borderRadius:
-            const BorderRadius.vertical(top: Radius.circular(AppRadius.sheet)),
-      ),
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        border: const Border(
+          top: BorderSide(color: AppColors.darkHairline, width: 0.5),
+        ),
       ),
       child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Title row: 快速记账 + X
-              Row(
-                children: [
-                  Text(
-                    '快速记账',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: isDark
-                          ? AppColors.darkTextPrimary
-                          : AppColors.lightTextPrimary,
+        top: false,
+        child: SizedBox(
+          height: 450,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 12, 24, 40),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Align(
+                  alignment: Alignment.center,
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                  const Spacer(),
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        color: isDark
-                            ? AppColors.darkInputBg
-                            : AppColors.lightInputBg,
-                        borderRadius: BorderRadius.circular(10),
+                ),
+                const SizedBox(height: 18),
+                Row(
+                  children: [
+                    Text(
+                      '快速记账',
+                      style: oneKeepManrope(
+                        color: AppColors.darkTextPrimary,
+                        size: 18,
+                        weight: FontWeight.w700,
                       ),
-                      child: Icon(LucideIcons.x,
-                          size: 16,
-                          color: isDark
-                              ? AppColors.darkTextSecondary
-                              : AppColors.lightTextSecondary),
+                    ),
+                    const Spacer(),
+                    GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: Icon(
+                        Icons.close_rounded,
+                        color: Colors.white.withValues(alpha: 0.32),
+                        size: 24,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                Container(
+                  height: 42,
+                  padding: const EdgeInsets.all(3),
+                  decoration: BoxDecoration(
+                    color: AppColors.darkGlassStrong,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _QuickAddToggle(
+                          label: '支出',
+                          active: _direction == 'expense',
+                          activeColor: AppColors.expensePink,
+                          onTap: () => setState(() => _direction = 'expense'),
+                        ),
+                      ),
+                      Expanded(
+                        child: _QuickAddToggle(
+                          label: '收入',
+                          active: _direction == 'income',
+                          activeColor: AppColors.teal,
+                          onTap: () => setState(() => _direction = 'income'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+                GestureDetector(
+                  onTap: () => _amountFocusNode.requestFocus(),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: OneKeepGradientText(
+                      text: '¥ $_displayAmount',
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [Colors.white, activeColor],
+                      ),
+                      style: oneKeepGrotesk(
+                        color: Colors.white,
+                        size: 40,
+                        weight: FontWeight.w700,
+                        letterSpacing: 1.5,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+                Opacity(
+                  opacity: 0,
+                  child: SizedBox(
+                    height: 1,
+                    child: TextField(
+                      controller: _amountController,
+                      focusNode: _amountFocusNode,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+                      ],
+                      onChanged: _onAmountChanged,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                categories.when(
+                  data: (items) => _buildCategoryRow(items, activeColor),
+                  loading: () => const SizedBox(height: 36),
+                  error: (error, stackTrace) => const SizedBox(height: 36),
+                ),
+                const Spacer(),
+                GestureDetector(
+                  onTap: canSubmit ? _submit : null,
+                  child: Opacity(
+                    opacity: canSubmit ? 1 : 0.5,
+                    child: Container(
+                      width: double.infinity,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        color: AppColors.teal,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Center(
+                        child: Text(
+                          '确认记账',
+                          style: oneKeepManrope(
+                            color: AppColors.darkBg,
+                            size: 16,
+                            weight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCategoryRow(List<Category> items, Color activeColor) {
+    final filtered = items
+        .where((item) => item.type == _direction)
+        .take(4)
+        .toList();
+    if (filtered.isEmpty) return const SizedBox(height: 36);
+
+    return SizedBox(
+      height: 36,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: filtered.length,
+        separatorBuilder: (context, index) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final item = filtered[index];
+          final selected = item.id == _selectedCategoryId;
+
+          return GestureDetector(
+            onTap: () => setState(() => _selectedCategoryId = item.id),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              decoration: BoxDecoration(
+                color: selected
+                    ? activeColor.withValues(alpha: 0.15)
+                    : AppColors.darkGlassStrong,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: selected
+                      ? activeColor.withValues(alpha: 0.32)
+                      : Colors.transparent,
+                  width: 0.8,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    oneKeepCategoryIcon(item.name, item.name, item.icon),
+                    size: 16,
+                    color: selected ? activeColor : AppColors.darkTextSecondary,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    item.name,
+                    style: oneKeepInter(
+                      color: selected
+                          ? activeColor
+                          : AppColors.darkTextSecondary,
+                      size: 12,
+                      weight: selected ? FontWeight.w600 : FontWeight.w400,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
-
-              // 支出/收入 toggle
-              Container(
-                padding: const EdgeInsets.all(3),
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? AppColors.darkInputBg
-                      : AppColors.lightInputBg,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: _toggleBtn('支出', _direction == 'expense',
-                          isDark, () => setState(() => _direction = 'expense')),
-                    ),
-                    Expanded(
-                      child: _toggleBtn('收入', _direction == 'income', isDark,
-                          () => setState(() => _direction = 'income')),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Amount display
-              Text(
-                '¥ ${_amount.isEmpty ? '0.00' : _amount}',
-                style: GoogleFonts.spaceGrotesk(
-                  fontSize: 40,
-                  fontWeight: FontWeight.w700,
-                  color: isDark
-                      ? AppColors.darkTextPrimary
-                      : AppColors.lightTextPrimary,
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Category chips
-              categories.when(
-                data: (cats) {
-                  final filtered = cats
-                      .where((c) => c.type == _direction)
-                      .toList();
-                  if (filtered.isEmpty) {
-                    return const SizedBox.shrink();
-                  }
-                  return SizedBox(
-                    height: 42,
-                    child: ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: filtered.length,
-                      separatorBuilder: (context2, index2) => const SizedBox(width: 10),
-                      itemBuilder: (context, index) {
-                        final cat = filtered[index];
-                        final selected = _selectedCategoryId == cat.id;
-                        return GestureDetector(
-                          onTap: () => setState(
-                              () => _selectedCategoryId = cat.id),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 10),
-                            decoration: BoxDecoration(
-                              color: selected
-                                  ? accent.withValues(alpha: 0.12)
-                                  : (isDark
-                                      ? AppColors.darkInputBg
-                                      : AppColors.lightInputBg),
-                              borderRadius: BorderRadius.circular(20),
-                              border: selected
-                                  ? Border.all(color: accent, width: 1)
-                                  : null,
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(cat.icon,
-                                    style: const TextStyle(fontSize: 16)),
-                                const SizedBox(width: 6),
-                                Text(
-                                  cat.name,
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: selected
-                                        ? FontWeight.w600
-                                        : FontWeight.w400,
-                                    color: selected
-                                        ? accent
-                                        : (isDark
-                                            ? AppColors.darkTextSecondary
-                                            : AppColors.lightTextSecondary),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  );
-                },
-                loading: () =>
-                    const Center(child: CircularProgressIndicator()),
-                error: (e, s) => const SizedBox.shrink(),
-              ),
-              const SizedBox(height: 24),
-
-              // Numpad (simple row of digits)
-              _buildNumpad(isDark),
-              const SizedBox(height: 16),
-
-              // 确认记账 button
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () {
-                  debugPrint('[QuickAdd] amount=$_amount, category=$_selectedCategoryId, direction=$_direction');
-                  _submit();
-                },
-                child: Container(
-                  width: double.infinity,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: isDark
-                          ? AppColors.fabGradientDark
-                          : AppColors.fabGradientLight,
-                    ),
-                    borderRadius: BorderRadius.circular(AppRadius.button),
-                  ),
-                  child: const Center(
-                    child: Text(
-                      '确认记账',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }
 
-  Widget _toggleBtn(
-      String label, bool active, bool isDark, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: BoxDecoration(
-          color: active
-              ? (isDark ? AppColors.darkSurface : Colors.white)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Center(
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: active ? FontWeight.w600 : FontWeight.w400,
-              color: active
-                  ? (isDark
-                      ? AppColors.darkTextPrimary
-                      : AppColors.lightTextPrimary)
-                  : (isDark
-                      ? AppColors.darkTextTertiary
-                      : AppColors.lightTextTertiary),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  String get _displayAmount => _amount.isEmpty ? '0.00' : _amount;
 
-  Widget _buildNumpad(bool isDark) {
-    const keys = [
-      '1', '2', '3',
-      '4', '5', '6',
-      '7', '8', '9',
-      '.', '0', '⌫',
-    ];
-    return GridView.count(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: 3,
-      childAspectRatio: 2.2,
-      mainAxisSpacing: 8,
-      crossAxisSpacing: 8,
-      children: keys.map((k) {
-        return GestureDetector(
-          onTap: () => _onKeyTap(k),
-          child: Container(
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.darkInputBg : AppColors.lightInputBg,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Center(
-              child: k == '⌫'
-                  ? Icon(LucideIcons.delete,
-                      size: 20,
-                      color: isDark
-                          ? AppColors.darkTextSecondary
-                          : AppColors.lightTextSecondary)
-                  : Text(
-                      k,
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w500,
-                        color: isDark
-                            ? AppColors.darkTextPrimary
-                            : AppColors.lightTextPrimary,
-                      ),
-                    ),
-            ),
-          ),
-        );
-      }).toList(),
-    );
-  }
-
-  void _onKeyTap(String key) {
-    setState(() {
-      if (key == '⌫') {
-        if (_amount.isNotEmpty) {
-          _amount = _amount.substring(0, _amount.length - 1);
-        }
-      } else if (key == '.') {
-        if (!_amount.contains('.')) {
-          _amount = _amount.isEmpty ? '0.' : '$_amount.';
-        }
-      } else {
-        // Limit decimal places to 2
-        if (_amount.contains('.')) {
-          final parts = _amount.split('.');
-          if (parts[1].length >= 2) return;
-        }
-        _amount = '$_amount$key';
-      }
-    });
-  }
-
-  void _submit() async {
-    final amt = double.tryParse(_amount);
-    if (amt == null || amt <= 0) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('请输入金额')),
-        );
-      }
-      return;
+  void _onAmountChanged(String value) {
+    final sanitized = _sanitizeAmount(value);
+    if (sanitized != value) {
+      _amountController.value = TextEditingValue(
+        text: sanitized,
+        selection: TextSelection.collapsed(offset: sanitized.length),
+      );
     }
-    if (_selectedCategoryId == null) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('请选择分类')),
-        );
+    setState(() => _amount = sanitized);
+  }
+
+  String _sanitizeAmount(String input) {
+    final buffer = StringBuffer();
+    var seenDot = false;
+    var decimals = 0;
+
+    for (final rune in input.runes) {
+      final char = String.fromCharCode(rune);
+      if (char == '.') {
+        if (seenDot) continue;
+        seenDot = true;
+        if (buffer.isEmpty) {
+          buffer.write('0');
+        }
+        buffer.write('.');
+        continue;
       }
+      if (char.codeUnitAt(0) < 48 || char.codeUnitAt(0) > 57) {
+        continue;
+      }
+      if (seenDot) {
+        if (decimals >= 2) continue;
+        decimals += 1;
+      }
+      buffer.write(char);
+    }
+
+    return buffer.toString();
+  }
+
+  Future<void> _submit() async {
+    final amount = double.tryParse(_amount);
+    if (amount == null || amount <= 0 || _selectedCategoryId == null) {
       return;
     }
 
     final categories = ref.read(categoriesProvider).valueOrNull;
-    final cat = categories?.where((c) => c.id == _selectedCategoryId).firstOrNull;
-    final title = cat?.name ?? '未分类';
+    final category = categories
+        ?.where((item) => item.id == _selectedCategoryId)
+        .firstOrNull;
+    final title = category?.name ?? '未分类';
 
     try {
       final api = ref.read(apiClientProvider);
-      await api.dio.post('/api/transactions', data: {
-        'title': title,
-        'amount': amt,
-        'direction': _direction,
-        'categoryId': _selectedCategoryId,
-        'occurredAt': DateTime.now().toUtc().toIso8601String(),
-      });
-      if (mounted) {
-        Navigator.pop(context);
-        ref.read(homeProvider.notifier).load();
-        ref.read(billsProvider.notifier).load();
-      }
-    } catch (e) {
-      debugPrint('[QuickAdd] error: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('记账失败: $e')),
-        );
-      }
+      await api.dio.post(
+        '/api/transactions',
+        data: {
+          'title': title,
+          'amount': amount,
+          'direction': _direction,
+          'categoryId': _selectedCategoryId,
+          'occurredAt': DateTime.now().toUtc().toIso8601String(),
+        },
+      );
+      if (!mounted) return;
+      Navigator.pop(context);
+      ref.read(homeProvider.notifier).load();
+      ref.read(billsProvider.notifier).load();
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('记账失败: $error')));
     }
+  }
+}
+
+class _QuickAddToggle extends StatelessWidget {
+  final String label;
+  final bool active;
+  final Color activeColor;
+  final VoidCallback onTap;
+
+  const _QuickAddToggle({
+    required this.label,
+    required this.active,
+    required this.activeColor,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: active
+              ? activeColor.withValues(alpha: 0.15)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: active
+                ? activeColor.withValues(alpha: 0.28)
+                : Colors.transparent,
+            width: 0.8,
+          ),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          label,
+          style: oneKeepManrope(
+            color: active ? activeColor : AppColors.darkTextTertiary,
+            size: 14,
+            weight: active ? FontWeight.w600 : FontWeight.w400,
+          ),
+        ),
+      ),
+    );
   }
 }

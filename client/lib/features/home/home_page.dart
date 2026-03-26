@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:lucide_icons/lucide_icons.dart';
-import '../../core/theme/app_colors.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../core/providers/auth_provider.dart';
 import '../../core/providers/data_providers.dart';
+import '../../core/providers/preferences_provider.dart';
+import '../../core/theme/app_colors.dart';
 import '../../shared/models/models.dart';
+import '../../shared/widgets/onekeep_ui.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -23,77 +26,74 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   String _greeting() {
-    final h = DateTime.now().hour;
-    if (h < 6) return '凌晨好';
-    if (h < 12) return '早上好';
-    if (h < 18) return '下午好';
+    final hour = DateTime.now().hour;
+    if (hour < 6) return '凌晨好';
+    if (hour < 12) return '早上好';
+    if (hour < 18) return '下午好';
     return '晚上好';
   }
 
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(homeProvider);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final authState = ref.watch(authProvider);
+    final preferences = ref.watch(preferencesProvider);
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBg : AppColors.lightBg,
-      body: SafeArea(
-        child: state.isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : state.error != null
-                ? Center(child: Text(state.error!))
-                : RefreshIndicator(
-                    onRefresh: () => ref.read(homeProvider.notifier).load(),
-                    child: ListView(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      children: [
-                        const SizedBox(height: 16),
-                        _buildHeader(isDark),
-                        const SizedBox(height: 24),
-                        _buildBalanceCard(state.summary!, isDark),
-                        const SizedBox(height: 16),
-                        _buildIncomeExpenseRow(state.summary!, isDark),
-                        const SizedBox(height: 28),
-                        _buildRecentSection(
-                          state.summary!.recentTransactions,
-                          isDark,
-                        ),
-                        const SizedBox(height: 32),
+      backgroundColor: Colors.transparent,
+      body: OneKeepPageBackground(
+        variant: OneKeepPageVariant.home,
+        child: SafeArea(
+          bottom: false,
+          child: state.isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : state.error != null
+              ? Center(child: Text(state.error!))
+              : RefreshIndicator(
+                  onRefresh: () => ref.read(homeProvider.notifier).load(),
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 110),
+                    children: [
+                      _buildHeader(
+                        state.summary,
+                        authState.user?.name,
+                        preferences,
+                      ),
+                      const SizedBox(height: 20),
+                      if (state.summary != null) ...[
+                        _buildBalanceCard(state.summary!),
+                        const SizedBox(height: 14),
+                        _buildIncomeExpenseRow(state.summary!),
+                        const SizedBox(height: 20),
+                        _buildRecentSection(state.summary!.recentTransactions),
                       ],
-                    ),
+                    ],
                   ),
+                ),
+        ),
       ),
     );
   }
 
-  // ── Header: avatar(teal ring) + greeting + bell ──
-  Widget _buildHeader(bool isDark) {
+  Widget _buildHeader(
+    HomeSummary? summary,
+    String? authUserName,
+    PreferencesState preferences,
+  ) {
+    final userName = preferences.nickname.isNotEmpty
+        ? preferences.nickname
+        : (summary?.user.name.isNotEmpty == true
+              ? summary!.user.name
+              : (authUserName?.isNotEmpty == true
+                    ? authUserName!
+                    : 'OneKeep 用户'));
+
     return Row(
       children: [
-        Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: isDark
-                  ? AppColors.teal.withValues(alpha: 0.6)
-                  : AppColors.indigo.withValues(alpha: 0.3),
-              width: 2,
-            ),
-          ),
-          child: CircleAvatar(
-            radius: 22,
-            backgroundColor:
-                isDark ? AppColors.darkSurface : AppColors.lightInputBg,
-            child: Icon(
-              LucideIcons.user,
-              size: 20,
-              color: isDark
-                  ? AppColors.darkTextSecondary
-                  : AppColors.lightTextSecondary,
-            ),
-          ),
+        OneKeepAvatar(
+          avatarIndex: preferences.avatarIndex,
+          size: 48,
+          iconSize: 22,
         ),
         const SizedBox(width: 14),
         Expanded(
@@ -102,151 +102,160 @@ class _HomePageState extends ConsumerState<HomePage> {
             children: [
               Text(
                 _greeting(),
-                style: TextStyle(
-                  fontSize: 13,
-                  color: isDark
-                      ? AppColors.darkTextTertiary
-                      : AppColors.lightTextTertiary,
+                style: oneKeepManrope(
+                  color: AppColors.darkTextSecondary,
+                  size: 13,
+                  weight: FontWeight.w400,
+                  letterSpacing: 0.5,
                 ),
               ),
               const SizedBox(height: 2),
               Text(
-                'OneKeep 用户',
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w600,
-                  color: isDark
-                      ? AppColors.darkTextPrimary
-                      : AppColors.lightTextPrimary,
+                userName,
+                style: oneKeepGrotesk(
+                  color: AppColors.darkTextPrimary,
+                  size: 18,
+                  weight: FontWeight.w600,
+                  letterSpacing: 0.8,
                 ),
               ),
             ],
           ),
         ),
-        Container(
-          width: 42,
-          height: 42,
-          decoration: BoxDecoration(
-            color: isDark ? AppColors.darkInputBg : AppColors.lightInputBg,
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Icon(
-            LucideIcons.bell,
-            size: 20,
-            color: isDark
-                ? AppColors.darkTextSecondary
-                : AppColors.lightTextSecondary,
+        OneKeepGlassCard(
+          radius: 14,
+          blurSigma: 10,
+          fillColor: AppColors.darkGlassStrong,
+          borderColor: AppColors.darkCardBorderStrong,
+          padding: EdgeInsets.zero,
+          child: const SizedBox(
+            width: 42,
+            height: 42,
+            child: Icon(
+              Icons.notifications_none_rounded,
+              size: 20,
+              color: Color(0xB3FFFFFF),
+            ),
           ),
         ),
       ],
     );
   }
 
-  // ── Balance Card: glow border + hidden dots ──
-  Widget _buildBalanceCard(HomeSummary summary, bool isDark) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(24, 24, 24, 28),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurface : Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: isDark
-              ? AppColors.teal.withValues(alpha: 0.15)
-              : AppColors.indigo.withValues(alpha: 0.08),
-          width: 1,
+  Widget _buildBalanceCard(HomeSummary summary) {
+    return OneKeepGlassCard(
+      radius: 20,
+      blurSigma: 24,
+      fillColor: const Color(0x0AFFFFFF),
+      borderColor: AppColors.darkCardBorderStrong,
+      padding: const EdgeInsets.all(24),
+      shadows: const [
+        BoxShadow(
+          color: Color(0x33000000),
+          blurRadius: 20,
+          offset: Offset(0, 8),
         ),
-        boxShadow: [
-          if (isDark)
-            BoxShadow(
-              color: AppColors.teal.withValues(alpha: 0.08),
-              blurRadius: 40,
-              offset: const Offset(0, -4),
-            ),
-          if (!isDark)
-            BoxShadow(
-              color: AppColors.indigo.withValues(alpha: 0.08),
-              blurRadius: 30,
-              offset: const Offset(0, 8),
-            ),
-        ],
-      ),
+      ],
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Text(
-                '本月结余',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: isDark
-                      ? AppColors.darkTextTertiary
-                      : AppColors.lightTextTertiary,
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.teal.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: AppColors.teal.withValues(alpha: 0.25),
+                    width: 0.5,
+                  ),
+                ),
+                child: Text(
+                  '本月结余',
+                  style: oneKeepManrope(
+                    color: AppColors.teal,
+                    size: 12,
+                    weight: FontWeight.w500,
+                    letterSpacing: 1,
+                  ),
                 ),
               ),
-              const SizedBox(width: 8),
+              const Spacer(),
               GestureDetector(
-                onTap: () =>
-                    setState(() => _balanceVisible = !_balanceVisible),
+                onTap: () => setState(() => _balanceVisible = !_balanceVisible),
                 child: Icon(
-                  _balanceVisible ? LucideIcons.eye : LucideIcons.eyeOff,
-                  size: 16,
-                  color: isDark
-                      ? AppColors.darkTextTertiary
-                      : AppColors.lightTextTertiary,
+                  _balanceVisible
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
+                  size: 20,
+                  color: Colors.white.withValues(alpha: 0.38),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          Text(
-            _balanceVisible
-                ? '¥ ${_fmt(summary.balance)}'
-                : '¥ ••••••••',
-            style: GoogleFonts.spaceGrotesk(
-              fontSize: 36,
-              fontWeight: FontWeight.w700,
-              color: isDark
-                  ? AppColors.darkTextPrimary
-                  : AppColors.lightTextPrimary,
-            ),
-          ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 16),
           if (_balanceVisible)
+            OneKeepGradientText(
+              text: '¥ ${oneKeepCurrency(summary.balance)}',
+              gradient: const LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Colors.white, AppColors.tealLight],
+              ),
+              style: oneKeepGrotesk(
+                color: Colors.white,
+                size: 36,
+                weight: FontWeight.w700,
+                letterSpacing: 1.2,
+              ),
+            )
+          else
             Text(
-              '较上月 +8.2%',
-              style: TextStyle(
-                fontSize: 12,
-                color: isDark ? AppColors.teal : AppColors.indigo,
+              '¥ ••••••••',
+              style: oneKeepGrotesk(
+                color: AppColors.darkTextPrimary,
+                size: 36,
+                weight: FontWeight.w700,
+                letterSpacing: 1.2,
               ),
             ),
+          const SizedBox(height: 8),
+          Text(
+            '较上月 +8.2%',
+            style: oneKeepManrope(
+              color: AppColors.tealLight.withValues(alpha: 0.7),
+              size: 13,
+              weight: FontWeight.w400,
+            ),
+          ),
         ],
       ),
     );
   }
 
-  // ── Income / Expense cards ──
-  Widget _buildIncomeExpenseRow(HomeSummary summary, bool isDark) {
+  Widget _buildIncomeExpenseRow(HomeSummary summary) {
     return Row(
       children: [
         Expanded(
-          child: _MetricCard(
+          child: _MetricTile(
             label: '本月支出',
             amount: summary.expense,
             icon: Icons.arrow_upward_rounded,
-            iconColor: AppColors.expensePink,
-            isDark: isDark,
+            tone: AppColors.expensePink,
             visible: _balanceVisible,
           ),
         ),
         const SizedBox(width: 14),
         Expanded(
-          child: _MetricCard(
+          child: _MetricTile(
             label: '本月收入',
             amount: summary.income,
             icon: Icons.arrow_downward_rounded,
-            iconColor: AppColors.incomeTeal,
-            isDark: isDark,
+            tone: AppColors.tealLight,
             visible: _balanceVisible,
           ),
         ),
@@ -254,8 +263,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-  // ── Recent section with left accent bar ──
-  Widget _buildRecentSection(List<Transaction> txs, bool isDark) {
+  Widget _buildRecentSection(List<Transaction> items) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -265,48 +273,42 @@ class _HomePageState extends ConsumerState<HomePage> {
               width: 3,
               height: 16,
               decoration: BoxDecoration(
-                color: isDark ? AppColors.teal : AppColors.indigo,
                 borderRadius: BorderRadius.circular(2),
+                gradient: const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [AppColors.teal, AppColors.purple],
+                ),
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 8),
             Text(
               '最近记账',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: isDark
-                    ? AppColors.darkTextPrimary
-                    : AppColors.lightTextPrimary,
+              style: oneKeepGrotesk(
+                color: AppColors.darkTextPrimary,
+                size: 16,
+                weight: FontWeight.w600,
+                letterSpacing: 0.5,
               ),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Container(
-                height: 0.5,
-                color: isDark
-                    ? AppColors.darkCardBorder
-                    : const Color(0xFFE5E7EB),
-              ),
-            ),
-            const SizedBox(width: 12),
+            const Spacer(),
             GestureDetector(
-              onTap: () {},
+              onTap: () => context.go('/bills'),
               child: Row(
-                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     '查看全部',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: isDark ? AppColors.teal : AppColors.indigo,
+                    style: oneKeepManrope(
+                      color: AppColors.teal.withValues(alpha: 0.7),
+                      size: 13,
+                      weight: FontWeight.w400,
                     ),
                   ),
                   const SizedBox(width: 2),
                   Icon(
-                    LucideIcons.chevronRight,
-                    size: 14,
-                    color: isDark ? AppColors.teal : AppColors.indigo,
+                    Icons.chevron_right_rounded,
+                    size: 16,
+                    color: AppColors.teal.withValues(alpha: 0.5),
                   ),
                 ],
               ),
@@ -314,101 +316,100 @@ class _HomePageState extends ConsumerState<HomePage> {
           ],
         ),
         const SizedBox(height: 16),
-        if (txs.isEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 32),
-            child: Center(
+        if (items.isEmpty)
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 32),
               child: Text(
                 '暂无交易记录',
-                style: TextStyle(
-                  color: isDark
-                      ? AppColors.darkTextTertiary
-                      : AppColors.lightTextTertiary,
+                style: oneKeepManrope(
+                  color: AppColors.darkTextSecondary,
+                  size: 13,
+                  weight: FontWeight.w400,
                 ),
               ),
             ),
           )
         else
-          ...txs.map((tx) => _HomeTransactionRow(tx: tx, isDark: isDark)),
+          ...items.map(
+            (item) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: _HomeTransactionRow(
+                transaction: item,
+                onTap: () => _showTransactionSheet(item),
+              ),
+            ),
+          ),
       ],
     );
   }
 
-  String _fmt(double v) {
-    return v.toStringAsFixed(2).replaceAllMapped(
-          RegExp(r'(\d)(?=(\d{3})+\.)'),
-          (m) => '${m[1]},',
-        );
+  void _showTransactionSheet(Transaction tx) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      barrierColor: AppColors.darkDimOverlay,
+      builder: (_) => _HomeTransactionDetailSheet(transaction: tx),
+    );
   }
 }
 
-// ── Metric card (income/expense) ──
-class _MetricCard extends StatelessWidget {
+class _MetricTile extends StatelessWidget {
   final String label;
   final double amount;
   final IconData icon;
-  final Color iconColor;
-  final bool isDark;
+  final Color tone;
   final bool visible;
 
-  const _MetricCard({
+  const _MetricTile({
     required this.label,
     required this.amount,
     required this.icon,
-    required this.iconColor,
-    required this.isDark,
+    required this.tone,
     required this.visible,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurface : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark
-              ? AppColors.darkCardBorder
-              : const Color(0xFFE5E7EB),
-          width: 0.5,
-        ),
-      ),
+    return OneKeepGlassCard(
+      radius: 18,
+      blurSigma: 20,
+      fillColor: const Color(0x0AFFFFFF),
+      borderColor: tone.withValues(alpha: 0.2),
+      padding: const EdgeInsets.all(18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: iconColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(icon, size: 16, color: iconColor),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: isDark
-                      ? AppColors.darkTextTertiary
-                      : AppColors.lightTextTertiary,
-                ),
-              ),
-            ],
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: tone.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(color: tone.withValues(alpha: 0.36), blurRadius: 16),
+              ],
+            ),
+            child: Icon(icon, size: 20, color: tone),
           ),
           const SizedBox(height: 12),
           Text(
-            visible ? '¥ ${amount.toStringAsFixed(2)}' : '¥ ••••',
-            style: GoogleFonts.spaceGrotesk(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: isDark
-                  ? AppColors.darkTextPrimary
-                  : AppColors.lightTextPrimary,
+            label,
+            style: oneKeepManrope(
+              color: AppColors.darkTextSoft,
+              size: 12,
+              weight: FontWeight.w400,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            visible ? '¥ ${oneKeepCurrency(amount)}' : '¥ ••••',
+            style: oneKeepGrotesk(
+              color: AppColors.darkTextPrimary,
+              size: 18,
+              weight: FontWeight.w600,
+              letterSpacing: 0.5,
             ),
           ),
         ],
@@ -417,81 +418,71 @@ class _MetricCard extends StatelessWidget {
   }
 }
 
-// ── Transaction row matching design ──
 class _HomeTransactionRow extends StatelessWidget {
-  final Transaction tx;
-  final bool isDark;
+  final Transaction transaction;
+  final VoidCallback onTap;
 
-  const _HomeTransactionRow({required this.tx, required this.isDark});
+  const _HomeTransactionRow({required this.transaction, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    final isExp = tx.isExpense;
-    final color = isExp ? AppColors.expensePink : AppColors.incomeTeal;
-    final sign = isExp ? '-' : '+';
+    final isExpense = transaction.isExpense;
+    final tone = isExpense ? AppColors.expensePink : AppColors.tealLight;
+    final icon = oneKeepCategoryIcon(
+      transaction.title,
+      transaction.categoryName,
+      transaction.categoryIcon,
+    );
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-        decoration: BoxDecoration(
-          color: isDark ? AppColors.darkSurface : Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: isDark
-                ? AppColors.darkCardBorder
-                : const Color(0xFFE5E7EB),
-            width: 0.5,
-          ),
-        ),
+    return GestureDetector(
+      onTap: onTap,
+      child: OneKeepGlassCard(
+        radius: 16,
+        blurSigma: 16,
+        fillColor: AppColors.darkGlass,
+        borderColor: AppColors.darkCardBorder,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
           children: [
             Container(
-              width: 40,
-              height: 40,
+              width: 42,
+              height: 42,
               decoration: BoxDecoration(
-                color: color.withValues(alpha: isDark ? 0.1 : 0.08),
+                color: tone.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Center(
-                child: Text(tx.categoryIcon,
-                    style: const TextStyle(fontSize: 20)),
-              ),
+              child: Icon(icon, size: 20, color: tone),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    tx.title,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                      color: isDark
-                          ? AppColors.darkTextPrimary
-                          : AppColors.lightTextPrimary,
+                    transaction.title,
+                    style: oneKeepManrope(
+                      color: AppColors.darkTextPrimary,
+                      size: 15,
+                      weight: FontWeight.w500,
                     ),
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    '${tx.categoryName} · ${_fmtTime(tx.occurredAt)}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: isDark
-                          ? AppColors.darkTextTertiary
-                          : AppColors.lightTextTertiary,
+                    '${transaction.categoryName} · ${oneKeepDayTime(transaction.occurredAt)}',
+                    style: oneKeepMono(
+                      color: Colors.white.withValues(alpha: 0.35),
+                      size: 12,
                     ),
                   ),
                 ],
               ),
             ),
             Text(
-              '$sign¥ ${tx.amount.toStringAsFixed(2)}',
-              style: GoogleFonts.spaceGrotesk(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: color,
+              '${isExpense ? '-' : '+'}¥ ${oneKeepCurrency(transaction.amount)}',
+              style: oneKeepGrotesk(
+                color: tone,
+                size: 16,
+                weight: FontWeight.w600,
               ),
             ),
           ],
@@ -499,16 +490,204 @@ class _HomeTransactionRow extends StatelessWidget {
       ),
     );
   }
+}
 
-  String _fmtTime(DateTime dt) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final d = DateTime(dt.year, dt.month, dt.day);
-    final day = d == today
-        ? '今天'
-        : d == today.subtract(const Duration(days: 1))
-            ? '昨天'
-            : '${dt.month}/${dt.day}';
-    return '$day ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+class _HomeTransactionDetailSheet extends StatelessWidget {
+  final Transaction transaction;
+
+  const _HomeTransactionDetailSheet({required this.transaction});
+
+  @override
+  Widget build(BuildContext context) {
+    final tone = transaction.isExpense ? AppColors.expensePink : AppColors.teal;
+    final icon = oneKeepCategoryIcon(
+      transaction.title,
+      transaction.categoryName,
+      transaction.categoryIcon,
+    );
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.darkSurface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        border: const Border(
+          top: BorderSide(color: AppColors.darkHairline, width: 0.5),
+        ),
+      ),
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          height: 400,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 12, 24, 36),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Align(
+                  alignment: Alignment.center,
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: tone.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(icon, size: 20, color: tone),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            transaction.title,
+                            style: oneKeepManrope(
+                              color: AppColors.darkTextPrimary,
+                              size: 18,
+                              weight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            transaction.categoryName,
+                            style: oneKeepInter(
+                              color: AppColors.darkTextTertiary,
+                              size: 12,
+                              weight: FontWeight.w400,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Text(
+                      '${transaction.isExpense ? '-' : '+'}¥${oneKeepCurrency(transaction.amount)}',
+                      style: oneKeepGrotesk(
+                        color: tone,
+                        size: 22,
+                        weight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Divider(color: Colors.white.withValues(alpha: 0.08), height: 1),
+                const SizedBox(height: 16),
+                _DetailRow(
+                  label: '日期',
+                  value: oneKeepDayTime(transaction.occurredAt),
+                ),
+                const SizedBox(height: 14),
+                _DetailRow(label: '商家', value: transaction.merchant ?? '暂无商家'),
+                const SizedBox(height: 14),
+                _DetailRow(label: '备注', value: transaction.note ?? '暂无备注'),
+                const Spacer(),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _SheetActionButton(
+                        label: '编辑',
+                        icon: Icons.edit_outlined,
+                        tone: AppColors.teal,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _SheetActionButton(
+                        label: '删除',
+                        icon: Icons.delete_outline_rounded,
+                        tone: AppColors.expensePink,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DetailRow extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _DetailRow({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Text(
+          label,
+          style: oneKeepInter(
+            color: AppColors.darkTextSecondary,
+            size: 13,
+            weight: FontWeight.w400,
+          ),
+        ),
+        const Spacer(),
+        Text(
+          value,
+          style: oneKeepInter(
+            color: AppColors.darkTextPrimary,
+            size: 13,
+            weight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SheetActionButton extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final Color tone;
+
+  const _SheetActionButton({
+    required this.label,
+    required this.icon,
+    required this.tone,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 48,
+      decoration: BoxDecoration(
+        color: tone.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: tone.withValues(alpha: 0.24), width: 0.8),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 16, color: tone),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: oneKeepManrope(
+              color: tone,
+              size: 14,
+              weight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

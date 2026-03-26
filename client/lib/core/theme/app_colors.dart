@@ -20,13 +20,18 @@ class AppColors {
   // ─── 深色主题 ───
   static const darkBg = Color(0xFF0A0A0A);
   static const darkSurface = Color(0xFF16181F);
-  static const darkCard = Color(0x0AFFFFFF); // 4%
-  static const darkCardBorder = Color(0x20FFFFFF); // 12%
+  static const darkCard = Color(0x08FFFFFF);
+  static const darkCardBorder = Color(0x0FFFFFFF);
+  static const darkCardBorderStrong = Color(0x20FFFFFF);
+  static const darkGlass = Color(0x08FFFFFF);
+  static const darkGlassStrong = Color(0x10FFFFFF);
   static const darkDimOverlay = Color(0x70000000);
   static const darkTextPrimary = Color(0xFFFFFFFF);
-  static const darkTextSecondary = Color(0x99FFFFFF); // 60%
-  static const darkTextTertiary = Color(0x4DFFFFFF); // 30%
-  static const darkInputBg = Color(0x12FFFFFF); // 7%
+  static const darkTextSecondary = Color(0xFFA1A1AA);
+  static const darkTextTertiary = Color(0xFF52525B);
+  static const darkTextSoft = Color(0x99FFFFFF);
+  static const darkInputBg = Color(0x12FFFFFF);
+  static const darkHairline = Color(0x15FFFFFF);
 
   // ─── 浅色主题 ───
   static const lightBg = Color(0xFFF7F7F8);
@@ -38,6 +43,7 @@ class AppColors {
   static const lightTextSecondary = Color(0xFF6B7280);
   static const lightTextTertiary = Color(0xFF9CA3AF);
   static const lightInputBg = Color(0xFFF3F4F6);
+  static const lightHairline = Color(0xFFE5E7EB);
 
   // ─── 图表渐变 ───
   static const expenseGradient = [Color(0xFFFF6B9D), Color(0xFF6C5CE7)];
