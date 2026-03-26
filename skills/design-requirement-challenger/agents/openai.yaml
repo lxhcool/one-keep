@@ -1,4 +1,0 @@
-interface:
-  display_name: "设计与需求思考审查"
-  short_description: "在架构前提出关键疑问、交互优化与需求补齐建议。"
-  default_prompt: "使用 $design-requirement-challenger 对页面分析和需求文档做思考审查，输出疑问与建议清单。"
