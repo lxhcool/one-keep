@@ -2,10 +2,13 @@
   "name": "one-keep",
   "version": "0.1.0",
   "private": true,
-  "description": "OneKeep Flutter client scaffold",
+  "description": "OneKeep — 个人记账应用",
   "scripts": {
     "dev:client": "cd client && flutter run",
     "analyze:client": "cd client && flutter analyze",
-    "test:client": "cd client && flutter test"
+    "test:client": "cd client && flutter test",
+    "dev:server": "cd server && npm run dev",
+    "build:server": "cd server && npm run build",
+    "start:server": "cd server && npm start"
   }
 }

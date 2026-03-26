@@ -1,0 +1,81 @@
+import 'package:flutter/material.dart';
+
+/// OneKeep 设计令牌 — 源自 Pencil 设计稿
+class AppColors {
+  AppColors._();
+
+  // ─── 品牌色 ───
+  static const teal = Color(0xFF00CEC9);
+  static const tealLight = Color(0xFF80FFEA);
+  static const indigo = Color(0xFF4F46E5);
+  static const purple = Color(0xFF6C5CE7);
+  static const blue = Color(0xFF74B9FF);
+
+  // ─── 语义色 ───
+  static const expensePink = Color(0xFFFF6B9D);
+  static const expenseRed = Color(0xFFE53E3E);
+  static const incomeTeal = Color(0xFF00CEC9);
+  static const incomeGreen = Color(0xFF38A169);
+
+  // ─── 深色主题 ───
+  static const darkBg = Color(0xFF0A0A0A);
+  static const darkSurface = Color(0xFF16181F);
+  static const darkCard = Color(0x0AFFFFFF); // 4%
+  static const darkCardBorder = Color(0x20FFFFFF); // 12%
+  static const darkDimOverlay = Color(0x70000000);
+  static const darkTextPrimary = Color(0xFFFFFFFF);
+  static const darkTextSecondary = Color(0x99FFFFFF); // 60%
+  static const darkTextTertiary = Color(0x4DFFFFFF); // 30%
+  static const darkInputBg = Color(0x12FFFFFF); // 7%
+
+  // ─── 浅色主题 ───
+  static const lightBg = Color(0xFFF7F7F8);
+  static const lightSurface = Color(0xFFFFFFFF);
+  static const lightCard = Color(0xFFFFFFFF);
+  static const lightCardBorder = Color(0x0FFFFFFF);
+  static const lightDimOverlay = Color(0x40000000);
+  static const lightTextPrimary = Color(0xFF1A1A1A);
+  static const lightTextSecondary = Color(0xFF6B7280);
+  static const lightTextTertiary = Color(0xFF9CA3AF);
+  static const lightInputBg = Color(0xFFF3F4F6);
+
+  // ─── 图表渐变 ───
+  static const expenseGradient = [Color(0xFFFF6B9D), Color(0xFF6C5CE7)];
+  static const incomeGradient = [Color(0xFF80FFEA), Color(0xFF00CEC9)];
+  static const fabGradientDark = [Color(0xFF00CEC9), Color(0xFF6C5CE7)];
+  static const fabGradientLight = [Color(0xFF4F46E5), Color(0xFF6C5CE7)];
+
+  // ─── 分类高亮 ───
+  static const tealHighlight = Color(0x3300CEC9); // 20%
+
+  // ─── 功能色 ───
+  static const error = Color(0xFFEF4444);
+  static const success = Color(0xFF22C55E);
+  static const warning = Color(0xFFF59E0B);
+}
+
+class AppSpacing {
+  AppSpacing._();
+
+  static const xs = 4.0;
+  static const sm = 8.0;
+  static const md = 12.0;
+  static const lg = 16.0;
+  static const xl = 20.0;
+  static const xxl = 24.0;
+  static const xxxl = 32.0;
+}
+
+class AppRadius {
+  AppRadius._();
+
+  static const sm = 8.0;
+  static const md = 12.0;
+  static const lg = 16.0;
+  static const xl = 20.0;
+  static const xxl = 24.0;
+  static const sheet = 24.0;
+  static const card = 16.0;
+  static const chip = 20.0;
+  static const button = 12.0;
+}
