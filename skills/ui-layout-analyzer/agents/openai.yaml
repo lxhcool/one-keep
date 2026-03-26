@@ -1,4 +1,4 @@
 interface:
   display_name: "UI 分析与组件拆分"
-  short_description: "根据截图或设计稿输出页面结构、功能点、组件拆分和状态说明。"
-  default_prompt: "使用 $ui-layout-analyzer 分析这个页面输入，输出页面结构、功能点、组件拆分、交互状态和待确认问题，并写入 docs。"
+  short_description: "根据截图、设计稿地址或页面链接输出页面结构、功能点、组件拆分和状态说明。"
+  default_prompt: "使用 $ui-layout-analyzer 分析这个页面输入。输入可能是截图、MasterGo 设计稿地址、Pencli 设计稿地址或页面链接。输出页面结构、功能点、组件拆分、交互状态和待确认问题，并写入 docs。"
