@@ -221,14 +221,14 @@ class OneKeepPageBackground extends StatelessWidget {
             top: 450,
             width: 280,
             height: 280,
-            color: AppColors.expensePink.withValues(alpha: 0.18),
+            color: AppColors.expense.withValues(alpha: 0.18),
           ),
           _glow(
             right: -20,
             bottom: 40,
             width: 200,
             height: 200,
-            color: AppColors.blue.withValues(alpha: 0.16),
+            color: AppColors.info.withValues(alpha: 0.16),
           ),
         ];
       case OneKeepPageVariant.stats:
@@ -398,7 +398,7 @@ Color oneKeepBorderStrong(BuildContext context) {
 
 Color oneKeepAccent(BuildContext context) {
   final isDark = Theme.of(context).brightness == Brightness.dark;
-  return isDark ? AppColors.teal : AppColors.indigo;
+  return AppColors.teal;
 }
 
 Color oneKeepIncomeTone(BuildContext context) {
@@ -415,15 +415,15 @@ class OneKeepAvatarPreset {
 
 const oneKeepAvatarPresets = <OneKeepAvatarPreset>[
   OneKeepAvatarPreset(
-    colors: [AppColors.teal, AppColors.indigo],
+    colors: [AppColors.teal, AppColors.purple],
     icon: Icons.person_outline_rounded,
   ),
   OneKeepAvatarPreset(
-    colors: [AppColors.purple, AppColors.indigo],
+    colors: [AppColors.purple, AppColors.teal],
     icon: Icons.star_outline_rounded,
   ),
   OneKeepAvatarPreset(
-    colors: [AppColors.expensePink, AppColors.purple],
+    colors: [AppColors.expense, AppColors.purple],
     icon: Icons.favorite_border_rounded,
   ),
   OneKeepAvatarPreset(
@@ -431,11 +431,11 @@ const oneKeepAvatarPresets = <OneKeepAvatarPreset>[
     icon: Icons.bolt_rounded,
   ),
   OneKeepAvatarPreset(
-    colors: [AppColors.warning, AppColors.expensePink],
+    colors: [AppColors.amber, AppColors.expense],
     icon: Icons.wb_sunny_outlined,
   ),
   OneKeepAvatarPreset(
-    colors: [AppColors.blue, AppColors.purple],
+    colors: [AppColors.info, AppColors.purple],
     icon: Icons.auto_awesome_rounded,
   ),
 ];
@@ -469,12 +469,6 @@ class OneKeepAvatar extends StatelessWidget {
           end: Alignment.bottomRight,
           colors: preset.colors,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: preset.colors.first.withValues(alpha: 0.3),
-            blurRadius: size * 0.24,
-          ),
-        ],
       ),
       child: ClipOval(
         child: imageBytes != null

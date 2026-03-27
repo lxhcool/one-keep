@@ -118,7 +118,7 @@ class _StatsPageState extends ConsumerState<StatsPage> {
           child: _SummaryCard(
             label: '总支出',
             amount: overview.totalExpense,
-            color: AppColors.expensePink,
+            color: AppColors.expense,
           ),
         ),
         const SizedBox(width: 14),
@@ -180,7 +180,7 @@ class _StatsPageState extends ConsumerState<StatsPage> {
   Widget _buildCategoryCard(StatsOverview overview) {
     final ranks = overview.categoryRanks.take(3).toList();
     final tones = _metricType == 'expense'
-        ? const [AppColors.expensePink, AppColors.purple, AppColors.teal]
+        ? const [AppColors.expense, AppColors.purple, AppColors.teal]
         : [oneKeepIncomeTone(context), AppColors.teal, AppColors.purple];
 
     return OneKeepGlassCard(

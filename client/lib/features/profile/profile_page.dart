@@ -65,12 +65,12 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                         children: [
                           _MenuTile(
                             icon: Icons.wallpaper_outlined,
-                            tone: AppColors.blue,
+                            tone: AppColors.info,
                             title: '背景图',
                             subtitle:
                                 preferences.profileBackgroundImageData != null
-                                ? '已设置封面背景'
-                                : '上传头部背景图',
+                                ? '已应用于个人中心和首页结余卡片'
+                                : '上传背景图，将显示在个人中心和首页',
                             onTap: _showBackgroundStudio,
                           ),
                           _MenuTile(
@@ -84,7 +84,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                           ),
                           _MenuTile(
                             icon: Icons.drive_file_rename_outline_rounded,
-                            tone: AppColors.indigo,
+                            tone: AppColors.purple,
                             title: '昵称设置',
                             subtitle: displayName,
                             onTap: _showNicknameDialog,
@@ -105,7 +105,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                         style: OutlinedButton.styleFrom(
                           minimumSize: const Size.fromHeight(54),
                           side: BorderSide(
-                            color: AppColors.expensePink.withValues(
+                            color: AppColors.expense.withValues(
                               alpha: 0.18,
                             ),
                             width: 0.9,
@@ -118,9 +118,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                         child: Text(
                           '退出登录',
                           style: oneKeepManrope(
-                            color: AppColors.expensePink,
-                            size: 15,
-                            weight: FontWeight.w800,
+                          color: AppColors.expense,
+                          size: 15,
+                          weight: FontWeight.w800,
                           ),
                         ),
                       ),
@@ -829,7 +829,7 @@ class _AvatarStudioSheet extends ConsumerWidget {
                     child: _StudioActionButton(
                       icon: Icons.auto_awesome_outlined,
                       label: '使用预设',
-                      tone: AppColors.indigo,
+                      tone: AppColors.purple,
                       onTap: () async {
                         await ref
                             .read(preferencesProvider.notifier)
@@ -859,10 +859,10 @@ class _AvatarStudioSheet extends ConsumerWidget {
                       vertical: 14,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.expensePink.withValues(alpha: 0.08),
+                      color: AppColors.expense.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: AppColors.expensePink.withValues(alpha: 0.22),
+                        color: AppColors.expense.withValues(alpha: 0.22),
                         width: 0.8,
                       ),
                     ),
@@ -870,7 +870,7 @@ class _AvatarStudioSheet extends ConsumerWidget {
                       '移除上传头像',
                       textAlign: TextAlign.center,
                       style: oneKeepManrope(
-                        color: AppColors.expensePink,
+                        color: AppColors.expense,
                         size: 13,
                         weight: FontWeight.w700,
                       ),
@@ -997,7 +997,7 @@ class _BackgroundStudioSheet extends ConsumerWidget {
                     child: _StudioActionButton(
                       icon: Icons.upload_rounded,
                       label: '上传背景',
-                      tone: AppColors.blue,
+                      tone: AppColors.info,
                       onTap: () async {
                         final navigator = Navigator.of(context);
                         await onUpload();
@@ -1010,7 +1010,7 @@ class _BackgroundStudioSheet extends ConsumerWidget {
                     child: _StudioActionButton(
                       icon: Icons.delete_outline_rounded,
                       label: '移除背景',
-                      tone: AppColors.expensePink,
+                      tone: AppColors.expense,
                       onTap: preferences.profileBackgroundImageData == null
                           ? () {}
                           : () async {

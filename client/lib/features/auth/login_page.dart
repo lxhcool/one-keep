@@ -60,7 +60,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   height: 64,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: isDark ? AppColors.fabGradientDark : AppColors.fabGradientLight,
+                      colors: AppColors.fabGradient,
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
@@ -149,7 +149,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         '忘记密码？',
                         style: TextStyle(
                           fontSize: 13,
-                          color: isDark ? AppColors.teal : AppColors.indigo,
+                          color: AppColors.teal,
                         ),
                       ),
                     ),
@@ -182,16 +182,16 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       ),
                     ),
                     TextButton(
-                      onPressed: () => setState(() => _isLogin = !_isLogin),
-                      child: Text(
-                        _isLogin ? '立即注册' : '去登录',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: isDark ? AppColors.teal : AppColors.indigo,
-                        ),
-                      ),
+                  onPressed: () => setState(() => _isLogin = !_isLogin),
+                  child: Text(
+                    _isLogin ? '立即注册' : '去登录',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.teal,
                     ),
+                  ),
+                ),
                   ],
                 ),
               ],

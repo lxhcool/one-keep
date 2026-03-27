@@ -1,3 +1,7 @@
+import 'dart:convert';
+import 'dart:typed_data';
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -64,7 +68,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                       ),
                       const SizedBox(height: 20),
                       if (state.summary != null) ...[
-                        _buildBalanceCard(state.summary!),
+                        _buildBalanceCard(state.summary!, preferences.profileBackgroundImageData),
                         const SizedBox(height: 14),
                         _buildIncomeExpenseRow(state.summary!),
                         const SizedBox(height: 20),
@@ -146,100 +150,185 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-  Widget _buildBalanceCard(HomeSummary summary) {
+  Widget _buildBalanceCard(HomeSummary summary, String? backgroundImageData) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return OneKeepGlassCard(
-      radius: 20,
-      blurSigma: 24,
-      fillColor: isDark ? const Color(0x0AFFFFFF) : oneKeepGlassStrong(context),
-      borderColor: oneKeepBorderStrong(context),
-      padding: const EdgeInsets.all(24),
-      shadows: [
-        BoxShadow(
-          color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
-          blurRadius: 20,
-          offset: Offset(0, 8),
-        ),
-      ],
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.teal.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: AppColors.teal.withValues(alpha: 0.25),
-                    width: 0.5,
-                  ),
-                ),
-                child: Text(
-                  '本月结余',
-                  style: oneKeepManrope(
-                    color: AppColors.teal,
-                    size: 12,
-                    weight: FontWeight.w500,
-                    letterSpacing: 1,
-                  ),
-                ),
-              ),
-              const Spacer(),
-              GestureDetector(
-                onTap: () => setState(() => _balanceVisible = !_balanceVisible),
-                child: Icon(
-                  _balanceVisible
-                      ? Icons.visibility_outlined
-                      : Icons.visibility_off_outlined,
-                  size: 20,
-                  color: oneKeepTextTertiary(context),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          if (_balanceVisible)
-            OneKeepGradientText(
-              text: '¥ ${oneKeepCurrency(summary.balance)}',
-              gradient: const LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [AppColors.lightTextPrimary, AppColors.indigo],
-              ),
-              style: oneKeepGrotesk(
-                color: oneKeepTextPrimary(context),
-                size: 36,
-                weight: FontWeight.w700,
-                letterSpacing: 1.2,
-              ),
-            )
-          else
-            Text(
-              '¥ ••••••••',
-              style: oneKeepGrotesk(
-                color: oneKeepTextPrimary(context),
-                size: 36,
-                weight: FontWeight.w700,
-                letterSpacing: 1.2,
-              ),
-            ),
-          const SizedBox(height: 8),
-          Text(
-            '较上月 +8.2%',
-            style: oneKeepManrope(
-              color: oneKeepIncomeTone(context).withValues(alpha: 0.82),
-              size: 13,
-              weight: FontWeight.w400,
-            ),
+    final hasBackgroundImage = backgroundImageData != null && backgroundImageData.isNotEmpty;
+    
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Stack(
+          children: [
+            // 背景层：图片或渐变 - 使用 Positioned.fill 填充
+            if (hasBackgroundImage)
+              Positioned.fill(child: _buildBlurredBackground(backgroundImageData))
+            else
+              Positioned.fill(child: _buildGradientBackground(isDark)),
+            
+            // 内容层
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: isDark 
+                    ? Colors.white.withValues(alpha: 0.08)
+                    : Colors.white.withValues(alpha: 0.25),
+                  width: 0.5,
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isDark 
+                            ? Colors.white.withValues(alpha: 0.15)
+                            : Colors.white.withValues(alpha: 0.25),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: isDark 
+                              ? Colors.white.withValues(alpha: 0.2)
+                              : Colors.white.withValues(alpha: 0.3),
+                            width: 0.5,
+                          ),
+                        ),
+                        child: Text(
+                          '本月结余',
+                          style: oneKeepManrope(
+                            color: isDark ? Colors.white : AppColors.lightTextPrimary,
+                            size: 12,
+                            weight: FontWeight.w600,
+                            letterSpacing: 1,
+                          ),
+                        ),
+                      ),
+                      const Spacer(),
+                      GestureDetector(
+                        onTap: () => setState(() => _balanceVisible = !_balanceVisible),
+                        child: Icon(
+                          _balanceVisible
+                              ? Icons.visibility_outlined
+                              : Icons.visibility_off_outlined,
+                          size: 20,
+                          color: isDark 
+                            ? Colors.white.withValues(alpha: 0.8)
+                            : AppColors.lightTextSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  if (_balanceVisible)
+                    Text(
+                      '¥ ${oneKeepCurrency(summary.balance)}',
+                      style: oneKeepGrotesk(
+                        color: isDark ? Colors.white : AppColors.lightTextPrimary,
+                        size: 36,
+                        weight: FontWeight.w700,
+                        letterSpacing: 1.2,
+                      ),
+                    )
+                  else
+                    Text(
+                      '¥ ••••••••',
+                      style: oneKeepGrotesk(
+                        color: isDark ? Colors.white : AppColors.lightTextPrimary,
+                        size: 36,
+                        weight: FontWeight.w700,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '较上月 +8.2%',
+                    style: oneKeepManrope(
+                      color: isDark 
+                        ? Colors.white.withValues(alpha: 0.7)
+                        : AppColors.lightTextSecondary.withValues(alpha: 0.8),
+                      size: 13,
+                      weight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
+  }
+
+  Widget _buildBlurredBackground(String imageData) {
+    final bytes = _decodeImageBytes(imageData);
+    if (bytes == null) return _buildGradientBackground(Theme.of(context).brightness == Brightness.dark);
+    
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        // 背景图片
+        Image.memory(
+          bytes,
+          fit: BoxFit.cover,
+          opacity: const AlwaysStoppedAnimation(0.4),
+        ),
+        // 高斯模糊层
+        BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: Container(
+            color: Colors.black.withValues(alpha: 0.35),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGradientBackground(bool isDark) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isDark
+            ? [
+                const Color(0xFF5B6B7C),  // 深灰蓝
+                const Color(0xFF6B7B8C),  // 灰蓝
+              ]
+            : [
+                const Color(0xFF7B8B9C),  // 浅灰蓝
+                const Color(0xFF9BABB9),  // 淡灰蓝
+              ],
+        ),
+      ),
+    );
+  }
+
+  Uint8List? _decodeImageBytes(String? data) {
+    if (data == null || data.isEmpty) return null;
+    final normalized = data.contains(',')
+        ? data.substring(data.indexOf(',') + 1)
+        : data;
+    try {
+      return base64Decode(normalized);
+    } catch (_) {
+      return null;
+    }
   }
 
   Widget _buildIncomeExpenseRow(HomeSummary summary) {
@@ -250,7 +339,7 @@ class _HomePageState extends ConsumerState<HomePage> {
             label: '本月支出',
             amount: summary.expense,
             icon: Icons.arrow_upward_rounded,
-            tone: AppColors.expensePink,
+            tone: AppColors.expense,
             visible: _balanceVisible,
           ),
         ),
@@ -304,16 +393,16 @@ class _HomePageState extends ConsumerState<HomePage> {
                   Text(
                     '查看全部',
                     style: oneKeepManrope(
-                      color: AppColors.teal.withValues(alpha: 0.7),
+                      color: oneKeepTextTertiary(context),
                       size: 13,
-                      weight: FontWeight.w400,
+                      weight: FontWeight.w500,
                     ),
                   ),
                   const SizedBox(width: 2),
                   Icon(
                     Icons.chevron_right_rounded,
                     size: 16,
-                    color: AppColors.teal.withValues(alpha: 0.5),
+                    color: oneKeepTextTertiary(context),
                   ),
                 ],
               ),
@@ -436,7 +525,7 @@ class _HomePageState extends ConsumerState<HomePage> {
             child: Text(
               '删除',
               style: oneKeepInter(
-                color: AppColors.expensePink,
+                color: AppColors.expense,
                 size: 14,
                 weight: FontWeight.w700,
               ),
@@ -503,11 +592,8 @@ class _MetricTile extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: tone.withValues(alpha: 0.12),
+              color: tone.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(color: tone.withValues(alpha: 0.36), blurRadius: 16),
-              ],
             ),
             child: Icon(icon, size: 20, color: tone),
           ),
@@ -546,7 +632,7 @@ class _HomeTransactionRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isExpense = transaction.isExpense;
-    final tone = isExpense ? AppColors.expensePink : oneKeepIncomeTone(context);
+    final tone = isExpense ? AppColors.expense : AppColors.income;
     final icon = oneKeepCategoryIcon(
       transaction.title,
       transaction.categoryName,
@@ -618,7 +704,7 @@ class _HomeTransactionDetailSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tone = transaction.isExpense ? AppColors.expensePink : AppColors.teal;
+    final tone = transaction.isExpense ? AppColors.expense : AppColors.income;
     final icon = oneKeepCategoryIcon(
       transaction.title,
       transaction.categoryName,
@@ -731,7 +817,7 @@ class _HomeTransactionDetailSheet extends StatelessWidget {
                       child: _SheetActionButton(
                         label: '删除',
                         icon: Icons.delete_outline_rounded,
-                        tone: AppColors.expensePink,
+                        tone: AppColors.expense,
                         onTap: () => Navigator.of(
                           context,
                         ).pop(_TransactionDetailAction.delete),

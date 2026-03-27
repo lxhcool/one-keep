@@ -57,7 +57,7 @@ class _MainShellState extends ConsumerState<MainShell> {
 
   Widget _buildBottomBar(bool isDark) {
     final bg = isDark ? AppColors.darkBg : AppColors.lightBg;
-    final active = isDark ? AppColors.teal : AppColors.indigo;
+    final active = AppColors.teal;
     final inactive = isDark
         ? AppColors.darkTextTertiary
         : AppColors.lightTextSecondary;
@@ -132,9 +132,7 @@ class _MainShellState extends ConsumerState<MainShell> {
   }
 
   Widget _buildFab(bool isDark) {
-    final colors = isDark
-        ? AppColors.fabGradientDark
-        : AppColors.fabGradientLight;
+    const colors = AppColors.fabGradient;
     return Transform.translate(
       offset: const Offset(0, 8),
       child: GestureDetector(
@@ -242,8 +240,8 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final categories = ref.watch(categoriesProvider);
     final activeColor = _direction == 'expense'
-        ? AppColors.expensePink
-        : AppColors.teal;
+        ? AppColors.expense
+        : AppColors.income;
     final canSubmit =
         double.tryParse(_amount) != null &&
         double.parse(_amount) > 0 &&
@@ -315,7 +313,7 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet> {
                         child: _QuickAddToggle(
                           label: '支出',
                           active: _direction == 'expense',
-                          activeColor: AppColors.expensePink,
+                          activeColor: AppColors.expense,
                           onTap: () => setState(() => _direction = 'expense'),
                         ),
                       ),

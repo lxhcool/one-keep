@@ -401,7 +401,7 @@ class _BillsPageState extends ConsumerState<BillsPage> {
             child: Text(
               '删除',
               style: oneKeepInter(
-                color: AppColors.expensePink,
+                color: AppColors.expense,
                 size: 14,
                 weight: FontWeight.w700,
               ),
@@ -489,7 +489,7 @@ class _BillRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isExpense = transaction.isExpense;
-    final tone = isExpense ? AppColors.expensePink : oneKeepIncomeTone(context);
+    final tone = isExpense ? AppColors.expense : AppColors.income;
     final icon = oneKeepCategoryIcon(
       transaction.title,
       transaction.categoryName,
@@ -570,7 +570,7 @@ class _BillDetailSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isExpense = transaction.isExpense;
-    final tone = isExpense ? AppColors.expensePink : AppColors.teal;
+    final tone = isExpense ? AppColors.expense : AppColors.income;
     final icon = oneKeepCategoryIcon(
       transaction.title,
       transaction.categoryName,
@@ -690,7 +690,7 @@ class _BillDetailSheet extends StatelessWidget {
                       child: _ActionButton(
                         label: '删除',
                         icon: Icons.delete_outline_rounded,
-                        tone: AppColors.expensePink,
+                        tone: AppColors.expense,
                         onTap: () => Navigator.of(
                           context,
                         ).pop(_TransactionDetailAction.delete),

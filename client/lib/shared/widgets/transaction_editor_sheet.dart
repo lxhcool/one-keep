@@ -85,8 +85,8 @@ class _OneKeepTransactionEditorSheetState
     final viewInsets = MediaQuery.of(context).viewInsets;
     final categories = ref.watch(categoriesProvider);
     final tone = widget.transaction.isExpense
-        ? AppColors.expensePink
-        : AppColors.teal;
+        ? AppColors.expense
+        : AppColors.income;
     final amount = double.tryParse(_amountController.text.trim());
     final canSave =
         amount != null &&
@@ -212,7 +212,7 @@ class _OneKeepTransactionEditorSheetState
                             error: (error, stackTrace) => Text(
                               '分类加载失败',
                               style: oneKeepInter(
-                                color: AppColors.expensePink,
+                                color: AppColors.expense,
                                 size: 12,
                                 weight: FontWeight.w500,
                               ),
@@ -377,11 +377,11 @@ class _OneKeepTransactionEditorSheetState
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(18),
-        borderSide: const BorderSide(color: AppColors.expensePink, width: 1),
+        borderSide: const BorderSide(color: AppColors.error, width: 1),
       ),
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(18),
-        borderSide: const BorderSide(color: AppColors.expensePink, width: 1),
+        borderSide: const BorderSide(color: AppColors.error, width: 1),
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
     );
