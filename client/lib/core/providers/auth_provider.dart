@@ -63,7 +63,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
         isLoading: false,
       );
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: '登录失败，请检查邮箱和密码');
+      state = state.copyWith(
+        isLoading: false,
+        error: ApiClient.readableError(e, fallback: '登录失败'),
+      );
     }
   }
 
@@ -82,7 +85,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
         isLoading: false,
       );
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: '注册失败，请重试');
+      state = state.copyWith(
+        isLoading: false,
+        error: ApiClient.readableError(e, fallback: '注册失败'),
+      );
     }
   }
 

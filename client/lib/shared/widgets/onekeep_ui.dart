@@ -173,28 +173,28 @@ class OneKeepPageBackground extends StatelessWidget {
         top: 80,
         width: 220,
         height: 220,
-        color: const Color(0x108B5CF6),
+        color: const Color(0x088B5CF6),
       ),
       _glow(
         right: -10,
         top: 180,
         width: 260,
         height: 260,
-        color: const Color(0x104F46E5),
+        color: const Color(0x084F46E5),
       ),
       _glow(
         left: 100,
         top: 450,
         width: 280,
         height: 280,
-        color: const Color(0x08EF4444),
+        color: const Color(0x05EF4444),
       ),
       _glow(
         right: -20,
         bottom: 40,
         width: 200,
         height: 200,
-        color: const Color(0x083B82F6),
+        color: const Color(0x053B82F6),
       ),
     ];
 
@@ -239,14 +239,14 @@ class OneKeepPageBackground extends StatelessWidget {
               top: 120,
               width: 240,
               height: 240,
-              color: const Color(0x104F46E5),
+              color: const Color(0x084F46E5),
             ),
             _glow(
               left: -30,
               top: 300,
               width: 200,
               height: 200,
-              color: const Color(0x108B5CF6),
+              color: const Color(0x088B5CF6),
             ),
           ];
         }
@@ -274,14 +274,14 @@ class OneKeepPageBackground extends StatelessWidget {
               top: 100,
               width: 200,
               height: 200,
-              color: const Color(0x104F46E5),
+              color: const Color(0x084F46E5),
             ),
             _glow(
               left: -40,
               top: 350,
               width: 180,
               height: 180,
-              color: const Color(0x108B5CF6),
+              color: const Color(0x088B5CF6),
             ),
           ];
         }
@@ -378,12 +378,12 @@ Color oneKeepSurface(BuildContext context) {
 
 Color oneKeepGlass(BuildContext context) {
   final isDark = Theme.of(context).brightness == Brightness.dark;
-  return isDark ? AppColors.darkGlass : AppColors.lightSurface;
+  return isDark ? AppColors.darkGlass : AppColors.lightCard;
 }
 
 Color oneKeepGlassStrong(BuildContext context) {
   final isDark = Theme.of(context).brightness == Brightness.dark;
-  return isDark ? AppColors.darkGlassStrong : AppColors.lightSurface;
+  return isDark ? AppColors.darkGlassStrong : AppColors.lightInputBg;
 }
 
 Color oneKeepBorder(BuildContext context) {
@@ -393,12 +393,17 @@ Color oneKeepBorder(BuildContext context) {
 
 Color oneKeepBorderStrong(BuildContext context) {
   final isDark = Theme.of(context).brightness == Brightness.dark;
-  return isDark ? AppColors.darkCardBorderStrong : AppColors.lightHairline;
+  return isDark ? AppColors.darkCardBorderStrong : AppColors.lightCardBorder;
 }
 
 Color oneKeepAccent(BuildContext context) {
   final isDark = Theme.of(context).brightness == Brightness.dark;
   return isDark ? AppColors.teal : AppColors.indigo;
+}
+
+Color oneKeepIncomeTone(BuildContext context) {
+  final isDark = Theme.of(context).brightness == Brightness.dark;
+  return isDark ? AppColors.tealLight : AppColors.teal;
 }
 
 class OneKeepAvatarPreset {

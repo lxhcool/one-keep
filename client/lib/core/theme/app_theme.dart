@@ -73,10 +73,38 @@ class AppTheme {
           borderRadius: BorderRadius.circular(AppRadius.lg),
         ),
         textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        elevation: 0,
+        shadowColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        splashFactory: NoSplash.splashFactory,
+      ),
+    ),
+    filledButtonTheme: FilledButtonThemeData(
+      style: FilledButton.styleFrom(
+        backgroundColor: AppColors.teal,
+        foregroundColor: Colors.black,
+        elevation: 0,
+        shadowColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        splashFactory: NoSplash.splashFactory,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.button),
+        ),
       ),
     ),
     textButtonTheme: TextButtonThemeData(
-      style: TextButton.styleFrom(foregroundColor: AppColors.teal),
+      style: TextButton.styleFrom(
+        foregroundColor: AppColors.teal,
+        splashFactory: NoSplash.splashFactory,
+      ),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        elevation: 0,
+        shadowColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        splashFactory: NoSplash.splashFactory,
+      ),
     ),
     dividerTheme: const DividerThemeData(
       color: AppColors.darkHairline,
@@ -170,10 +198,38 @@ class AppTheme {
           borderRadius: BorderRadius.circular(AppRadius.button),
         ),
         textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        elevation: 0,
+        shadowColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        splashFactory: NoSplash.splashFactory,
+      ),
+    ),
+    filledButtonTheme: FilledButtonThemeData(
+      style: FilledButton.styleFrom(
+        backgroundColor: AppColors.indigo,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        shadowColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        splashFactory: NoSplash.splashFactory,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.button),
+        ),
       ),
     ),
     textButtonTheme: TextButtonThemeData(
-      style: TextButton.styleFrom(foregroundColor: AppColors.indigo),
+      style: TextButton.styleFrom(
+        foregroundColor: AppColors.indigo,
+        splashFactory: NoSplash.splashFactory,
+      ),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        elevation: 0,
+        shadowColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        splashFactory: NoSplash.splashFactory,
+      ),
     ),
     dividerTheme: const DividerThemeData(
       color: AppColors.lightHairline,

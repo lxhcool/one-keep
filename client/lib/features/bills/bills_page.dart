@@ -489,7 +489,7 @@ class _BillRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isExpense = transaction.isExpense;
-    final tone = isExpense ? AppColors.expensePink : AppColors.tealLight;
+    final tone = isExpense ? AppColors.expensePink : oneKeepIncomeTone(context);
     final icon = oneKeepCategoryIcon(
       transaction.title,
       transaction.categoryName,

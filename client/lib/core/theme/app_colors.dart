@@ -6,7 +6,7 @@ class AppColors {
 
   // ─── 品牌色 ───
   static const teal = Color(0xFF00CEC9);
-  static const tealLight = Color(0xFF80FFEA);
+  static const tealLight = Color(0xFF2AA79B);
   static const indigo = Color(0xFF4F46E5);
   static const purple = Color(0xFF8B5CF6);
   static const blue = Color(0xFF3B82F6);
@@ -34,16 +34,16 @@ class AppColors {
   static const darkHairline = Color(0x15FFFFFF);
 
   // ─── 浅色主题 ───
-  static const lightBg = Color(0xFFF7F7F8);
+  static const lightBg = Color(0xFFF3F6FA);
   static const lightSurface = Color(0xFFFFFFFF);
-  static const lightCard = Color(0xFFFFFFFF);
-  static const lightCardBorder = Color(0xFFE5E7EB);
+  static const lightCard = Color(0xFFF8FAFC);
+  static const lightCardBorder = Color(0xFFDCE3EC);
   static const lightDimOverlay = Color(0x40000000);
-  static const lightTextPrimary = Color(0xFF1F2937);
-  static const lightTextSecondary = Color(0xFF6B7280);
-  static const lightTextTertiary = Color(0xFF9CA3AF);
-  static const lightInputBg = Color(0xFFF3F4F6);
-  static const lightHairline = Color(0xFFE5E7EB);
+  static const lightTextPrimary = Color(0xFF111827);
+  static const lightTextSecondary = Color(0xFF475569);
+  static const lightTextTertiary = Color(0xFF64748B);
+  static const lightInputBg = Color(0xFFF0F4F8);
+  static const lightHairline = Color(0xFFD8E0EA);
 
   // ─── 图表渐变 ───
   static const expenseGradient = [Color(0xFFFF6B9D), Color(0xFF6C5CE7)];

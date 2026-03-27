@@ -311,13 +311,6 @@ class _OneKeepTransactionEditorSheetState
                             colors: [tone, tone.withValues(alpha: 0.78)],
                           ),
                           borderRadius: BorderRadius.circular(18),
-                          boxShadow: [
-                            BoxShadow(
-                              color: tone.withValues(alpha: 0.28),
-                              blurRadius: 24,
-                              offset: const Offset(0, 12),
-                            ),
-                          ],
                         ),
                         child: Center(
                           child: Text(

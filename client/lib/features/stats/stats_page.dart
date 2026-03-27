@@ -126,7 +126,7 @@ class _StatsPageState extends ConsumerState<StatsPage> {
           child: _SummaryCard(
             label: '总收入',
             amount: overview.totalIncome,
-            color: AppColors.tealLight,
+            color: oneKeepIncomeTone(context),
           ),
         ),
       ],
@@ -170,7 +170,7 @@ class _StatsPageState extends ConsumerState<StatsPage> {
             points: series,
             colors: isExpense
                 ? const [AppColors.teal, AppColors.purple]
-                : const [AppColors.tealLight, AppColors.teal],
+                : [oneKeepIncomeTone(context), AppColors.teal],
           ),
         ],
       ),
@@ -181,7 +181,7 @@ class _StatsPageState extends ConsumerState<StatsPage> {
     final ranks = overview.categoryRanks.take(3).toList();
     final tones = _metricType == 'expense'
         ? const [AppColors.expensePink, AppColors.purple, AppColors.teal]
-        : const [AppColors.tealLight, AppColors.teal, AppColors.purple];
+        : [oneKeepIncomeTone(context), AppColors.teal, AppColors.purple];
 
     return OneKeepGlassCard(
       radius: 18,

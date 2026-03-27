@@ -60,7 +60,7 @@ class _MainShellState extends ConsumerState<MainShell> {
     final active = isDark ? AppColors.teal : AppColors.indigo;
     final inactive = isDark
         ? AppColors.darkTextTertiary
-        : AppColors.lightTextTertiary;
+        : AppColors.lightTextSecondary;
 
     return Container(
       height: 78,
@@ -155,13 +155,6 @@ class _MainShellState extends ConsumerState<MainShell> {
                   : AppColors.lightHairline,
               width: 0.8,
             ),
-            boxShadow: [
-              BoxShadow(
-                color: colors.first.withValues(alpha: 0.26),
-                blurRadius: 18,
-                offset: const Offset(0, 8),
-              ),
-            ],
           ),
           child: const Icon(Icons.add_rounded, color: Colors.white, size: 34),
         ),

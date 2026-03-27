@@ -1,8 +1,8 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../core/providers/auth_provider.dart';
@@ -38,90 +38,97 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
     return Scaffold(
       backgroundColor: background,
-      body: DecoratedBox(
-        decoration: BoxDecoration(color: background),
-        child: SafeArea(
-          bottom: false,
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(0, 0, 0, 120),
-            children: [
-              _ProfileSummaryCard(
-                displayName: displayName,
-                avatarIndex: preferences.avatarIndex,
-                avatarImageData: preferences.avatarImageData,
-                backgroundImageData: preferences.profileBackgroundImageData,
-                onEditAvatar: _showAvatarStudio,
-                onEditBackground: _showBackgroundStudio,
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _MenuGroup(
-                      children: [
-                        _MenuTile(
-                          icon: Icons.wallpaper_outlined,
-                          tone: AppColors.blue,
-                          title: '背景图',
-                          subtitle:
-                              preferences.profileBackgroundImageData != null
-                              ? '已设置封面背景'
-                              : '上传头部背景图',
-                          onTap: _showBackgroundStudio,
-                        ),
-                        _MenuTile(
-                          icon: Icons.add_a_photo_outlined,
-                          tone: AppColors.teal,
-                          title: '头像设置',
-                          subtitle: preferences.avatarImageData != null
-                              ? '已上传头像'
-                              : '使用预设头像',
-                          onTap: _showAvatarStudio,
-                        ),
-                        _MenuTile(
-                          icon: Icons.drive_file_rename_outline_rounded,
-                          tone: AppColors.indigo,
-                          title: '昵称设置',
-                          subtitle: displayName,
-                          onTap: _showNicknameDialog,
-                        ),
-                        _MenuTile(
-                          icon: Icons.light_mode_outlined,
-                          tone: AppColors.warning,
-                          title: '主题模式',
-                          subtitle: themeLabel,
-                          onTap: _showThemePicker,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    OutlinedButton(
-                      onPressed: () => ref.read(authProvider.notifier).logout(),
-                      style: OutlinedButton.styleFrom(
-                        minimumSize: const Size.fromHeight(54),
-                        side: BorderSide(
-                          color: AppColors.expensePink.withValues(alpha: 0.18),
-                          width: 0.9,
-                        ),
-                        backgroundColor: oneKeepSurface(context),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(18),
-                        ),
-                      ),
-                      child: Text(
-                        '退出登录',
-                        style: oneKeepManrope(
-                          color: AppColors.expensePink,
-                          size: 15,
-                          weight: FontWeight.w800,
-                        ),
-                      ),
-                    ),
-                  ],
+      body: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: SystemUiOverlayStyle.light,
+        child: DecoratedBox(
+          decoration: BoxDecoration(color: background),
+          child: SafeArea(
+            top: false,
+            bottom: false,
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(0, 0, 0, 120),
+              children: [
+                _ProfileSummaryCard(
+                  displayName: displayName,
+                  avatarIndex: preferences.avatarIndex,
+                  avatarImageData: preferences.avatarImageData,
+                  backgroundImageData: preferences.profileBackgroundImageData,
+                  onEditAvatar: _showAvatarStudio,
+                  onEditBackground: _showBackgroundStudio,
                 ),
-              ),
-            ],
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _MenuGroup(
+                        children: [
+                          _MenuTile(
+                            icon: Icons.wallpaper_outlined,
+                            tone: AppColors.blue,
+                            title: '背景图',
+                            subtitle:
+                                preferences.profileBackgroundImageData != null
+                                ? '已设置封面背景'
+                                : '上传头部背景图',
+                            onTap: _showBackgroundStudio,
+                          ),
+                          _MenuTile(
+                            icon: Icons.add_a_photo_outlined,
+                            tone: AppColors.teal,
+                            title: '头像设置',
+                            subtitle: preferences.avatarImageData != null
+                                ? '已上传头像'
+                                : '使用预设头像',
+                            onTap: _showAvatarStudio,
+                          ),
+                          _MenuTile(
+                            icon: Icons.drive_file_rename_outline_rounded,
+                            tone: AppColors.indigo,
+                            title: '昵称设置',
+                            subtitle: displayName,
+                            onTap: _showNicknameDialog,
+                          ),
+                          _MenuTile(
+                            icon: Icons.light_mode_outlined,
+                            tone: AppColors.warning,
+                            title: '主题模式',
+                            subtitle: themeLabel,
+                            onTap: _showThemePicker,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      OutlinedButton(
+                        onPressed: () =>
+                            ref.read(authProvider.notifier).logout(),
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size.fromHeight(54),
+                          side: BorderSide(
+                            color: AppColors.expensePink.withValues(
+                              alpha: 0.18,
+                            ),
+                            width: 0.9,
+                          ),
+                          backgroundColor: oneKeepSurface(context),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                        ),
+                        child: Text(
+                          '退出登录',
+                          style: oneKeepManrope(
+                            color: AppColors.expensePink,
+                            size: 15,
+                            weight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -395,10 +402,10 @@ class _ProfileSummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final coverBytes = _decodeImageBytes(backgroundImageData);
-    final surface = oneKeepSurface(context);
+    final topInset = MediaQuery.paddingOf(context).top;
 
     return Container(
-      height: 214,
+      height: 220 + topInset,
       width: double.infinity,
       decoration: BoxDecoration(
         color: const Color(0xFF0F1720),
@@ -409,34 +416,26 @@ class _ProfileSummaryCard extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          Column(
-            children: [
-              SizedBox(
-                height: 122,
-                width: double.infinity,
-                child: coverBytes != null
-                    ? Image.memory(coverBytes, fit: BoxFit.cover)
-                    : const _ProfileCoverFallback(),
-              ),
-              Expanded(child: ColoredBox(color: surface)),
-            ],
-          ),
+          if (coverBytes != null)
+            Image.memory(coverBytes, fit: BoxFit.cover)
+          else
+            const _ProfileCoverFallback(),
           DecoratedBox(
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Colors.black.withValues(alpha: 0.08),
                   Colors.black.withValues(alpha: 0.16),
-                  Colors.transparent,
-                  Colors.transparent,
+                  Colors.black.withValues(alpha: 0.24),
+                  Colors.black.withValues(alpha: 0.38),
+                  Colors.black.withValues(alpha: 0.52),
                 ],
               ),
             ),
           ),
           Positioned(
-            top: 18,
+            top: topInset + 18,
             right: 18,
             child: _HeroActionButton(
               icon: Icons.wallpaper_outlined,
@@ -445,7 +444,7 @@ class _ProfileSummaryCard extends StatelessWidget {
           ),
           Positioned(
             left: 24,
-            top: 76,
+            top: topInset + 78,
             child: Stack(
               clipBehavior: Clip.none,
               children: [
@@ -492,13 +491,13 @@ class _ProfileSummaryCard extends StatelessWidget {
           Positioned(
             left: 116,
             right: 24,
-            top: 138,
+            top: topInset + 142,
             child: Text(
               displayName,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: oneKeepGrotesk(
-                color: oneKeepTextPrimary(context),
+                color: Colors.white,
                 size: 24,
                 weight: FontWeight.w700,
               ),

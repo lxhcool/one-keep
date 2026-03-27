@@ -232,7 +232,7 @@ class _HomePageState extends ConsumerState<HomePage> {
           Text(
             '较上月 +8.2%',
             style: oneKeepManrope(
-              color: AppColors.tealLight.withValues(alpha: 0.7),
+              color: oneKeepIncomeTone(context).withValues(alpha: 0.82),
               size: 13,
               weight: FontWeight.w400,
             ),
@@ -260,7 +260,7 @@ class _HomePageState extends ConsumerState<HomePage> {
             label: '本月收入',
             amount: summary.income,
             icon: Icons.arrow_downward_rounded,
-            tone: AppColors.tealLight,
+            tone: oneKeepIncomeTone(context),
             visible: _balanceVisible,
           ),
         ),
@@ -546,7 +546,7 @@ class _HomeTransactionRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isExpense = transaction.isExpense;
-    final tone = isExpense ? AppColors.expensePink : AppColors.tealLight;
+    final tone = isExpense ? AppColors.expensePink : oneKeepIncomeTone(context);
     final icon = oneKeepCategoryIcon(
       transaction.title,
       transaction.categoryName,
