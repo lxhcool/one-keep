@@ -8,14 +8,14 @@ class AppColors {
   static const teal = Color(0xFF00CEC9);
   static const tealLight = Color(0xFF80FFEA);
   static const indigo = Color(0xFF4F46E5);
-  static const purple = Color(0xFF6C5CE7);
-  static const blue = Color(0xFF74B9FF);
+  static const purple = Color(0xFF8B5CF6);
+  static const blue = Color(0xFF3B82F6);
 
   // ─── 语义色 ───
   static const expensePink = Color(0xFFFF6B9D);
-  static const expenseRed = Color(0xFFE53E3E);
+  static const expenseRed = Color(0xFFEF4444);
   static const incomeTeal = Color(0xFF00CEC9);
-  static const incomeGreen = Color(0xFF38A169);
+  static const incomeGreen = Color(0xFF10B981);
 
   // ─── 深色主题 ───
   static const darkBg = Color(0xFF0A0A0A);
@@ -37,9 +37,9 @@ class AppColors {
   static const lightBg = Color(0xFFF7F7F8);
   static const lightSurface = Color(0xFFFFFFFF);
   static const lightCard = Color(0xFFFFFFFF);
-  static const lightCardBorder = Color(0x0FFFFFFF);
+  static const lightCardBorder = Color(0xFFE5E7EB);
   static const lightDimOverlay = Color(0x40000000);
-  static const lightTextPrimary = Color(0xFF1A1A1A);
+  static const lightTextPrimary = Color(0xFF1F2937);
   static const lightTextSecondary = Color(0xFF6B7280);
   static const lightTextTertiary = Color(0xFF9CA3AF);
   static const lightInputBg = Color(0xFFF3F4F6);
@@ -49,7 +49,7 @@ class AppColors {
   static const expenseGradient = [Color(0xFFFF6B9D), Color(0xFF6C5CE7)];
   static const incomeGradient = [Color(0xFF80FFEA), Color(0xFF00CEC9)];
   static const fabGradientDark = [Color(0xFF00CEC9), Color(0xFF6C5CE7)];
-  static const fabGradientLight = [Color(0xFF4F46E5), Color(0xFF6C5CE7)];
+  static const fabGradientLight = [Color(0xFF4F46E5), Color(0xFF8B5CF6)];
 
   // ─── 分类高亮 ───
   static const tealHighlight = Color(0x3300CEC9); // 20%

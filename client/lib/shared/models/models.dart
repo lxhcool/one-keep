@@ -1,5 +1,34 @@
+String _readString(
+  Map<String, dynamic> json,
+  String key, {
+  String fallback = '',
+}) {
+  final value = json[key];
+  if (value == null) return fallback;
+  return value.toString();
+}
+
+String? _readNullableString(Map<String, dynamic> json, String key) {
+  final value = json[key];
+  if (value == null) return null;
+  final text = value.toString();
+  return text.isEmpty ? null : text;
+}
+
+double _readDouble(
+  Map<String, dynamic> json,
+  String key, {
+  double fallback = 0,
+}) {
+  final value = json[key];
+  if (value is num) return value.toDouble();
+  if (value is String) return double.tryParse(value) ?? fallback;
+  return fallback;
+}
+
 class Transaction {
   final String transactionId;
+  final String categoryId;
   final String title;
   final String categoryName;
   final String categoryIcon;
@@ -11,6 +40,7 @@ class Transaction {
 
   const Transaction({
     required this.transactionId,
+    required this.categoryId,
     required this.title,
     required this.categoryName,
     required this.categoryIcon,
@@ -25,15 +55,17 @@ class Transaction {
   bool get isIncome => direction == 'income';
 
   factory Transaction.fromJson(Map<String, dynamic> json) => Transaction(
-    transactionId: json['transactionId'] as String,
-    title: json['title'] as String,
-    categoryName: json['categoryName'] as String,
-    categoryIcon: json['categoryIcon'] as String,
-    occurredAt: DateTime.parse(json['occurredAt'] as String),
-    amount: (json['amount'] as num).toDouble(),
-    direction: json['direction'] as String,
-    note: json['note'] as String?,
-    merchant: json['merchant'] as String?,
+    transactionId: _readString(json, 'transactionId'),
+    categoryId: _readString(json, 'categoryId'),
+    title: _readString(json, 'title', fallback: '未命名交易'),
+    categoryName: _readString(json, 'categoryName', fallback: '未分类'),
+    categoryIcon: _readString(json, 'categoryIcon', fallback: 'receipt_long'),
+    occurredAt:
+        DateTime.tryParse(_readString(json, 'occurredAt')) ?? DateTime.now(),
+    amount: _readDouble(json, 'amount'),
+    direction: _readString(json, 'direction', fallback: 'expense'),
+    note: _readNullableString(json, 'note'),
+    merchant: _readNullableString(json, 'merchant'),
   );
 }
 
@@ -79,9 +111,9 @@ class UserInfo {
   }
 
   factory UserInfo.fromJson(Map<String, dynamic> json) => UserInfo(
-    id: json['id'] as String,
-    name: json['name'] as String,
-    email: json['email'] as String,
+    id: _readString(json, 'id'),
+    name: _readString(json, 'name', fallback: 'OneKeep 用户'),
+    email: _readString(json, 'email'),
   );
 }
 
@@ -99,8 +131,11 @@ class StatsOverview {
   });
 
   factory StatsOverview.fromJson(Map<String, dynamic> json) => StatsOverview(
-    totalIncome: (json['totals']['income'] as num).toDouble(),
-    totalExpense: (json['totals']['expense'] as num).toDouble(),
+    totalIncome: _readDouble(json['totals'] as Map<String, dynamic>, 'income'),
+    totalExpense: _readDouble(
+      json['totals'] as Map<String, dynamic>,
+      'expense',
+    ),
     trendSeries: (json['trendSeries'] as List)
         .map((e) => TrendPoint.fromJson(e as Map<String, dynamic>))
         .toList(),
@@ -117,8 +152,8 @@ class TrendPoint {
   const TrendPoint({required this.label, required this.value});
 
   factory TrendPoint.fromJson(Map<String, dynamic> json) => TrendPoint(
-    label: json['label'] as String,
-    value: (json['value'] as num).toDouble(),
+    label: _readString(json, 'label'),
+    value: _readDouble(json, 'value'),
   );
 }
 
@@ -138,11 +173,11 @@ class CategoryRank {
   });
 
   factory CategoryRank.fromJson(Map<String, dynamic> json) => CategoryRank(
-    categoryId: json['categoryId'] as String,
-    categoryName: json['categoryName'] as String,
-    categoryIcon: json['categoryIcon'] as String,
-    amount: (json['amount'] as num).toDouble(),
-    progressRatio: (json['progressRatio'] as num).toDouble(),
+    categoryId: _readString(json, 'categoryId'),
+    categoryName: _readString(json, 'categoryName', fallback: '未分类'),
+    categoryIcon: _readString(json, 'categoryIcon', fallback: 'receipt_long'),
+    amount: _readDouble(json, 'amount'),
+    progressRatio: _readDouble(json, 'progressRatio'),
   );
 }
 
@@ -160,9 +195,12 @@ class BillGroup {
   });
 
   factory BillGroup.fromJson(Map<String, dynamic> json) => BillGroup(
-    date: json['date'] as String,
-    expenseTotal: (json['summary']['expense'] as num).toDouble(),
-    incomeTotal: (json['summary']['income'] as num).toDouble(),
+    date: _readString(json, 'date'),
+    expenseTotal: _readDouble(
+      json['summary'] as Map<String, dynamic>,
+      'expense',
+    ),
+    incomeTotal: _readDouble(json['summary'] as Map<String, dynamic>, 'income'),
     items: (json['items'] as List)
         .map((e) => Transaction.fromJson(e as Map<String, dynamic>))
         .toList(),
@@ -197,9 +235,9 @@ class Category {
   });
 
   factory Category.fromJson(Map<String, dynamic> json) => Category(
-    id: json['id'] as String,
-    name: json['name'] as String,
-    icon: json['icon'] as String,
-    type: json['type'] as String,
+    id: _readString(json, 'id'),
+    name: _readString(json, 'name', fallback: '未分类'),
+    icon: _readString(json, 'icon', fallback: 'receipt_long'),
+    type: _readString(json, 'type', fallback: 'expense'),
   );
 }

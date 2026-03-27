@@ -2,16 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+const _noPreferenceChange = Object();
+
 class PreferencesState {
   final ThemeMode themeMode;
   final String nickname;
   final int avatarIndex;
+  final String? avatarImageData;
+  final String? profileBackgroundImageData;
   final bool isLoaded;
 
   const PreferencesState({
     this.themeMode = ThemeMode.dark,
     this.nickname = '',
     this.avatarIndex = 0,
+    this.avatarImageData,
+    this.profileBackgroundImageData,
     this.isLoaded = false,
   });
 
@@ -19,12 +25,21 @@ class PreferencesState {
     ThemeMode? themeMode,
     String? nickname,
     int? avatarIndex,
+    Object? avatarImageData = _noPreferenceChange,
+    Object? profileBackgroundImageData = _noPreferenceChange,
     bool? isLoaded,
   }) {
     return PreferencesState(
       themeMode: themeMode ?? this.themeMode,
       nickname: nickname ?? this.nickname,
       avatarIndex: avatarIndex ?? this.avatarIndex,
+      avatarImageData: avatarImageData == _noPreferenceChange
+          ? this.avatarImageData
+          : avatarImageData as String?,
+      profileBackgroundImageData:
+          profileBackgroundImageData == _noPreferenceChange
+          ? this.profileBackgroundImageData
+          : profileBackgroundImageData as String?,
       isLoaded: isLoaded ?? this.isLoaded,
     );
   }
@@ -39,16 +54,24 @@ class PreferencesNotifier extends StateNotifier<PreferencesState> {
   static const _themeModeKey = 'pref_theme_mode';
   static const _nicknameKey = 'pref_nickname';
   static const _avatarIndexKey = 'pref_avatar_index';
+  static const _avatarImageKey = 'pref_avatar_image';
+  static const _profileBackgroundImageKey = 'pref_profile_background_image';
 
   Future<void> _load() async {
     final themeModeValue = await _storage.read(key: _themeModeKey);
     final nicknameValue = await _storage.read(key: _nicknameKey);
     final avatarValue = await _storage.read(key: _avatarIndexKey);
+    final avatarImageValue = await _storage.read(key: _avatarImageKey);
+    final profileBackgroundImageValue = await _storage.read(
+      key: _profileBackgroundImageKey,
+    );
 
     state = state.copyWith(
       themeMode: _decodeThemeMode(themeModeValue),
       nickname: nicknameValue ?? '',
       avatarIndex: int.tryParse(avatarValue ?? '') ?? 0,
+      avatarImageData: avatarImageValue,
+      profileBackgroundImageData: profileBackgroundImageValue,
       isLoaded: true,
     );
   }
@@ -68,8 +91,36 @@ class PreferencesNotifier extends StateNotifier<PreferencesState> {
   }
 
   Future<void> setAvatarIndex(int avatarIndex) async {
-    state = state.copyWith(avatarIndex: avatarIndex);
+    state = state.copyWith(avatarIndex: avatarIndex, avatarImageData: null);
     await _storage.write(key: _avatarIndexKey, value: '$avatarIndex');
+    await _storage.delete(key: _avatarImageKey);
+  }
+
+  Future<void> setAvatarImageData(String avatarImageData) async {
+    state = state.copyWith(avatarImageData: avatarImageData);
+    await _storage.write(key: _avatarImageKey, value: avatarImageData);
+  }
+
+  Future<void> clearAvatarImageData() async {
+    state = state.copyWith(avatarImageData: null);
+    await _storage.delete(key: _avatarImageKey);
+  }
+
+  Future<void> setProfileBackgroundImageData(
+    String profileBackgroundImageData,
+  ) async {
+    state = state.copyWith(
+      profileBackgroundImageData: profileBackgroundImageData,
+    );
+    await _storage.write(
+      key: _profileBackgroundImageKey,
+      value: profileBackgroundImageData,
+    );
+  }
+
+  Future<void> clearProfileBackgroundImageData() async {
+    state = state.copyWith(profileBackgroundImageData: null);
+    await _storage.delete(key: _profileBackgroundImageKey);
   }
 
   String _encodeThemeMode(ThemeMode themeMode) {

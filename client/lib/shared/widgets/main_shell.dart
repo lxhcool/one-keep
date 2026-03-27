@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/network/api_client.dart';
 import '../../core/providers/api_provider.dart';
 import '../../core/providers/data_providers.dart';
 import '../../core/theme/app_colors.dart';
@@ -62,7 +63,7 @@ class _MainShellState extends ConsumerState<MainShell> {
         : AppColors.lightTextTertiary;
 
     return Container(
-      height: 70,
+      height: 78,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
@@ -75,7 +76,7 @@ class _MainShellState extends ConsumerState<MainShell> {
         top: false,
         child: Center(
           child: SizedBox(
-            height: 54,
+            height: 58,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Row(
@@ -134,26 +135,36 @@ class _MainShellState extends ConsumerState<MainShell> {
     final colors = isDark
         ? AppColors.fabGradientDark
         : AppColors.fabGradientLight;
-    return GestureDetector(
-      onTap: () => _showQuickAddSheet(context),
-      child: Container(
-        width: 50,
-        height: 50,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: colors,
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(25),
-          boxShadow: [
-            BoxShadow(
-              color: colors.first.withValues(alpha: 0.32),
-              blurRadius: 14,
+    return Transform.translate(
+      offset: const Offset(0, 8),
+      child: GestureDetector(
+        onTap: () => _showQuickAddSheet(context),
+        child: Container(
+          width: 60,
+          height: 60,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: colors,
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
-          ],
+            borderRadius: BorderRadius.circular(30),
+            border: Border.all(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.14)
+                  : AppColors.lightHairline,
+              width: 0.8,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: colors.first.withValues(alpha: 0.26),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: const Icon(Icons.add_rounded, color: Colors.white, size: 34),
         ),
-        child: const Icon(Icons.add_rounded, color: Colors.white, size: 26),
       ),
     );
   }
@@ -247,10 +258,10 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet> {
 
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurface : Colors.white,
+        color: oneKeepSurface(context),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        border: const Border(
-          top: BorderSide(color: AppColors.darkHairline, width: 0.5),
+        border: Border(
+          top: BorderSide(color: oneKeepBorder(context), width: 0.5),
         ),
       ),
       child: SafeArea(
@@ -268,7 +279,9 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet> {
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.18),
+                      color: oneKeepTextTertiary(
+                        context,
+                      ).withValues(alpha: 0.32),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -279,7 +292,7 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet> {
                     Text(
                       '快速记账',
                       style: oneKeepManrope(
-                        color: AppColors.darkTextPrimary,
+                        color: oneKeepTextPrimary(context),
                         size: 18,
                         weight: FontWeight.w700,
                       ),
@@ -289,7 +302,7 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet> {
                       onTap: () => Navigator.pop(context),
                       child: Icon(
                         Icons.close_rounded,
-                        color: Colors.white.withValues(alpha: 0.32),
+                        color: oneKeepTextSecondary(context),
                         size: 24,
                       ),
                     ),
@@ -300,7 +313,7 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet> {
                   height: 42,
                   padding: const EdgeInsets.all(3),
                   decoration: BoxDecoration(
-                    color: AppColors.darkGlassStrong,
+                    color: oneKeepGlassStrong(context),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
@@ -334,10 +347,12 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet> {
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
-                        colors: [Colors.white, activeColor],
+                        colors: isDark
+                            ? [Colors.white, activeColor]
+                            : [AppColors.lightTextPrimary, activeColor],
                       ),
                       style: oneKeepGrotesk(
-                        color: Colors.white,
+                        color: oneKeepTextPrimary(context),
                         size: 40,
                         weight: FontWeight.w700,
                         letterSpacing: 1.5,
@@ -426,7 +441,7 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet> {
               decoration: BoxDecoration(
                 color: selected
                     ? activeColor.withValues(alpha: 0.15)
-                    : AppColors.darkGlassStrong,
+                    : oneKeepGlassStrong(context),
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
                   color: selected
@@ -440,7 +455,9 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet> {
                   Icon(
                     oneKeepCategoryIcon(item.name, item.name, item.icon),
                     size: 16,
-                    color: selected ? activeColor : AppColors.darkTextSecondary,
+                    color: selected
+                        ? activeColor
+                        : oneKeepTextSecondary(context),
                   ),
                   const SizedBox(width: 6),
                   Text(
@@ -448,7 +465,7 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet> {
                     style: oneKeepInter(
                       color: selected
                           ? activeColor
-                          : AppColors.darkTextSecondary,
+                          : oneKeepTextSecondary(context),
                       size: 12,
                       weight: selected ? FontWeight.w600 : FontWeight.w400,
                     ),
@@ -534,9 +551,11 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet> {
       ref.read(billsProvider.notifier).load();
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('记账失败: $error')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(ApiClient.readableError(error, fallback: '记账失败')),
+        ),
+      );
     }
   }
 }
@@ -575,7 +594,7 @@ class _QuickAddToggle extends StatelessWidget {
         child: Text(
           label,
           style: oneKeepManrope(
-            color: active ? activeColor : AppColors.darkTextTertiary,
+            color: active ? activeColor : oneKeepTextTertiary(context),
             size: 14,
             weight: active ? FontWeight.w600 : FontWeight.w400,
           ),

@@ -91,6 +91,7 @@ export default async function billsRoutes(app: FastifyInstance) {
         const cat = (t as any).category as { name: string; icon: string };
         return {
           transactionId: t.id,
+          categoryId: t.categoryId,
           title: t.title,
           categoryName: cat.name,
           categoryIcon: cat.icon,

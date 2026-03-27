@@ -71,7 +71,7 @@ class _StatsPageState extends ConsumerState<StatsPage> {
         Text(
           '统计',
           style: oneKeepGrotesk(
-            color: AppColors.darkTextPrimary,
+            color: oneKeepTextPrimary(context),
             size: 24,
             weight: FontWeight.w700,
             letterSpacing: 0.5,
@@ -83,8 +83,8 @@ class _StatsPageState extends ConsumerState<StatsPage> {
           child: OneKeepGlassCard(
             radius: 12,
             blurSigma: 12,
-            fillColor: AppColors.darkGlass,
-            borderColor: AppColors.darkCardBorder,
+            fillColor: oneKeepGlass(context),
+            borderColor: oneKeepBorder(context),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -92,16 +92,16 @@ class _StatsPageState extends ConsumerState<StatsPage> {
                 Text(
                   DateFormat('yyyy年M月').format(_selectedMonth),
                   style: oneKeepInter(
-                    color: AppColors.darkTextSecondary,
+                    color: oneKeepTextSecondary(context),
                     size: 13,
                     weight: FontWeight.w500,
                   ),
                 ),
                 const SizedBox(width: 6),
-                const Icon(
+                Icon(
                   Icons.expand_more_rounded,
                   size: 14,
-                  color: AppColors.darkTextSecondary,
+                  color: oneKeepTextSecondary(context),
                 ),
               ],
             ),
@@ -140,8 +140,8 @@ class _StatsPageState extends ConsumerState<StatsPage> {
     return OneKeepGlassCard(
       radius: 18,
       blurSigma: 16,
-      fillColor: AppColors.darkGlass,
-      borderColor: AppColors.darkCardBorder,
+      fillColor: oneKeepGlass(context),
+      borderColor: oneKeepBorder(context),
       padding: const EdgeInsets.all(20),
       child: Column(
         children: [
@@ -150,7 +150,7 @@ class _StatsPageState extends ConsumerState<StatsPage> {
               Text(
                 isExpense ? '支出趋势' : '收入趋势',
                 style: oneKeepManrope(
-                  color: AppColors.darkTextPrimary,
+                  color: oneKeepTextPrimary(context),
                   size: 16,
                   weight: FontWeight.w600,
                 ),
@@ -186,8 +186,8 @@ class _StatsPageState extends ConsumerState<StatsPage> {
     return OneKeepGlassCard(
       radius: 18,
       blurSigma: 16,
-      fillColor: AppColors.darkGlass,
-      borderColor: AppColors.darkCardBorder,
+      fillColor: oneKeepGlass(context),
+      borderColor: oneKeepBorder(context),
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -197,7 +197,7 @@ class _StatsPageState extends ConsumerState<StatsPage> {
               Text(
                 '分类排行',
                 style: oneKeepManrope(
-                  color: AppColors.darkTextPrimary,
+                  color: oneKeepTextPrimary(context),
                   size: 16,
                   weight: FontWeight.w600,
                 ),
@@ -206,7 +206,7 @@ class _StatsPageState extends ConsumerState<StatsPage> {
               Text(
                 '查看全部',
                 style: oneKeepInter(
-                  color: AppColors.darkTextTertiary,
+                  color: oneKeepTextTertiary(context),
                   size: 12,
                   weight: FontWeight.w400,
                 ),
@@ -221,7 +221,7 @@ class _StatsPageState extends ConsumerState<StatsPage> {
                 child: Text(
                   '暂无数据',
                   style: oneKeepInter(
-                    color: AppColors.darkTextSecondary,
+                    color: oneKeepTextSecondary(context),
                     size: 12,
                     weight: FontWeight.w400,
                   ),
@@ -258,12 +258,12 @@ class _StatsPageState extends ConsumerState<StatsPage> {
           builder: (context, setModalState) {
             return Container(
               decoration: BoxDecoration(
-                color: AppColors.darkSurface,
+                color: oneKeepSurface(context),
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(24),
                 ),
-                border: const Border(
-                  top: BorderSide(color: AppColors.darkHairline, width: 0.5),
+                border: Border(
+                  top: BorderSide(color: oneKeepBorder(context), width: 0.5),
                 ),
               ),
               child: SafeArea(
@@ -281,7 +281,9 @@ class _StatsPageState extends ConsumerState<StatsPage> {
                             width: 40,
                             height: 4,
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.18),
+                              color: oneKeepTextTertiary(
+                                context,
+                              ).withValues(alpha: 0.32),
                               borderRadius: BorderRadius.circular(2),
                             ),
                           ),
@@ -292,7 +294,7 @@ class _StatsPageState extends ConsumerState<StatsPage> {
                             Text(
                               '选择月份',
                               style: oneKeepManrope(
-                                color: AppColors.darkTextPrimary,
+                                color: oneKeepTextPrimary(context),
                                 size: 18,
                                 weight: FontWeight.w700,
                               ),
@@ -302,7 +304,7 @@ class _StatsPageState extends ConsumerState<StatsPage> {
                               onTap: () => Navigator.pop(context),
                               child: Icon(
                                 Icons.close_rounded,
-                                color: Colors.white.withValues(alpha: 0.32),
+                                color: oneKeepTextSecondary(context),
                                 size: 24,
                               ),
                             ),
@@ -316,7 +318,7 @@ class _StatsPageState extends ConsumerState<StatsPage> {
                                   setModalState(() => displayYear -= 1),
                               child: Icon(
                                 Icons.chevron_left_rounded,
-                                color: Colors.white.withValues(alpha: 0.38),
+                                color: oneKeepTextSecondary(context),
                                 size: 20,
                               ),
                             ),
@@ -324,7 +326,7 @@ class _StatsPageState extends ConsumerState<StatsPage> {
                             Text(
                               '$displayYear',
                               style: oneKeepManrope(
-                                color: AppColors.darkTextPrimary,
+                                color: oneKeepTextPrimary(context),
                                 size: 16,
                                 weight: FontWeight.w600,
                               ),
@@ -336,9 +338,11 @@ class _StatsPageState extends ConsumerState<StatsPage> {
                                   : null,
                               child: Icon(
                                 Icons.chevron_right_rounded,
-                                color: Colors.white.withValues(
-                                  alpha: displayYear < now.year ? 0.2 : 0.08,
-                                ),
+                                color: displayYear < now.year
+                                    ? oneKeepTextSecondary(context)
+                                    : oneKeepTextTertiary(
+                                        context,
+                                      ).withValues(alpha: 0.5),
                                 size: 20,
                               ),
                             ),
@@ -381,7 +385,7 @@ class _StatsPageState extends ConsumerState<StatsPage> {
                                   decoration: BoxDecoration(
                                     color: selected
                                         ? AppColors.teal.withValues(alpha: 0.2)
-                                        : AppColors.darkGlassStrong,
+                                        : oneKeepGlassStrong(context),
                                     borderRadius: BorderRadius.circular(8),
                                     border: Border.all(
                                       color: selected
@@ -399,8 +403,10 @@ class _StatsPageState extends ConsumerState<StatsPage> {
                                       color: selected
                                           ? AppColors.teal
                                           : disabled
-                                          ? Colors.white.withValues(alpha: 0.14)
-                                          : AppColors.darkTextTertiary,
+                                          ? oneKeepTextTertiary(
+                                              context,
+                                            ).withValues(alpha: 0.5)
+                                          : oneKeepTextTertiary(context),
                                       size: 12,
                                       weight: selected
                                           ? FontWeight.w600
@@ -441,8 +447,8 @@ class _SummaryCard extends StatelessWidget {
     return OneKeepGlassCard(
       radius: 18,
       blurSigma: 12,
-      fillColor: AppColors.darkGlass,
-      borderColor: AppColors.darkCardBorder,
+      fillColor: oneKeepGlass(context),
+      borderColor: oneKeepBorder(context),
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -450,7 +456,7 @@ class _SummaryCard extends StatelessWidget {
           Text(
             label,
             style: oneKeepInter(
-              color: AppColors.darkTextSecondary,
+              color: oneKeepTextSecondary(context),
               size: 12,
               weight: FontWeight.w400,
             ),
@@ -481,19 +487,21 @@ class _MetricToggle extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: AppColors.darkGlassStrong,
+        color: oneKeepGlassStrong(context),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           _toggleChip(
+            context: context,
             label: '支出',
             active: isExpense,
             tone: AppColors.teal,
             onTap: () => onChanged(true),
           ),
           _toggleChip(
+            context: context,
             label: '收入',
             active: !isExpense,
             tone: AppColors.teal,
@@ -505,6 +513,7 @@ class _MetricToggle extends StatelessWidget {
   }
 
   Widget _toggleChip({
+    required BuildContext context,
     required String label,
     required bool active,
     required Color tone,
@@ -521,7 +530,7 @@ class _MetricToggle extends StatelessWidget {
         child: Text(
           label,
           style: oneKeepInter(
-            color: active ? tone : AppColors.darkTextTertiary,
+            color: active ? tone : oneKeepTextTertiary(context),
             size: 12,
             weight: active ? FontWeight.w600 : FontWeight.w400,
           ),
@@ -546,7 +555,7 @@ class _TrendBars extends StatelessWidget {
           child: Text(
             '暂无数据',
             style: oneKeepInter(
-              color: AppColors.darkTextSecondary,
+              color: oneKeepTextSecondary(context),
               size: 12,
               weight: FontWeight.w400,
             ),
@@ -591,7 +600,7 @@ class _TrendBars extends StatelessWidget {
                 Text(
                   point.label,
                   style: oneKeepInter(
-                    color: AppColors.darkTextTertiary,
+                    color: oneKeepTextTertiary(context),
                     size: 10,
                     weight: FontWeight.w400,
                   ),
@@ -641,7 +650,7 @@ class _RankRow extends StatelessWidget {
                     child: Text(
                       rank.categoryName,
                       style: oneKeepInter(
-                        color: AppColors.darkTextPrimary,
+                        color: oneKeepTextPrimary(context),
                         size: 14,
                         weight: FontWeight.w500,
                       ),
@@ -664,7 +673,7 @@ class _RankRow extends StatelessWidget {
                   height: 4,
                   child: Stack(
                     children: [
-                      Container(color: AppColors.darkGlassStrong),
+                      Container(color: oneKeepGlassStrong(context)),
                       FractionallySizedBox(
                         widthFactor: rank.progressRatio.clamp(0, 1),
                         child: Container(color: tone),

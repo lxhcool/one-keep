@@ -123,9 +123,10 @@ class AppTheme {
       color: AppColors.lightCard,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.card),
+        side: const BorderSide(color: AppColors.lightCardBorder, width: 1),
       ),
-      elevation: 2,
-      shadowColor: Colors.black.withValues(alpha: 0.06),
+      elevation: 0,
+      shadowColor: Colors.black.withValues(alpha: 0.04),
     ),
     bottomNavigationBarTheme: const BottomNavigationBarThemeData(
       backgroundColor: Colors.transparent,
@@ -135,10 +136,11 @@ class AppTheme {
       showUnselectedLabels: true,
     ),
     chipTheme: ChipThemeData(
-      backgroundColor: AppColors.lightBg,
+      backgroundColor: AppColors.lightInputBg,
       selectedColor: AppColors.indigo.withValues(alpha: 0.1),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.chip),
+        side: const BorderSide(color: AppColors.lightHairline, width: 1),
       ),
     ),
     inputDecorationTheme: InputDecorationTheme(
@@ -146,7 +148,15 @@ class AppTheme {
       fillColor: AppColors.lightInputBg,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppRadius.md),
-        borderSide: BorderSide.none,
+        borderSide: const BorderSide(color: AppColors.lightHairline, width: 1),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        borderSide: const BorderSide(color: AppColors.lightHairline, width: 1),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        borderSide: const BorderSide(color: AppColors.indigo, width: 1),
       ),
       hintStyle: const TextStyle(color: AppColors.lightTextTertiary),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -175,6 +185,13 @@ class AppTheme {
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(AppRadius.sheet),
         ),
+      ),
+    ),
+    dialogTheme: DialogThemeData(
+      backgroundColor: AppColors.lightSurface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.xxl),
+        side: const BorderSide(color: AppColors.lightHairline, width: 1),
       ),
     ),
   );

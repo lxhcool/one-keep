@@ -48,12 +48,15 @@ export default async function homeRoutes(app: FastifyInstance) {
       expenseSummary: { amount: totalExpense },
       recentTransactions: recentTransactions.map((t) => ({
         transactionId: t.id,
+        categoryId: t.categoryId,
         title: t.title,
         categoryName: t.category.name,
         categoryIcon: t.category.icon,
         occurredAt: t.occurredAt.toISOString(),
         amount: toNumber(t.amount),
         direction: t.direction,
+        note: t.note,
+        merchant: t.merchant,
       })),
     };
   });

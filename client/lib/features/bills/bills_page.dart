@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/network/api_client.dart';
+import '../../core/providers/api_provider.dart';
 import '../../core/providers/data_providers.dart';
 import '../../core/theme/app_colors.dart';
 import '../../shared/models/models.dart';
 import '../../shared/widgets/onekeep_ui.dart';
+import '../../shared/widgets/transaction_editor_sheet.dart';
 
 class BillsPage extends ConsumerStatefulWidget {
   const BillsPage({super.key});
@@ -71,7 +74,7 @@ class _BillsPageState extends ConsumerState<BillsPage> {
                         child: Text(
                           '暂无账单记录',
                           style: oneKeepInter(
-                            color: AppColors.darkTextSecondary,
+                            color: oneKeepTextSecondary(context),
                             size: 12,
                             weight: FontWeight.w400,
                           ),
@@ -111,7 +114,7 @@ class _BillsPageState extends ConsumerState<BillsPage> {
         Text(
           '账单',
           style: oneKeepGrotesk(
-            color: AppColors.darkTextPrimary,
+            color: oneKeepTextPrimary(context),
             size: 28,
             weight: FontWeight.w700,
           ),
@@ -122,16 +125,16 @@ class _BillsPageState extends ConsumerState<BillsPage> {
           child: OneKeepGlassCard(
             radius: 12,
             blurSigma: 10,
-            fillColor: AppColors.darkGlassStrong,
+            fillColor: oneKeepGlassStrong(context),
             borderColor: Colors.transparent,
             padding: EdgeInsets.zero,
-            child: const SizedBox(
+            child: SizedBox(
               width: 40,
               height: 40,
               child: Icon(
                 Icons.search_rounded,
                 size: 20,
-                color: AppColors.darkTextSecondary,
+                color: oneKeepTextSecondary(context),
               ),
             ),
           ),
@@ -149,15 +152,15 @@ class _BillsPageState extends ConsumerState<BillsPage> {
             child: OneKeepGlassCard(
               radius: 12,
               blurSigma: 10,
-              fillColor: AppColors.darkGlassStrong,
-              borderColor: AppColors.darkCardBorderStrong,
+              fillColor: oneKeepGlassStrong(context),
+              borderColor: oneKeepBorderStrong(context),
               padding: const EdgeInsets.symmetric(horizontal: 14),
               child: Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.search_rounded,
                     size: 18,
-                    color: AppColors.darkTextSecondary,
+                    color: oneKeepTextSecondary(context),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
@@ -166,7 +169,7 @@ class _BillsPageState extends ConsumerState<BillsPage> {
                       autofocus: true,
                       onSubmitted: (_) => _reload(),
                       style: oneKeepInter(
-                        color: AppColors.darkTextPrimary,
+                        color: oneKeepTextPrimary(context),
                         size: 13,
                         weight: FontWeight.w400,
                       ),
@@ -175,7 +178,7 @@ class _BillsPageState extends ConsumerState<BillsPage> {
                         border: InputBorder.none,
                         hintText: '搜索账单',
                         hintStyle: oneKeepInter(
-                          color: AppColors.darkTextSecondary,
+                          color: oneKeepTextSecondary(context),
                           size: 13,
                           weight: FontWeight.w400,
                         ),
@@ -242,7 +245,7 @@ class _BillsPageState extends ConsumerState<BillsPage> {
             Text(
               _formatDateHeader(group.date),
               style: oneKeepInter(
-                color: AppColors.darkTextSecondary,
+                color: oneKeepTextSecondary(context),
                 size: 13,
                 weight: FontWeight.w500,
               ),
@@ -252,7 +255,7 @@ class _BillsPageState extends ConsumerState<BillsPage> {
               Text(
                 '支出 ¥${oneKeepCurrency(group.expenseTotal)}',
                 style: oneKeepInter(
-                  color: AppColors.darkTextTertiary,
+                  color: oneKeepTextTertiary(context),
                   size: 12,
                   weight: FontWeight.w400,
                 ),
@@ -263,7 +266,7 @@ class _BillsPageState extends ConsumerState<BillsPage> {
                 child: Text(
                   '收入 ¥${oneKeepCurrency(group.incomeTotal)}',
                   style: oneKeepInter(
-                    color: AppColors.darkTextTertiary,
+                    color: oneKeepTextTertiary(context),
                     size: 12,
                     weight: FontWeight.w400,
                   ),
@@ -311,13 +314,125 @@ class _BillsPageState extends ConsumerState<BillsPage> {
     _reload();
   }
 
-  void _showDetailSheet(Transaction tx) {
-    showModalBottomSheet<void>(
+  Future<void> _showDetailSheet(Transaction tx) async {
+    final action = await showModalBottomSheet<_TransactionDetailAction>(
       context: context,
       backgroundColor: Colors.transparent,
       barrierColor: AppColors.darkDimOverlay,
       builder: (_) => _BillDetailSheet(transaction: tx),
     );
+    if (!mounted || action == null) return;
+
+    if (action == _TransactionDetailAction.edit) {
+      await _editTransaction(tx);
+    } else if (action == _TransactionDetailAction.delete) {
+      await _deleteTransaction(tx);
+    }
+  }
+
+  Future<void> _editTransaction(Transaction tx) async {
+    final draft = await showModalBottomSheet<TransactionEditDraft>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: AppColors.darkDimOverlay,
+      builder: (_) => OneKeepTransactionEditorSheet(transaction: tx),
+    );
+    if (!mounted || draft == null) return;
+
+    try {
+      final api = ref.read(apiClientProvider);
+      await api.dio.put(
+        '/api/transactions/${tx.transactionId}',
+        data: draft.toJson(),
+      );
+      _reload();
+      ref.read(homeProvider.notifier).load();
+      ref.read(statsProvider.notifier).load();
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('账单已更新')));
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(ApiClient.readableError(error, fallback: '更新失败')),
+        ),
+      );
+    }
+  }
+
+  Future<void> _deleteTransaction(Transaction tx) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: oneKeepSurface(dialogContext),
+        title: Text(
+          '删除这条记账？',
+          style: oneKeepManrope(
+            color: oneKeepTextPrimary(dialogContext),
+            size: 18,
+            weight: FontWeight.w700,
+          ),
+        ),
+        content: Text(
+          '删除后将无法恢复。',
+          style: oneKeepInter(
+            color: oneKeepTextSecondary(dialogContext),
+            size: 13,
+            weight: FontWeight.w400,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(
+              '取消',
+              style: oneKeepInter(
+                color: oneKeepTextSecondary(dialogContext),
+                size: 14,
+                weight: FontWeight.w500,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(
+              '删除',
+              style: oneKeepInter(
+                color: AppColors.expensePink,
+                size: 14,
+                weight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (!mounted || confirmed != true) return;
+
+    try {
+      final api = ref.read(apiClientProvider);
+      await api.dio.delete(
+        '/api/transactions/${tx.transactionId}',
+        data: const <String, dynamic>{},
+      );
+      _reload();
+      ref.read(homeProvider.notifier).load();
+      ref.read(statsProvider.notifier).load();
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('账单已删除')));
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(ApiClient.readableError(error, fallback: '删除失败')),
+        ),
+      );
+    }
   }
 
   String _formatDateHeader(String dateStr) {
@@ -326,6 +441,8 @@ class _BillsPageState extends ConsumerState<BillsPage> {
     return '${date.month}月${date.day}日 ${_weekdays[date.weekday - 1]}';
   }
 }
+
+enum _TransactionDetailAction { edit, delete }
 
 class _FilterChip extends StatelessWidget {
   final String label;
@@ -347,13 +464,13 @@ class _FilterChip extends StatelessWidget {
         decoration: BoxDecoration(
           color: active
               ? AppColors.teal.withValues(alpha: 0.12)
-              : AppColors.darkGlass,
+              : oneKeepGlass(context),
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(
           label,
           style: oneKeepInter(
-            color: active ? AppColors.teal : AppColors.darkTextTertiary,
+            color: active ? AppColors.teal : oneKeepTextTertiary(context),
             size: 12,
             weight: active ? FontWeight.w600 : FontWeight.w400,
           ),
@@ -388,8 +505,8 @@ class _BillRow extends StatelessWidget {
       child: OneKeepGlassCard(
         radius: 16,
         blurSigma: 12,
-        fillColor: AppColors.darkGlass,
-        borderColor: AppColors.darkCardBorder,
+        fillColor: oneKeepGlass(context),
+        borderColor: oneKeepBorder(context),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
           children: [
@@ -412,7 +529,7 @@ class _BillRow extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: oneKeepInter(
-                      color: AppColors.darkTextPrimary,
+                      color: oneKeepTextPrimary(context),
                       size: 14,
                       weight: FontWeight.w500,
                     ),
@@ -421,7 +538,7 @@ class _BillRow extends StatelessWidget {
                   Text(
                     '${DateFormat('HH:mm').format(transaction.occurredAt)} · ${transaction.categoryName}',
                     style: oneKeepInter(
-                      color: AppColors.darkTextTertiary,
+                      color: oneKeepTextTertiary(context),
                       size: 11,
                       weight: FontWeight.w400,
                     ),
@@ -466,10 +583,10 @@ class _BillDetailSheet extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.darkSurface,
+        color: oneKeepSurface(context),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        border: const Border(
-          top: BorderSide(color: AppColors.darkHairline, width: 0.5),
+        border: Border(
+          top: BorderSide(color: oneKeepBorder(context), width: 0.5),
         ),
       ),
       child: SafeArea(
@@ -487,7 +604,9 @@ class _BillDetailSheet extends StatelessWidget {
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.18),
+                      color: oneKeepTextTertiary(
+                        context,
+                      ).withValues(alpha: 0.32),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -512,7 +631,7 @@ class _BillDetailSheet extends StatelessWidget {
                           Text(
                             title,
                             style: oneKeepManrope(
-                              color: AppColors.darkTextPrimary,
+                              color: oneKeepTextPrimary(context),
                               size: 18,
                               weight: FontWeight.w700,
                             ),
@@ -521,7 +640,7 @@ class _BillDetailSheet extends StatelessWidget {
                           Text(
                             transaction.categoryName,
                             style: oneKeepInter(
-                              color: AppColors.darkTextTertiary,
+                              color: oneKeepTextTertiary(context),
                               size: 12,
                               weight: FontWeight.w400,
                             ),
@@ -540,7 +659,7 @@ class _BillDetailSheet extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 16),
-                Divider(color: Colors.white.withValues(alpha: 0.08), height: 1),
+                Divider(color: oneKeepBorder(context), height: 1),
                 const SizedBox(height: 16),
                 _SheetRow(
                   label: '日期',
@@ -561,6 +680,9 @@ class _BillDetailSheet extends StatelessWidget {
                         label: '编辑',
                         icon: Icons.edit_outlined,
                         tone: AppColors.teal,
+                        onTap: () => Navigator.of(
+                          context,
+                        ).pop(_TransactionDetailAction.edit),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -569,6 +691,9 @@ class _BillDetailSheet extends StatelessWidget {
                         label: '删除',
                         icon: Icons.delete_outline_rounded,
                         tone: AppColors.expensePink,
+                        onTap: () => Navigator.of(
+                          context,
+                        ).pop(_TransactionDetailAction.delete),
                       ),
                     ),
                   ],
@@ -595,7 +720,7 @@ class _SheetRow extends StatelessWidget {
         Text(
           label,
           style: oneKeepInter(
-            color: AppColors.darkTextSecondary,
+            color: oneKeepTextSecondary(context),
             size: 13,
             weight: FontWeight.w400,
           ),
@@ -604,7 +729,7 @@ class _SheetRow extends StatelessWidget {
         Text(
           value,
           style: oneKeepInter(
-            color: AppColors.darkTextPrimary,
+            color: oneKeepTextPrimary(context),
             size: 13,
             weight: FontWeight.w500,
           ),
@@ -618,36 +743,41 @@ class _ActionButton extends StatelessWidget {
   final String label;
   final IconData icon;
   final Color tone;
+  final VoidCallback onTap;
 
   const _ActionButton({
     required this.label,
     required this.icon,
     required this.tone,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 48,
-      decoration: BoxDecoration(
-        color: tone.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: tone.withValues(alpha: 0.24), width: 0.8),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 16, color: tone),
-          const SizedBox(width: 8),
-          Text(
-            label,
-            style: oneKeepManrope(
-              color: tone,
-              size: 14,
-              weight: FontWeight.w700,
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 48,
+        decoration: BoxDecoration(
+          color: tone.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: tone.withValues(alpha: 0.24), width: 0.8),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 16, color: tone),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: oneKeepManrope(
+                color: tone,
+                size: 14,
+                weight: FontWeight.w700,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

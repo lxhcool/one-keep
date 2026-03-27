@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -157,22 +159,48 @@ class OneKeepPageBackground extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    if (!isDark) {
-      return DecoratedBox(
-        decoration: const BoxDecoration(color: AppColors.lightBg),
-        child: child,
-      );
-    }
-
+    final background = isDark ? AppColors.darkBg : AppColors.lightBg;
     return DecoratedBox(
-      decoration: const BoxDecoration(color: AppColors.darkBg),
-      child: Stack(children: [..._buildGlows(), child]),
+      decoration: BoxDecoration(color: background),
+      child: Stack(children: [..._buildGlows(isDark), child]),
     );
   }
 
-  List<Widget> _buildGlows() {
+  List<Widget> _buildGlows(bool isDark) {
+    final light = [
+      _glow(
+        left: -40,
+        top: 80,
+        width: 220,
+        height: 220,
+        color: const Color(0x108B5CF6),
+      ),
+      _glow(
+        right: -10,
+        top: 180,
+        width: 260,
+        height: 260,
+        color: const Color(0x104F46E5),
+      ),
+      _glow(
+        left: 100,
+        top: 450,
+        width: 280,
+        height: 280,
+        color: const Color(0x08EF4444),
+      ),
+      _glow(
+        right: -20,
+        bottom: 40,
+        width: 200,
+        height: 200,
+        color: const Color(0x083B82F6),
+      ),
+    ];
+
     switch (variant) {
       case OneKeepPageVariant.home:
+        if (!isDark) return light;
         return [
           _glow(
             left: -40,
@@ -204,6 +232,24 @@ class OneKeepPageBackground extends StatelessWidget {
           ),
         ];
       case OneKeepPageVariant.stats:
+        if (!isDark) {
+          return [
+            _glow(
+              right: -20,
+              top: 120,
+              width: 240,
+              height: 240,
+              color: const Color(0x104F46E5),
+            ),
+            _glow(
+              left: -30,
+              top: 300,
+              width: 200,
+              height: 200,
+              color: const Color(0x108B5CF6),
+            ),
+          ];
+        }
         return [
           _glow(
             right: -20,
@@ -221,6 +267,24 @@ class OneKeepPageBackground extends StatelessWidget {
           ),
         ];
       case OneKeepPageVariant.bills:
+        if (!isDark) {
+          return [
+            _glow(
+              right: -20,
+              top: 100,
+              width: 200,
+              height: 200,
+              color: const Color(0x104F46E5),
+            ),
+            _glow(
+              left: -40,
+              top: 350,
+              width: 180,
+              height: 180,
+              color: const Color(0x108B5CF6),
+            ),
+          ];
+        }
         return [
           _glow(
             right: -20,
@@ -314,14 +378,12 @@ Color oneKeepSurface(BuildContext context) {
 
 Color oneKeepGlass(BuildContext context) {
   final isDark = Theme.of(context).brightness == Brightness.dark;
-  return isDark ? AppColors.darkGlass : Colors.white.withValues(alpha: 0.86);
+  return isDark ? AppColors.darkGlass : AppColors.lightSurface;
 }
 
 Color oneKeepGlassStrong(BuildContext context) {
   final isDark = Theme.of(context).brightness == Brightness.dark;
-  return isDark
-      ? AppColors.darkGlassStrong
-      : Colors.white.withValues(alpha: 0.96);
+  return isDark ? AppColors.darkGlassStrong : AppColors.lightSurface;
 }
 
 Color oneKeepBorder(BuildContext context) {
@@ -377,18 +439,21 @@ class OneKeepAvatar extends StatelessWidget {
   final int avatarIndex;
   final double size;
   final double iconSize;
+  final String? avatarImageData;
 
   const OneKeepAvatar({
     super.key,
     required this.avatarIndex,
     this.size = 48,
     this.iconSize = 24,
+    this.avatarImageData,
   });
 
   @override
   Widget build(BuildContext context) {
     final preset =
         oneKeepAvatarPresets[avatarIndex % oneKeepAvatarPresets.length];
+    final imageBytes = _decodeAvatarBytes(avatarImageData);
     return Container(
       width: size,
       height: size,
@@ -406,8 +471,24 @@ class OneKeepAvatar extends StatelessWidget {
           ),
         ],
       ),
-      child: Icon(preset.icon, size: iconSize, color: Colors.white),
+      child: ClipOval(
+        child: imageBytes != null
+            ? Image.memory(imageBytes, fit: BoxFit.cover)
+            : Icon(preset.icon, size: iconSize, color: Colors.white),
+      ),
     );
+  }
+
+  Uint8List? _decodeAvatarBytes(String? data) {
+    if (data == null || data.isEmpty) return null;
+    final normalized = data.contains(',')
+        ? data.substring(data.indexOf(',') + 1)
+        : data;
+    try {
+      return base64Decode(normalized);
+    } catch (_) {
+      return null;
+    }
   }
 }
 
