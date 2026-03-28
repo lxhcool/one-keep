@@ -488,9 +488,10 @@ class _BillRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isExpense = transaction.isExpense;
     final tone = isExpense ? AppColors.expense : AppColors.income;
-    final icon = oneKeepCategoryIcon(
+    final icon = oneKeepResolvedCategoryIcon(
       transaction.title,
       transaction.categoryName,
       transaction.categoryIcon,
@@ -502,24 +503,32 @@ class _BillRow extends StatelessWidget {
 
     return GestureDetector(
       onTap: onTap,
-      child: OneKeepGlassCard(
-        radius: 16,
-        blurSigma: 12,
-        fillColor: oneKeepGlass(context),
-        borderColor: oneKeepBorder(context),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF18181B) : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
         child: Row(
           children: [
             Container(
-              width: 40,
-              height: 40,
+              width: 44,
+              height: 44,
               decoration: BoxDecoration(
                 color: tone.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(14),
               ),
               child: Icon(icon, size: 20, color: tone),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -528,19 +537,19 @@ class _BillRow extends StatelessWidget {
                     title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: oneKeepInter(
+                    style: oneKeepManrope(
                       color: oneKeepTextPrimary(context),
-                      size: 14,
-                      weight: FontWeight.w500,
+                      size: 16,
+                      weight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 4),
                   Text(
                     '${DateFormat('HH:mm').format(transaction.occurredAt)} · ${transaction.categoryName}',
                     style: oneKeepInter(
-                      color: oneKeepTextTertiary(context),
-                      size: 11,
-                      weight: FontWeight.w400,
+                      color: oneKeepTextSecondary(context),
+                      size: 12,
+                      weight: FontWeight.w500,
                     ),
                   ),
                 ],
@@ -548,11 +557,11 @@ class _BillRow extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             Text(
-              '${isExpense ? '-' : '+'}¥${oneKeepCurrency(transaction.amount)}',
+              '${isExpense ? '-' : '+'} ¥${oneKeepCurrency(transaction.amount)}',
               style: oneKeepGrotesk(
                 color: tone,
                 size: 16,
-                weight: FontWeight.w600,
+                weight: FontWeight.w700,
               ),
             ),
           ],
@@ -571,7 +580,7 @@ class _BillDetailSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final isExpense = transaction.isExpense;
     final tone = isExpense ? AppColors.expense : AppColors.income;
-    final icon = oneKeepCategoryIcon(
+    final icon = oneKeepResolvedCategoryIcon(
       transaction.title,
       transaction.categoryName,
       transaction.categoryIcon,

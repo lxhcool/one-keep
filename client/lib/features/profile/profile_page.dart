@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 
+import 'category_settings_page.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/preferences_provider.dart';
 import '../../core/theme/app_colors.dart';
@@ -42,7 +43,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             top: false,
             bottom: false,
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(0, 0, 0, 120),
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
               children: [
                 _ProfileSummaryCard(
                   displayName: displayName,
@@ -53,7 +54,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   onEditBackground: _showBackgroundStudio,
                 ),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+                  padding: const EdgeInsets.only(top: 24),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -83,7 +84,14 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                             tone: AppColors.purple,
                             title: '昵称设置',
                             subtitle: displayName,
-                            onTap: _showNicknameDialog,
+                            onTap: _showNicknameSheet,
+                          ),
+                          _MenuTile(
+                            icon: Icons.category_outlined,
+                            tone: AppColors.teal,
+                            title: '分类设置',
+                            subtitle: '管理快速记账使用的分类和图标',
+                            onTap: _openCategorySettings,
                           ),
                           _MenuTile(
                             icon: Icons.light_mode_outlined,
@@ -94,28 +102,26 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 24),
-                      OutlinedButton(
-                        onPressed: () =>
-                            ref.read(authProvider.notifier).logout(),
-                        style: OutlinedButton.styleFrom(
-                          minimumSize: const Size.fromHeight(54),
-                          side: BorderSide(
-                            color: AppColors.expense.withValues(alpha: 0.18),
-                            width: 0.9,
+                      const SizedBox(height: 32),
+                      GestureDetector(
+                        onTap: () => ref.read(authProvider.notifier).logout(),
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 18),
+                          decoration: BoxDecoration(
+                            color: AppColors.expense.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(20),
                           ),
-                          backgroundColor: oneKeepSurface(context),
-                          shadowColor: Colors.transparent,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(18),
-                          ),
-                        ),
-                        child: Text(
-                          '退出登录',
-                          style: oneKeepManrope(
-                            color: AppColors.expense,
-                            size: 15,
-                            weight: FontWeight.w800,
+                          child: Center(
+                            child: Text(
+                              '退出登录',
+                              style: oneKeepManrope(
+                                color: AppColors.expense,
+                                size: 16,
+                                weight: FontWeight.w700,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
                           ),
                         ),
                       ),
@@ -130,6 +136,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     );
   }
 
+  // ignore: unused_element
   Future<void> _showNicknameDialog() async {
     final preferences = ref.read(preferencesProvider);
     final authState = ref.read(authProvider);
@@ -237,8 +244,155 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     controller.dispose();
 
     if (!mounted || saved == null || saved.isEmpty) return;
+
+    // Let the dialog route finish tearing down before triggering provider updates.
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      await ref.read(preferencesProvider.notifier).setNickname(saved);
+    });
+  }
+
+  Future<void> _showNicknameSheet() async {
+    final preferences = ref.read(preferencesProvider);
+    final authState = ref.read(authProvider);
+    final initial = preferences.nickname.isNotEmpty
+        ? preferences.nickname
+        : (authState.user?.name ?? '');
+    final controller = TextEditingController(text: initial);
+
+    final saved = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: oneKeepDimOverlay(context),
+      builder: (sheetContext) {
+        final bottomInset = MediaQuery.of(sheetContext).viewInsets.bottom;
+        return OneKeepSheetSurface(
+          child: SafeArea(
+            top: false,
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(24, 12, 24, 24 + bottomInset),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Align(
+                    alignment: Alignment.center,
+                    child: Container(
+                      width: 42,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: oneKeepTextTertiary(
+                          sheetContext,
+                        ).withValues(alpha: 0.28),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    '编辑昵称',
+                    style: oneKeepGrotesk(
+                      color: oneKeepTextPrimary(sheetContext),
+                      size: 22,
+                      weight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '更新后会同步显示在首页和个人中心',
+                    style: oneKeepInter(
+                      color: oneKeepTextSecondary(sheetContext),
+                      size: 13,
+                      weight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: controller,
+                    autofocus: true,
+                    style: oneKeepInter(
+                      color: oneKeepTextPrimary(sheetContext),
+                      size: 14,
+                      weight: FontWeight.w600,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: '输入新的昵称',
+                      hintStyle: oneKeepInter(
+                        color: oneKeepTextTertiary(sheetContext),
+                        size: 14,
+                        weight: FontWeight.w400,
+                      ),
+                      filled: true,
+                      fillColor: oneKeepGlassStrong(sheetContext),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(
+                          color: oneKeepBorder(sheetContext),
+                          width: 0.8,
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(
+                          color: oneKeepBorder(sheetContext),
+                          width: 0.8,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(
+                          color: oneKeepAccent(sheetContext),
+                          width: 1,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.of(sheetContext).pop(),
+                          child: Text(
+                            '取消',
+                            style: oneKeepInter(
+                              color: oneKeepTextSecondary(sheetContext),
+                              size: 14,
+                              weight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: FilledButton(
+                          onPressed: () => Navigator.of(
+                            sheetContext,
+                          ).pop(controller.text.trim()),
+                          child: Text(
+                            '保存',
+                            style: oneKeepManrope(
+                              color: Colors.white,
+                              size: 14,
+                              weight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+    controller.dispose();
+
+    if (!mounted || saved == null || saved.isEmpty) return;
     await ref.read(preferencesProvider.notifier).setNickname(saved);
-    ref.read(authProvider.notifier).updateLocalUser(name: saved);
   }
 
   Future<void> _showThemePicker() async {
@@ -316,6 +470,12 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     );
   }
 
+  Future<void> _openCategorySettings() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const CategorySettingsPage()),
+    );
+  }
+
   Future<void> _showAvatarStudio() async {
     await showModalBottomSheet<void>(
       context: context,
@@ -367,7 +527,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   }
 }
 
-class _ProfileSummaryCard extends StatelessWidget {
+class _ProfileSummaryCard extends StatefulWidget {
   final String displayName;
   final int avatarIndex;
   final String? avatarImageData;
@@ -385,112 +545,149 @@ class _ProfileSummaryCard extends StatelessWidget {
   });
 
   @override
+  State<_ProfileSummaryCard> createState() => _ProfileSummaryCardState();
+}
+
+class _ProfileSummaryCardState extends State<_ProfileSummaryCard> {
+  MemoryImage? _coverImageProvider;
+
+  @override
+  void initState() {
+    super.initState();
+    _syncCoverProvider();
+  }
+
+  @override
+  void didUpdateWidget(covariant _ProfileSummaryCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.backgroundImageData != widget.backgroundImageData) {
+      _syncCoverProvider();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final coverBytes = _decodeImageBytes(backgroundImageData);
-    final topInset = MediaQuery.paddingOf(context).top;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      height: 220 + topInset,
+      height: 220,
       width: double.infinity,
       decoration: BoxDecoration(
-        gradient: oneKeepPanelGradient(context),
-        border: Border(
-          bottom: BorderSide(color: oneKeepBorderStrong(context), width: 0.8),
-        ),
+        color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
+        borderRadius: BorderRadius.circular(32), // Rounder for premium feel
+        boxShadow: oneKeepCardShadows(context),
       ),
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          if (coverBytes != null)
-            Image.memory(coverBytes, fit: BoxFit.cover)
-          else
-            const _ProfileCoverFallback(),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.black.withValues(alpha: 0.16),
-                  Colors.black.withValues(alpha: 0.24),
-                  Colors.black.withValues(alpha: 0.38),
-                  Colors.black.withValues(alpha: 0.52),
-                ],
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(32),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (_coverImageProvider != null)
+              Image(
+                image: _coverImageProvider!,
+                fit: BoxFit.cover,
+                gaplessPlayback: true,
+              )
+            else
+              const _ProfileCoverFallback(),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withValues(alpha: 0.1),
+                    Colors.black.withValues(alpha: 0.3),
+                    Colors.black.withValues(alpha: 0.6),
+                    Colors.black.withValues(alpha: 0.8),
+                  ],
+                ),
               ),
             ),
-          ),
-          Positioned(
-            top: topInset + 18,
-            right: 18,
-            child: _HeroActionButton(
-              icon: Icons.wallpaper_outlined,
-              onTap: onEditBackground,
+            Positioned(
+              top: 16,
+              right: 16,
+              child: _HeroActionButton(
+                icon: Icons.wallpaper_outlined,
+                onTap: widget.onEditBackground,
+              ),
             ),
-          ),
-          Positioned(
-            left: 24,
-            top: topInset + 78,
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.96),
-                    shape: BoxShape.circle,
+            Positioned(
+              left: 24,
+              top: 72,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.1), // subtle ring
+                      shape: BoxShape.circle,
+                    ),
+                    child: OneKeepAvatar(
+                      avatarIndex: widget.avatarIndex,
+                      avatarImageData: widget.avatarImageData,
+                      size: 80, // slightly larger
+                      iconSize: 32,
+                    ),
                   ),
-                  child: OneKeepAvatar(
-                    avatarIndex: avatarIndex,
-                    avatarImageData: avatarImageData,
-                    size: 72,
-                    iconSize: 30,
-                  ),
-                ),
-                Positioned(
-                  right: -2,
-                  bottom: -2,
-                  child: GestureDetector(
-                    onTap: onEditAvatar,
-                    child: Container(
-                      width: 30,
-                      height: 30,
-                      decoration: BoxDecoration(
-                        color: oneKeepAccent(context),
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.96),
-                          width: 2,
+                  Positioned(
+                    right: 0,
+                    bottom: 0,
+                    child: GestureDetector(
+                      onTap: widget.onEditAvatar,
+                      child: Container(
+                        width: 28,
+                        height: 28,
+                        decoration: BoxDecoration(
+                          color: isDark ? AppColors.darkSurface : Colors.white,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.2),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
-                      ),
-                      child: const Icon(
-                        Icons.edit_rounded,
-                        size: 14,
-                        color: Colors.white,
+                        child: Icon(
+                          Icons.edit_rounded,
+                          size: 14,
+                          color: isDark
+                              ? Colors.white
+                              : AppColors.lightTextPrimary,
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
-            ),
-          ),
-          Positioned(
-            left: 116,
-            right: 24,
-            top: topInset + 142,
-            child: Text(
-              displayName,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: oneKeepGrotesk(
-                color: Colors.white,
-                size: 24,
-                weight: FontWeight.w700,
+                ],
               ),
             ),
-          ),
-        ],
+            Positioned(
+              left: 24,
+              right: 24,
+              bottom: 24, // position at the bottom of the card
+              child: Text(
+                widget.displayName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: oneKeepGrotesk(
+                  color: Colors.white,
+                  size: 28,
+                  weight: FontWeight.w700,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
+  }
+
+  void _syncCoverProvider() {
+    final bytes = _decodeImageBytes(widget.backgroundImageData);
+    _coverImageProvider = bytes == null ? null : MemoryImage(bytes);
   }
 
   Uint8List? _decodeImageBytes(String? data) {
@@ -617,27 +814,36 @@ class _MenuTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
-      child: OneKeepGlassCard(
-        radius: 20,
-        blurSigma: 18,
-        fillColor: oneKeepGlass(context),
-        borderColor: oneKeepBorder(context),
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF18181B) : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
         child: Row(
           children: [
             Container(
-              width: 38,
-              height: 38,
+              width: 44,
+              height: 44,
               decoration: BoxDecoration(
-                color: tone.withValues(alpha: 0.12),
+                color: tone.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(14),
               ),
-              child: Icon(icon, size: 18, color: tone),
+              child: Icon(icon, size: 22, color: tone),
             ),
-            const SizedBox(width: 14),
+            const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -646,18 +852,18 @@ class _MenuTile extends StatelessWidget {
                     title,
                     style: oneKeepManrope(
                       color: oneKeepTextPrimary(context),
-                      size: 15,
-                      weight: FontWeight.w700,
+                      size: 16,
+                      weight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 2),
                   Text(
                     subtitle,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: oneKeepInter(
                       color: oneKeepTextSecondary(context),
-                      size: 11,
+                      size: 13,
                       weight: FontWeight.w400,
                     ),
                   ),
@@ -665,10 +871,19 @@ class _MenuTile extends StatelessWidget {
               ),
             ),
             if (onTap != null)
-              Icon(
-                Icons.chevron_right_rounded,
-                size: 18,
-                color: oneKeepTextTertiary(context),
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.05)
+                      : Colors.black.withValues(alpha: 0.04),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.chevron_right_rounded,
+                  size: 16,
+                  color: oneKeepTextSecondary(context),
+                ),
               ),
           ],
         ),

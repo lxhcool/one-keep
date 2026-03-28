@@ -613,7 +613,7 @@ class _RankRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final icon = oneKeepCategoryIcon(
+    final icon = oneKeepResolvedCategoryIcon(
       rank.categoryName,
       rank.categoryName,
       rank.categoryIcon,

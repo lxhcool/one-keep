@@ -50,81 +50,74 @@ class _MainShellState extends ConsumerState<MainShell> {
       extendBody: true,
       body: widget.child,
       bottomNavigationBar: _buildBottomBar(isDark),
-      floatingActionButton: _buildFab(isDark),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 
   Widget _buildBottomBar(bool isDark) {
-    final active = AppColors.teal;
+    final active = isDark ? Colors.white : AppColors.teal;
     final inactive = isDark
         ? AppColors.darkTextTertiary
         : AppColors.lightTextSecondary;
 
     return SizedBox(
-      height: 96,
+      height: 100,
       child: SafeArea(
         top: false,
         child: Center(
-          child: SizedBox(
-            height: 68,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 18),
-              child: OneKeepGlassCard(
-                radius: 26,
-                blurSigma: 24,
-                fillColor: isDark ? AppColors.darkNav : AppColors.lightNav,
-                borderColor: oneKeepBorderStrong(context),
-                shadows: oneKeepCardShadows(context, prominent: true),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: OneKeepGlassCard(
+              radius: 36, // Fully rounded capsule
+              blurSigma: 24,
+              fillColor: isDark
+                  ? AppColors.darkNav
+                  : Colors.white.withValues(alpha: 0.9),
+              borderColor: oneKeepBorderStrong(context),
+              shadows: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.08),
+                  blurRadius: 32,
+                  offset: const Offset(0, 16),
                 ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: _NavSlot(
-                        icon: Icons.home_rounded,
-                        label: '首页',
-                        active: _currentIndex == 0,
-                        activeColor: active,
-                        inactiveColor: inactive,
-                        onTap: () => _onTap(0),
-                      ),
-                    ),
-                    Expanded(
-                      child: _NavSlot(
-                        icon: Icons.bar_chart_rounded,
-                        label: '统计',
-                        active: _currentIndex == 1,
-                        activeColor: active,
-                        inactiveColor: inactive,
-                        onTap: () => _onTap(1),
-                      ),
-                    ),
-                    const Expanded(child: SizedBox()),
-                    Expanded(
-                      child: _NavSlot(
-                        icon: Icons.receipt_long_rounded,
-                        label: '账单',
-                        active: _currentIndex == 2,
-                        activeColor: active,
-                        inactiveColor: inactive,
-                        onTap: () => _onTap(2),
-                      ),
-                    ),
-                    Expanded(
-                      child: _NavSlot(
-                        icon: Icons.person_rounded,
-                        label: '我的',
-                        active: _currentIndex == 3,
-                        activeColor: active,
-                        inactiveColor: inactive,
-                        onTap: () => _onTap(3),
-                      ),
-                    ),
-                  ],
-                ),
+              ],
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _NavSlot(
+                    icon: Icons.grid_view_rounded,
+                    label: '首页',
+                    active: _currentIndex == 0,
+                    activeColor: active,
+                    inactiveColor: inactive,
+                    onTap: () => _onTap(0),
+                  ),
+                  _NavSlot(
+                    icon: Icons.insert_chart_rounded,
+                    label: '统计',
+                    active: _currentIndex == 1,
+                    activeColor: active,
+                    inactiveColor: inactive,
+                    onTap: () => _onTap(1),
+                  ),
+                  _buildFabItem(isDark), // Integrated FAB
+                  _NavSlot(
+                    icon: Icons.receipt_long_rounded,
+                    label: '账单',
+                    active: _currentIndex == 2,
+                    activeColor: active,
+                    inactiveColor: inactive,
+                    onTap: () => _onTap(2),
+                  ),
+                  _NavSlot(
+                    icon: Icons.person_rounded,
+                    label: '我的',
+                    active: _currentIndex == 3,
+                    activeColor: active,
+                    inactiveColor: inactive,
+                    onTap: () => _onTap(3),
+                  ),
+                ],
               ),
             ),
           ),
@@ -133,38 +126,25 @@ class _MainShellState extends ConsumerState<MainShell> {
     );
   }
 
-  Widget _buildFab(bool isDark) {
-    const colors = AppColors.fabGradient;
-    return Transform.translate(
-      offset: const Offset(0, 8),
-      child: GestureDetector(
-        onTap: () => _showQuickAddSheet(context),
-        child: Container(
-          width: 60,
-          height: 60,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: colors,
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+  Widget _buildFabItem(bool isDark) {
+    return GestureDetector(
+      onTap: () => _showQuickAddSheet(context),
+      child: Container(
+        width: 52,
+        height: 52,
+        margin: const EdgeInsets.symmetric(horizontal: 8),
+        decoration: BoxDecoration(
+          color: AppColors.teal,
+          borderRadius: BorderRadius.circular(26),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.teal.withValues(alpha: 0.3),
+              blurRadius: 16,
+              offset: const Offset(0, 8),
             ),
-            borderRadius: BorderRadius.circular(30),
-            border: Border.all(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.14)
-                  : AppColors.lightHairline,
-              width: 0.8,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.teal.withValues(alpha: isDark ? 0.28 : 0.18),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: const Icon(Icons.add_rounded, color: Colors.white, size: 34),
+          ],
         ),
+        child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
       ),
     );
   }
@@ -260,7 +240,7 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet> {
       child: SafeArea(
         top: false,
         child: SizedBox(
-          height: 450,
+          height: 520,
           child: Padding(
             padding: const EdgeInsets.fromLTRB(24, 12, 24, 40),
             child: Column(
@@ -316,7 +296,10 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet> {
                           label: '支出',
                           active: _direction == 'expense',
                           activeColor: AppColors.expense,
-                          onTap: () => setState(() => _direction = 'expense'),
+                          onTap: () => setState(() {
+                            _direction = 'expense';
+                            _selectedCategoryId = null;
+                          }),
                         ),
                       ),
                       Expanded(
@@ -324,7 +307,10 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet> {
                           label: '收入',
                           active: _direction == 'income',
                           activeColor: AppColors.teal,
-                          onTap: () => setState(() => _direction = 'income'),
+                          onTap: () => setState(() {
+                            _direction = 'income';
+                            _selectedCategoryId = null;
+                          }),
                         ),
                       ),
                     ],
@@ -373,9 +359,12 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet> {
                 ),
                 const SizedBox(height: 24),
                 categories.when(
-                  data: (items) => _buildCategoryRow(items, activeColor),
-                  loading: () => const SizedBox(height: 36),
-                  error: (error, stackTrace) => const SizedBox(height: 36),
+                  data: (items) {
+                    _syncSelectedCategory(items);
+                    return _buildCategoryGrid(items, activeColor);
+                  },
+                  loading: () => const SizedBox(height: 72),
+                  error: (error, stackTrace) => const SizedBox(height: 72),
                 ),
                 const Spacer(),
                 GestureDetector(
@@ -410,69 +399,87 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet> {
     );
   }
 
-  Widget _buildCategoryRow(List<Category> items, Color activeColor) {
-    final filtered = items
-        .where((item) => item.type == _direction)
-        .take(4)
-        .toList();
-    if (filtered.isEmpty) return const SizedBox(height: 36);
+  Widget _buildCategoryGrid(List<Category> items, Color activeColor) {
+    final filtered = items.where((item) => item.type == _direction).toList();
+    if (filtered.isEmpty) return const SizedBox(height: 72);
 
-    return SizedBox(
-      height: 36,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: filtered.length,
-        separatorBuilder: (context, index) => const SizedBox(width: 8),
-        itemBuilder: (context, index) {
-          final item = filtered[index];
-          final selected = item.id == _selectedCategoryId;
-
-          return GestureDetector(
-            onTap: () => setState(() => _selectedCategoryId = item.id),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              decoration: BoxDecoration(
-                color: selected
-                    ? activeColor.withValues(alpha: 0.15)
-                    : oneKeepGlassStrong(context),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: selected
-                      ? activeColor.withValues(alpha: 0.32)
-                      : Colors.transparent,
-                  width: 0.8,
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxHeight: 144),
+      child: SingleChildScrollView(
+        child: Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: filtered.map((item) {
+            final selected = item.id == _selectedCategoryId;
+            return GestureDetector(
+              onTap: () => setState(() => _selectedCategoryId = item.id),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                curve: Curves.easeOut,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
                 ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    oneKeepCategoryIcon(item.name, item.name, item.icon),
-                    size: 16,
+                decoration: BoxDecoration(
+                  color: selected
+                      ? activeColor.withValues(alpha: 0.15)
+                      : oneKeepGlassStrong(context),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
                     color: selected
-                        ? activeColor
-                        : oneKeepTextSecondary(context),
+                        ? activeColor.withValues(alpha: 0.32)
+                        : oneKeepBorder(context),
+                    width: 0.8,
                   ),
-                  const SizedBox(width: 6),
-                  Text(
-                    item.name,
-                    style: oneKeepInter(
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      oneKeepResolvedCategoryIcon(
+                        item.name,
+                        item.name,
+                        item.icon,
+                      ),
+                      size: 16,
                       color: selected
                           ? activeColor
                           : oneKeepTextSecondary(context),
-                      size: 12,
-                      weight: selected ? FontWeight.w600 : FontWeight.w400,
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 6),
+                    Text(
+                      item.name,
+                      style: oneKeepInter(
+                        color: selected
+                            ? activeColor
+                            : oneKeepTextSecondary(context),
+                        size: 12,
+                        weight: selected ? FontWeight.w600 : FontWeight.w400,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          );
-        },
+            );
+          }).toList(),
+        ),
       ),
     );
   }
 
   String get _displayAmount => _amount.isEmpty ? '0.00' : _amount;
+
+  void _syncSelectedCategory(List<Category> items) {
+    final filtered = items.where((item) => item.type == _direction).toList();
+    if (filtered.isEmpty) {
+      _selectedCategoryId = null;
+      return;
+    }
+
+    if (!filtered.any((item) => item.id == _selectedCategoryId)) {
+      _selectedCategoryId = filtered.first.id;
+    }
+  }
 
   void _onAmountChanged(String value) {
     final sanitized = _sanitizeAmount(value);

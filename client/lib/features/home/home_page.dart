@@ -160,85 +160,100 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
-            blurRadius: 24,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: oneKeepCardShadows(context, prominent: true),
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(28),
         child: Stack(
           children: [
-            // 背景层：图片或渐变 - 使用 Positioned.fill 填充
+            // 背景层：图片或深色高级渐变
             if (hasBackgroundImage)
               Positioned.fill(
                 child: _buildBlurredBackground(backgroundImageData),
               )
             else
-              Positioned.fill(child: _buildGradientBackground(isDark)),
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: isDark
+                          ? const [
+                              Color(0xFF18181B), // Sleek very dark grey
+                              Color(0xFF09090B), // True black
+                            ]
+                          : const [
+                              Color(0xFF27272A), // Zinc 800
+                              Color(0xFF18181B), // Zinc 900
+                            ],
+                    ),
+                  ),
+                ),
+              ),
+
+            // 光晕点缀 (只在无背景图时显示)
+            if (!hasBackgroundImage)
+              Positioned(
+                right: -40,
+                top: -40,
+                child: Container(
+                  width: 150,
+                  height: 150,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [
+                        AppColors.teal.withValues(alpha: 0.2),
+                        Colors.transparent,
+                      ],
+                    ),
+                  ),
+                ),
+              ),
 
             // 内容层
             Container(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.fromLTRB(28, 28, 28, 28),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(28),
                 border: Border.all(
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.08)
-                      : Colors.white.withValues(alpha: 0.25),
-                  width: 0.5,
+                  color: Colors.white.withValues(alpha: 0.08),
+                  width: 1,
                 ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isDark
-                              ? Colors.white.withValues(alpha: 0.15)
-                              : Colors.white.withValues(alpha: 0.25),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: isDark
-                                ? Colors.white.withValues(alpha: 0.2)
-                                : Colors.white.withValues(alpha: 0.3),
-                            width: 0.5,
-                          ),
-                        ),
-                        child: Text(
-                          '本月结余',
-                          style: oneKeepManrope(
-                            color: isDark
-                                ? Colors.white
-                                : AppColors.lightTextPrimary,
-                            size: 12,
-                            weight: FontWeight.w600,
-                            letterSpacing: 1,
-                          ),
+                      Text(
+                        '本月结余',
+                        style: oneKeepManrope(
+                          color: Colors.white.withValues(alpha: 0.7),
+                          size: 14,
+                          weight: FontWeight.w500,
+                          letterSpacing: 1,
                         ),
                       ),
-                      const Spacer(),
                       GestureDetector(
                         onTap: () =>
                             setState(() => _balanceVisible = !_balanceVisible),
-                        child: Icon(
-                          _balanceVisible
-                              ? Icons.visibility_outlined
-                              : Icons.visibility_off_outlined,
-                          size: 20,
-                          color: isDark
-                              ? Colors.white.withValues(alpha: 0.8)
-                              : AppColors.lightTextSecondary,
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            _balanceVisible
+                                ? Icons.visibility_outlined
+                                : Icons.visibility_off_outlined,
+                            size: 16,
+                            color: Colors.white.withValues(alpha: 0.9),
+                          ),
                         ),
                       ),
                     ],
@@ -248,37 +263,22 @@ class _HomePageState extends ConsumerState<HomePage> {
                     Text(
                       '¥ ${oneKeepCurrency(summary.balance)}',
                       style: oneKeepGrotesk(
-                        color: isDark
-                            ? Colors.white
-                            : AppColors.lightTextPrimary,
-                        size: 36,
+                        color: Colors.white,
+                        size: 40,
                         weight: FontWeight.w700,
-                        letterSpacing: 1.2,
+                        letterSpacing: 1.0,
                       ),
                     )
                   else
                     Text(
-                      '¥ ••••••••',
+                      '¥ ********',
                       style: oneKeepGrotesk(
-                        color: isDark
-                            ? Colors.white
-                            : AppColors.lightTextPrimary,
-                        size: 36,
+                        color: Colors.white,
+                        size: 40,
                         weight: FontWeight.w700,
-                        letterSpacing: 1.2,
+                        letterSpacing: 2.0,
                       ),
                     ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '较上月 +8.2%',
-                    style: oneKeepManrope(
-                      color: isDark
-                          ? Colors.white.withValues(alpha: 0.7)
-                          : AppColors.lightTextSecondary.withValues(alpha: 0.8),
-                      size: 13,
-                      weight: FontWeight.w500,
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -594,41 +594,49 @@ class _MetricTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return OneKeepGlassCard(
-      radius: 18,
-      blurSigma: 20,
-      fillColor: oneKeepGlass(context),
-      borderColor: oneKeepBorder(context),
-      padding: const EdgeInsets.all(18),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF18181B) : Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.04),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 40,
-            height: 40,
+            width: 36,
+            height: 36,
             decoration: BoxDecoration(
               color: tone.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, size: 20, color: tone),
+            child: Icon(icon, size: 18, color: tone),
           ),
           const SizedBox(height: 12),
           Text(
             label,
             style: oneKeepManrope(
               color: oneKeepTextSecondary(context),
-              size: 12,
-              weight: FontWeight.w400,
-              letterSpacing: 0.5,
+              size: 13,
+              weight: FontWeight.w500,
             ),
           ),
           const SizedBox(height: 4),
           Text(
-            visible ? '¥ ${oneKeepCurrency(amount)}' : '¥ ••••',
+            visible ? '¥ ${oneKeepCurrency(amount)}' : '¥ ****',
             style: oneKeepGrotesk(
               color: oneKeepTextPrimary(context),
-              size: 18,
-              weight: FontWeight.w600,
+              size: 20,
+              weight: FontWeight.w700,
               letterSpacing: 0.5,
             ),
           ),
@@ -648,32 +656,41 @@ class _HomeTransactionRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final isExpense = transaction.isExpense;
     final tone = isExpense ? AppColors.expense : AppColors.income;
-    final icon = oneKeepCategoryIcon(
+    final icon = oneKeepResolvedCategoryIcon(
       transaction.title,
       transaction.categoryName,
       transaction.categoryIcon,
     );
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return GestureDetector(
       onTap: onTap,
-      child: OneKeepGlassCard(
-        radius: 16,
-        blurSigma: 16,
-        fillColor: oneKeepGlass(context),
-        borderColor: oneKeepBorder(context),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF18181B) : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
         child: Row(
           children: [
             Container(
-              width: 42,
-              height: 42,
+              width: 44,
+              height: 44,
               decoration: BoxDecoration(
-                color: tone.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(12),
+                color: tone.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(14),
               ),
               child: Icon(icon, size: 20, color: tone),
             ),
-            const SizedBox(width: 14),
+            const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -682,27 +699,28 @@ class _HomeTransactionRow extends StatelessWidget {
                     transaction.title,
                     style: oneKeepManrope(
                       color: oneKeepTextPrimary(context),
-                      size: 15,
-                      weight: FontWeight.w500,
+                      size: 16,
+                      weight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: 3),
+                  const SizedBox(height: 4),
                   Text(
                     '${transaction.categoryName} · ${oneKeepDayTime(transaction.occurredAt)}',
-                    style: oneKeepMono(
+                    style: oneKeepInter(
                       color: oneKeepTextSecondary(context),
                       size: 12,
+                      weight: FontWeight.w500,
                     ),
                   ),
                 ],
               ),
             ),
             Text(
-              '${isExpense ? '-' : '+'}¥ ${oneKeepCurrency(transaction.amount)}',
+              '${isExpense ? '-' : '+'} ¥${oneKeepCurrency(transaction.amount)}',
               style: oneKeepGrotesk(
-                color: tone,
+                color: oneKeepTextPrimary(context),
                 size: 16,
-                weight: FontWeight.w600,
+                weight: FontWeight.w700,
               ),
             ),
           ],
@@ -720,7 +738,7 @@ class _HomeTransactionDetailSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tone = transaction.isExpense ? AppColors.expense : AppColors.income;
-    final icon = oneKeepCategoryIcon(
+    final icon = oneKeepResolvedCategoryIcon(
       transaction.title,
       transaction.categoryName,
       transaction.categoryIcon,

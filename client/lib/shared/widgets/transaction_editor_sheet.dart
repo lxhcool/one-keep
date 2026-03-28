@@ -458,7 +458,7 @@ class _HeaderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final icon = oneKeepCategoryIcon(
+    final icon = oneKeepResolvedCategoryIcon(
       transaction.title,
       transaction.categoryName,
       transaction.categoryIcon,
@@ -618,7 +618,7 @@ class _CategorySelector extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  oneKeepCategoryIcon(
+                  oneKeepResolvedCategoryIcon(
                     category.name,
                     category.name,
                     category.icon,

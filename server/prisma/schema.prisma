@@ -16,6 +16,7 @@ model User {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   transactions Transaction[]
+  categories   Category[]
 
   @@map("users")
 }
@@ -26,9 +27,12 @@ model Category {
   icon     String
   type     TransactionType
   sort     Int             @default(0)
+  userId   String?         @map("user_id")
+  user     User?           @relation(fields: [userId], references: [id])
 
   transactions Transaction[]
 
+  @@index([userId, type, sort])
   @@map("categories")
 }
 

@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import bcrypt from "bcryptjs";
 import { getPrisma } from "../utils/prisma.js";
 import { registerSchema, loginSchema } from "../schemas/auth.js";
+import { ensureUserCategories } from "../utils/default-categories.js";
 
 export default async function authRoutes(app: FastifyInstance) {
   const prisma = getPrisma();
@@ -23,6 +24,7 @@ export default async function authRoutes(app: FastifyInstance) {
     const user = await prisma.user.create({
       data: { email, password: hashed, name },
     });
+    await ensureUserCategories(prisma, user.id);
 
     const token = app.jwt.sign({ sub: user.id }, { expiresIn: "7d" });
     return { token, user: { id: user.id, email: user.email, name: user.name } };

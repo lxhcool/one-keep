@@ -5,6 +5,7 @@ import authRoutes from "./routes/auth.js";
 import homeRoutes from "./routes/home.js";
 import statsRoutes from "./routes/stats.js";
 import billsRoutes from "./routes/bills.js";
+import categoryRoutes from "./routes/categories.js";
 import transactionRoutes from "./routes/transactions.js";
 
 export async function buildApp() {
@@ -23,6 +24,7 @@ export async function buildApp() {
   await app.register(homeRoutes);
   await app.register(statsRoutes);
   await app.register(billsRoutes);
+  await app.register(categoryRoutes);
   await app.register(transactionRoutes);
 
   // 健康检查

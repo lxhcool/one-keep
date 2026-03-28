@@ -2,14 +2,22 @@ import type { FastifyInstance } from "fastify";
 import { getPrisma } from "../utils/prisma.js";
 import {
   createTransactionSchema,
-  updateTransactionSchema,
   deleteTransactionSchema,
+  updateTransactionSchema,
 } from "../schemas/transaction.js";
 
 export default async function transactionRoutes(app: FastifyInstance) {
   const prisma = getPrisma();
 
-  // POST /api/transactions
+  async function findAccessibleCategory(userId: string, categoryId: string) {
+    return prisma.category.findFirst({
+      where: {
+        id: categoryId,
+        OR: [{ userId }, { userId: null }],
+      },
+    });
+  }
+
   app.post("/api/transactions", { schema: createTransactionSchema }, async (request, reply) => {
     const { title, amount, direction, categoryId, occurredAt, note, merchant } = request.body as {
       title: string;
@@ -22,10 +30,12 @@ export default async function transactionRoutes(app: FastifyInstance) {
     };
     const userId = request.userId;
 
-    // 校验分类存在
-    const category = await prisma.category.findUnique({ where: { id: categoryId } });
+    const category = await findAccessibleCategory(userId, categoryId);
     if (!category) {
       return reply.status(400).send({ error: "分类不存在" });
+    }
+    if (category.type !== direction) {
+      return reply.status(400).send({ error: "分类类型与记账方向不匹配" });
     }
 
     const tx = await prisma.transaction.create({
@@ -47,7 +57,6 @@ export default async function transactionRoutes(app: FastifyInstance) {
     });
   });
 
-  // PUT /api/transactions/:id
   app.put("/api/transactions/:id", { schema: updateTransactionSchema }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const userId = request.userId;
@@ -55,7 +64,17 @@ export default async function transactionRoutes(app: FastifyInstance) {
 
     const existing = await prisma.transaction.findUnique({ where: { id } });
     if (!existing || existing.userId !== userId) {
-      return reply.status(404).send({ error: "交易不存在" });
+      return reply.status(404).send({ error: "记账记录不存在" });
+    }
+
+    const nextDirection = (data.direction as "expense" | "income" | undefined) ?? existing.direction;
+    const nextCategoryId = (data.categoryId as string | undefined) ?? existing.categoryId;
+    const category = await findAccessibleCategory(userId, nextCategoryId);
+    if (!category) {
+      return reply.status(400).send({ error: "分类不存在" });
+    }
+    if (category.type !== nextDirection) {
+      return reply.status(400).send({ error: "分类类型与记账方向不匹配" });
     }
 
     if (data.occurredAt) {
@@ -70,7 +89,6 @@ export default async function transactionRoutes(app: FastifyInstance) {
     return { transactionId: updated.id, updatedAt: updated.updatedAt.toISOString() };
   });
 
-  // DELETE /api/transactions/:id
   app.delete(
     "/api/transactions/:id",
     { schema: deleteTransactionSchema },
@@ -80,19 +98,11 @@ export default async function transactionRoutes(app: FastifyInstance) {
 
       const existing = await prisma.transaction.findUnique({ where: { id } });
       if (!existing || existing.userId !== userId) {
-        return reply.status(404).send({ error: "交易不存在" });
+        return reply.status(404).send({ error: "记账记录不存在" });
       }
 
       await prisma.transaction.delete({ where: { id } });
       return reply.status(204).send();
     },
   );
-
-  // GET /api/categories
-  app.get("/api/categories", async () => {
-    const categories = await prisma.category.findMany({
-      orderBy: [{ type: "asc" }, { sort: "asc" }],
-    });
-    return { categories };
-  });
 }

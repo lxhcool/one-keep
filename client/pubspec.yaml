@@ -34,3 +34,7 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  fonts:
+    - family: OneKeepIconFont
+      fonts:
+        - asset: assets/iconfont/iconfont.ttf

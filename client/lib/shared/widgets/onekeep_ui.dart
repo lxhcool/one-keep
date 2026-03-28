@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/onekeep_iconfont.dart';
 
 enum OneKeepPageVariant { auth, home, stats, bills, profile }
 
@@ -120,8 +121,8 @@ class OneKeepGlassCard extends StatelessWidget {
     super.key,
     required this.child,
     this.padding = const EdgeInsets.all(20),
-    this.radius = 18,
-    this.blurSigma = 14,
+    this.radius = 24, // Rounder, sleeker corners
+    this.blurSigma = 16,
     this.fillColor,
     this.borderColor,
     this.shadows,
@@ -131,56 +132,33 @@ class OneKeepGlassCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final resolvedFill = fillColor ?? oneKeepGlass(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final resolvedFill =
+        fillColor ?? (isDark ? const Color(0xFF18181B) : Colors.white);
     final resolvedBorder = borderColor ?? oneKeepBorder(context);
     final resolvedShadows = shadows ?? oneKeepCardShadows(context);
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(radius),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(radius),
-            boxShadow: resolvedShadows,
-          ),
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(radius),
+        boxShadow: resolvedShadows,
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(radius),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
           child: Container(
             padding: padding,
             decoration: BoxDecoration(
               color: resolvedFill,
               gradient: gradient,
               borderRadius: BorderRadius.circular(radius),
-              border: Border.all(color: resolvedBorder, width: 0.8),
+              border: Border.all(
+                color: resolvedBorder,
+                width: isDark ? 0.5 : 1.0,
+              ), // Crisper border
             ),
-            child: Stack(
-              children: [
-                if (showHighlight)
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    top: 0,
-                    child: IgnorePointer(
-                      child: Container(
-                        height: radius * 1.8,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.vertical(
-                            top: Radius.circular(radius),
-                          ),
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              Colors.white.withValues(alpha: 0.18),
-                              Colors.white.withValues(alpha: 0),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                child,
-              ],
-            ),
+            child: child,
           ),
         ),
       ),
@@ -233,22 +211,21 @@ class OneKeepPageBackground extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: RadialGradient(
-                  center: const Alignment(-0.75, -0.95),
-                  radius: isDark ? 1.25 : 1.1,
-                  colors: [
-                    (isDark ? AppColors.teal : AppColors.info).withValues(
-                      alpha: isDark ? 0.12 : 0.10,
-                    ),
-                    Colors.transparent,
-                  ],
+          if (isDark) // Only add the top left ambient glow in dark mode
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: RadialGradient(
+                    center: const Alignment(-0.75, -0.95),
+                    radius: 1.5,
+                    colors: [
+                      AppColors.teal.withValues(alpha: 0.05),
+                      Colors.transparent,
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
           ..._buildGlows(isDark),
           child,
         ],
@@ -257,6 +234,9 @@ class OneKeepPageBackground extends StatelessWidget {
   }
 
   List<Widget> _buildGlows(bool isDark) {
+    if (!isDark) return []; // Completely clean in light mode
+
+    // Very subtle ambient lights in dark mode
     switch (variant) {
       case OneKeepPageVariant.auth:
         return [
@@ -265,165 +245,50 @@ class OneKeepPageBackground extends StatelessWidget {
             top: -40,
             width: 280,
             height: 280,
-            color: isDark
-                ? AppColors.purple.withValues(alpha: 0.22)
-                : AppColors.purple.withValues(alpha: 0.12),
+            color: AppColors.purple.withValues(alpha: 0.05),
           ),
           _glow(
             right: -60,
             bottom: 40,
             width: 260,
             height: 260,
-            color: isDark
-                ? AppColors.teal.withValues(alpha: 0.20)
-                : AppColors.teal.withValues(alpha: 0.10),
+            color: AppColors.teal.withValues(alpha: 0.05),
           ),
         ];
       case OneKeepPageVariant.home:
-        if (!isDark) {
-          return [
-            _glow(
-              left: -60,
-              top: 40,
-              width: 240,
-              height: 240,
-              color: const Color(0x1C94A3FF),
-            ),
-            _glow(
-              right: -30,
-              top: 160,
-              width: 280,
-              height: 280,
-              color: const Color(0x1C7DD3FC),
-            ),
-            _glow(
-              left: 110,
-              bottom: 80,
-              width: 260,
-              height: 260,
-              color: const Color(0x17C4B5FD),
-            ),
-          ];
-        }
         return [
           _glow(
             left: -40,
             top: 80,
-            width: 220,
-            height: 220,
-            color: AppColors.purple.withValues(alpha: 0.22),
-          ),
-          _glow(
-            right: -10,
-            top: 180,
-            width: 260,
-            height: 260,
-            color: AppColors.teal.withValues(alpha: 0.22),
-          ),
-          _glow(
-            left: 100,
-            top: 450,
-            width: 280,
-            height: 280,
-            color: AppColors.expense.withValues(alpha: 0.18),
+            width: 320,
+            height: 320,
+            color: AppColors.teal.withValues(alpha: 0.06),
           ),
           _glow(
             right: -20,
             bottom: 40,
-            width: 200,
-            height: 200,
-            color: AppColors.info.withValues(alpha: 0.16),
+            width: 300,
+            height: 300,
+            color: AppColors.purple.withValues(alpha: 0.04),
           ),
         ];
       case OneKeepPageVariant.stats:
-        if (!isDark) {
-          return [
-            _glow(
-              right: -40,
-              top: 100,
-              width: 260,
-              height: 260,
-              color: const Color(0x1854C5FF),
-            ),
-            _glow(
-              left: -40,
-              top: 320,
-              width: 220,
-              height: 220,
-              color: const Color(0x18A78BFA),
-            ),
-          ];
-        }
+      case OneKeepPageVariant.bills:
+      case OneKeepPageVariant.profile:
         return [
           _glow(
             right: -20,
             top: 120,
             width: 240,
             height: 240,
-            color: AppColors.teal.withValues(alpha: 0.18),
+            color: AppColors.teal.withValues(alpha: 0.05),
           ),
           _glow(
             left: -30,
             top: 300,
             width: 200,
             height: 200,
-            color: AppColors.purple.withValues(alpha: 0.16),
-          ),
-        ];
-      case OneKeepPageVariant.bills:
-        if (!isDark) {
-          return [
-            _glow(
-              right: -20,
-              top: 100,
-              width: 220,
-              height: 220,
-              color: const Color(0x1660A5FA),
-            ),
-            _glow(
-              left: -50,
-              top: 350,
-              width: 210,
-              height: 210,
-              color: const Color(0x1494A3FF),
-            ),
-          ];
-        }
-        return [
-          _glow(
-            right: -20,
-            top: 100,
-            width: 200,
-            height: 200,
-            color: AppColors.teal.withValues(alpha: 0.14),
-          ),
-          _glow(
-            left: -40,
-            top: 350,
-            width: 180,
-            height: 180,
-            color: AppColors.purple.withValues(alpha: 0.14),
-          ),
-        ];
-      case OneKeepPageVariant.profile:
-        return [
-          _glow(
-            left: -60,
-            top: -40,
-            width: 260,
-            height: 260,
-            color: isDark
-                ? AppColors.teal.withValues(alpha: 0.18)
-                : AppColors.teal.withValues(alpha: 0.12),
-          ),
-          _glow(
-            right: -40,
-            top: 200,
-            width: 280,
-            height: 280,
-            color: isDark
-                ? AppColors.purple.withValues(alpha: 0.18)
-                : AppColors.purple.withValues(alpha: 0.10),
+            color: AppColors.purple.withValues(alpha: 0.04),
           ),
         ];
     }
@@ -504,11 +369,11 @@ Color oneKeepSurface(BuildContext context) {
 Gradient oneKeepPageGradient(BuildContext context) {
   final isDark = Theme.of(context).brightness == Brightness.dark;
   return LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
     colors: isDark
-        ? const [Color(0xFF07111F), Color(0xFF0C1730), Color(0xFF101C2D)]
-        : const [Color(0xFFF6FAFD), Color(0xFFEAF2FF), Color(0xFFF8FBFF)],
+        ? const [Color(0xFF09090B), Color(0xFF09090B)] // Solid deep black
+        : const [Color(0xFFF4F4F5), Color(0xFFE4E4E7)], // Clean cool light gray
   );
 }
 
@@ -517,7 +382,9 @@ Gradient oneKeepPanelGradient(BuildContext context) {
   return LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: isDark ? AppColors.cardGradientDark : AppColors.cardGradientLight,
+    colors: isDark
+        ? [const Color(0xFF18181B), const Color(0xFF18181B)]
+        : [Colors.white, Colors.white],
   );
 }
 
@@ -555,19 +422,28 @@ List<BoxShadow> oneKeepCardShadows(
   bool prominent = false,
 }) {
   final isDark = Theme.of(context).brightness == Brightness.dark;
-  final base = isDark ? AppColors.darkShadow : AppColors.lightShadow;
+
+  if (isDark) {
+    return [
+      BoxShadow(
+        color: Colors.black.withValues(alpha: prominent ? 0.6 : 0.4),
+        blurRadius: prominent ? 32 : 16,
+        offset: Offset(0, prominent ? 16 : 8),
+      ),
+    ];
+  }
 
   return [
     BoxShadow(
-      color: base.withValues(alpha: prominent ? 0.38 : 0.22),
-      blurRadius: prominent ? 40 : 22,
-      offset: Offset(0, prominent ? 18 : 10),
+      color: Colors.black.withValues(alpha: prominent ? 0.08 : 0.04),
+      blurRadius: prominent ? 24 : 12,
+      offset: Offset(0, prominent ? 12 : 4),
+      spreadRadius: 0,
     ),
     BoxShadow(
-      color: Colors.white.withValues(alpha: isDark ? 0.02 : 0.25),
-      blurRadius: prominent ? 14 : 8,
-      offset: const Offset(0, 1),
-      spreadRadius: -2,
+      color: Colors.black.withValues(alpha: 0.02),
+      blurRadius: 4,
+      offset: const Offset(0, 2),
     ),
   ];
 }
@@ -611,7 +487,7 @@ const oneKeepAvatarPresets = <OneKeepAvatarPreset>[
   ),
 ];
 
-class OneKeepAvatar extends StatelessWidget {
+class OneKeepAvatar extends StatefulWidget {
   final int avatarIndex;
   final double size;
   final double iconSize;
@@ -626,13 +502,33 @@ class OneKeepAvatar extends StatelessWidget {
   });
 
   @override
+  State<OneKeepAvatar> createState() => _OneKeepAvatarState();
+}
+
+class _OneKeepAvatarState extends State<OneKeepAvatar> {
+  MemoryImage? _avatarProvider;
+
+  @override
+  void initState() {
+    super.initState();
+    _syncAvatarProvider();
+  }
+
+  @override
+  void didUpdateWidget(covariant OneKeepAvatar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.avatarImageData != widget.avatarImageData) {
+      _syncAvatarProvider();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final preset =
-        oneKeepAvatarPresets[avatarIndex % oneKeepAvatarPresets.length];
-    final imageBytes = _decodeAvatarBytes(avatarImageData);
+        oneKeepAvatarPresets[widget.avatarIndex % oneKeepAvatarPresets.length];
     return Container(
-      width: size,
-      height: size,
+      width: widget.size,
+      height: widget.size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         gradient: LinearGradient(
@@ -642,11 +538,20 @@ class OneKeepAvatar extends StatelessWidget {
         ),
       ),
       child: ClipOval(
-        child: imageBytes != null
-            ? Image.memory(imageBytes, fit: BoxFit.cover)
-            : Icon(preset.icon, size: iconSize, color: Colors.white),
+        child: _avatarProvider != null
+            ? Image(
+                image: _avatarProvider!,
+                fit: BoxFit.cover,
+                gaplessPlayback: true,
+              )
+            : Icon(preset.icon, size: widget.iconSize, color: Colors.white),
       ),
     );
+  }
+
+  void _syncAvatarProvider() {
+    final bytes = _decodeAvatarBytes(widget.avatarImageData);
+    _avatarProvider = bytes == null ? null : MemoryImage(bytes);
   }
 
   Uint8List? _decodeAvatarBytes(String? data) {
@@ -660,6 +565,55 @@ class OneKeepAvatar extends StatelessWidget {
       return null;
     }
   }
+}
+
+IconData oneKeepResolvedCategoryIcon(
+  String title,
+  String category,
+  String fallback,
+) {
+  final iconfontIcon =
+      oneKeepIconFont(fallback) ??
+      oneKeepIconFont(category) ??
+      oneKeepIconFont(title);
+  if (iconfontIcon != null) {
+    return iconfontIcon;
+  }
+
+  final haystack = '$title $category $fallback'.toLowerCase();
+  if (haystack.contains('用餐') ||
+      haystack.contains('早餐') ||
+      haystack.contains('宵夜') ||
+      haystack.contains('餐') ||
+      haystack.contains('restaurant')) {
+    return Icons.restaurant_rounded;
+  }
+  if (haystack.contains('地铁') ||
+      haystack.contains('交通') ||
+      haystack.contains('公交') ||
+      haystack.contains('subway') ||
+      haystack.contains('bus')) {
+    return Icons.directions_subway_rounded;
+  }
+  if (haystack.contains('工资') ||
+      haystack.contains('薪') ||
+      haystack.contains('salary') ||
+      haystack.contains('wallet')) {
+    return Icons.account_balance_wallet_rounded;
+  }
+  if (haystack.contains('咖啡') || haystack.contains('coffee')) {
+    return Icons.local_cafe_rounded;
+  }
+  if (haystack.contains('购物') ||
+      haystack.contains('超市') ||
+      haystack.contains('shopping') ||
+      haystack.contains('bag')) {
+    return Icons.shopping_bag_rounded;
+  }
+  if (haystack.contains('bank')) {
+    return Icons.account_balance_rounded;
+  }
+  return Icons.receipt_long_rounded;
 }
 
 IconData oneKeepCategoryIcon(String title, String category, String fallback) {
