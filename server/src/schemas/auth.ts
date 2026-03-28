@@ -1,11 +1,18 @@
 export const registerSchema = {
   body: {
     type: "object",
-    required: ["email", "password", "name"],
+    additionalProperties: false,
+    required: ["username", "email", "displayName", "password"],
     properties: {
+      username: {
+        type: "string",
+        minLength: 3,
+        maxLength: 20,
+        pattern: "^[a-zA-Z0-9_]+$",
+      },
       email: { type: "string", format: "email" },
       password: { type: "string", minLength: 6 },
-      name: { type: "string", minLength: 1, maxLength: 50 },
+      displayName: { type: "string", minLength: 1, maxLength: 20 },
     },
   },
 } as const;
@@ -13,9 +20,10 @@ export const registerSchema = {
 export const loginSchema = {
   body: {
     type: "object",
-    required: ["email", "password"],
+    additionalProperties: false,
+    required: ["identifier", "password"],
     properties: {
-      email: { type: "string", minLength: 1 },
+      identifier: { type: "string", minLength: 1, maxLength: 100 },
       password: { type: "string", minLength: 1 },
     },
   },

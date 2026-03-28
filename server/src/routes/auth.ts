@@ -4,47 +4,93 @@ import { getPrisma } from "../utils/prisma.js";
 import { registerSchema, loginSchema } from "../schemas/auth.js";
 import { ensureUserCategories } from "../utils/default-categories.js";
 
+function serializeUser(user: {
+  id: string;
+  username: string | null;
+  email: string;
+  name: string;
+}) {
+  return {
+    id: user.id,
+    username: user.username,
+    email: user.email,
+    name: user.name,
+    displayName: user.name,
+  };
+}
+
 export default async function authRoutes(app: FastifyInstance) {
   const prisma = getPrisma();
 
-  // 注册
   app.post("/api/auth/register", { schema: registerSchema }, async (request, reply) => {
-    const { email, password, name } = request.body as {
+    const { username, email, displayName, password } = request.body as {
+      username: string;
       email: string;
+      displayName: string;
       password: string;
-      name: string;
     };
 
-    const existing = await prisma.user.findUnique({ where: { email } });
-    if (existing) {
+    const normalizedUsername = username.trim().toLowerCase();
+    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedDisplayName = displayName.trim();
+
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        OR: [{ email: normalizedEmail }, { username: normalizedUsername }],
+      },
+    });
+
+    if (existingUser?.email === normalizedEmail) {
       return reply.status(409).send({ error: "邮箱已被注册" });
+    }
+    if (existingUser?.username === normalizedUsername) {
+      return reply.status(409).send({ error: "用户名已被占用" });
     }
 
     const hashed = await bcrypt.hash(password, 10);
     const user = await prisma.user.create({
-      data: { email, password: hashed, name },
+      data: {
+        username: normalizedUsername,
+        email: normalizedEmail,
+        password: hashed,
+        name: normalizedDisplayName,
+      },
     });
     await ensureUserCategories(prisma, user.id);
 
     const token = app.jwt.sign({ sub: user.id }, { expiresIn: "7d" });
-    return { token, user: { id: user.id, email: user.email, name: user.name } };
+    return {
+      token,
+      user: serializeUser(user),
+    };
   });
 
-  // 登录
   app.post("/api/auth/login", { schema: loginSchema }, async (request, reply) => {
-    const { email, password } = request.body as { email: string; password: string };
+    const { identifier, password } = request.body as {
+      identifier: string;
+      password: string;
+    };
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    const normalizedIdentifier = identifier.trim().toLowerCase();
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [{ email: normalizedIdentifier }, { username: normalizedIdentifier }],
+      },
+    });
+
     if (!user) {
-      return reply.status(401).send({ error: "邮箱或密码错误" });
+      return reply.status(401).send({ error: "用户名/邮箱或密码错误" });
     }
 
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) {
-      return reply.status(401).send({ error: "邮箱或密码错误" });
+      return reply.status(401).send({ error: "用户名/邮箱或密码错误" });
     }
 
     const token = app.jwt.sign({ sub: user.id }, { expiresIn: "7d" });
-    return { token, user: { id: user.id, email: user.email, name: user.name } };
+    return {
+      token,
+      user: serializeUser(user),
+    };
   });
 }

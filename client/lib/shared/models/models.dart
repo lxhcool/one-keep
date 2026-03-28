@@ -97,14 +97,26 @@ class HomeSummary {
 
 class UserInfo {
   final String id;
+  final String? username;
   final String name;
   final String email;
 
-  const UserInfo({required this.id, required this.name, required this.email});
+  const UserInfo({
+    required this.id,
+    this.username,
+    required this.name,
+    required this.email,
+  });
 
-  UserInfo copyWith({String? id, String? name, String? email}) {
+  UserInfo copyWith({
+    String? id,
+    String? username,
+    String? name,
+    String? email,
+  }) {
     return UserInfo(
       id: id ?? this.id,
+      username: username ?? this.username,
       name: name ?? this.name,
       email: email ?? this.email,
     );
@@ -112,7 +124,12 @@ class UserInfo {
 
   factory UserInfo.fromJson(Map<String, dynamic> json) => UserInfo(
     id: _readString(json, 'id'),
-    name: _readString(json, 'name', fallback: 'OneKeep 用户'),
+    username: _readNullableString(json, 'username'),
+    name: _readString(
+      json,
+      'displayName',
+      fallback: _readString(json, 'name', fallback: 'OneKeep 用户'),
+    ),
     email: _readString(json, 'email'),
   );
 }

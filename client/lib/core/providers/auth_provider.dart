@@ -48,18 +48,22 @@ class AuthNotifier extends StateNotifier<AuthState> {
     );
   }
 
-  Future<void> login(String email, String password) async {
+  Future<void> login(String identifier, String password) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
       final res = await _api.dio.post(
         '/api/auth/login',
-        data: {'email': email, 'password': password},
+        data: {'identifier': identifier, 'password': password},
       );
       final data = res.data as Map<String, dynamic>;
+      final user = Map<String, dynamic>.from(
+        data['user'] as Map<String, dynamic>,
+      );
+      user['name'] ??= user['displayName'];
       await ApiClient.saveToken(data['token'] as String);
       state = state.copyWith(
         status: AuthStatus.authenticated,
-        user: UserInfo.fromJson(data['user'] as Map<String, dynamic>),
+        user: UserInfo.fromJson(user),
         isLoading: false,
       );
     } catch (e) {
@@ -70,18 +74,32 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  Future<void> register(String email, String password, String name) async {
+  Future<void> register(
+    String username,
+    String email,
+    String password,
+    String displayName,
+  ) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
       final res = await _api.dio.post(
         '/api/auth/register',
-        data: {'email': email, 'password': password, 'name': name},
+        data: {
+          'username': username,
+          'email': email,
+          'password': password,
+          'displayName': displayName,
+        },
       );
       final data = res.data as Map<String, dynamic>;
+      final user = Map<String, dynamic>.from(
+        data['user'] as Map<String, dynamic>,
+      );
+      user['name'] ??= user['displayName'];
       await ApiClient.saveToken(data['token'] as String);
       state = state.copyWith(
         status: AuthStatus.authenticated,
-        user: UserInfo.fromJson(data['user'] as Map<String, dynamic>),
+        user: UserInfo.fromJson(user),
         isLoading: false,
       );
     } catch (e) {

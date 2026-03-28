@@ -17,31 +17,44 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   bool _isLogin = true;
   bool _obscure = true;
 
+  final _identifierController = TextEditingController();
+  final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
+  final _displayNameController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _nameController = TextEditingController();
 
   @override
   void dispose() {
+    _identifierController.dispose();
+    _usernameController.dispose();
     _emailController.dispose();
+    _displayNameController.dispose();
     _passwordController.dispose();
-    _nameController.dispose();
     super.dispose();
   }
 
   void _submit() {
-    final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
-    if (email.isEmpty || password.isEmpty) return;
-
     if (_isLogin) {
-      ref.read(authProvider.notifier).login(email, password);
+      final identifier = _identifierController.text.trim();
+      if (identifier.isEmpty || password.isEmpty) return;
+      ref.read(authProvider.notifier).login(identifier, password);
       return;
     }
 
-    final name = _nameController.text.trim();
-    if (name.isEmpty) return;
-    ref.read(authProvider.notifier).register(email, password, name);
+    final username = _usernameController.text.trim();
+    final email = _emailController.text.trim();
+    final displayName = _displayNameController.text.trim();
+    if (username.isEmpty ||
+        email.isEmpty ||
+        displayName.isEmpty ||
+        password.isEmpty) {
+      return;
+    }
+
+    ref
+        .read(authProvider.notifier)
+        .register(username, email, password, displayName);
   }
 
   @override
@@ -126,7 +139,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          _isLogin ? '继续管理你的账本、账单与统计' : '几秒钟开始新的财务空间',
+                          _isLogin ? '使用用户名或邮箱继续登录。' : '使用用户名、邮箱、昵称和密码完成注册。',
                           style: oneKeepManrope(
                             color: oneKeepTextSecondary(context),
                             size: 13,
@@ -156,20 +169,33 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           ),
                           const SizedBox(height: AppSpacing.lg),
                         ],
-                        if (!_isLogin) ...[
+                        if (_isLogin) ...[
                           _AuthField(
-                            controller: _nameController,
+                            controller: _identifierController,
+                            hint: '用户名或邮箱',
+                            icon: LucideIcons.userCircle2,
+                          ),
+                          const SizedBox(height: AppSpacing.lg),
+                        ] else ...[
+                          _AuthField(
+                            controller: _usernameController,
+                            hint: '用户名',
+                            icon: LucideIcons.atSign,
+                          ),
+                          const SizedBox(height: AppSpacing.lg),
+                          _AuthField(
+                            controller: _emailController,
+                            hint: '邮箱',
+                            icon: LucideIcons.mail,
+                          ),
+                          const SizedBox(height: AppSpacing.lg),
+                          _AuthField(
+                            controller: _displayNameController,
                             hint: '昵称',
                             icon: LucideIcons.user,
                           ),
                           const SizedBox(height: AppSpacing.lg),
                         ],
-                        _AuthField(
-                          controller: _emailController,
-                          hint: '邮箱',
-                          icon: LucideIcons.mail,
-                        ),
-                        const SizedBox(height: AppSpacing.lg),
                         _AuthField(
                           controller: _passwordController,
                           hint: '密码',
@@ -232,7 +258,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                              _isLogin ? '还没有账户？' : '已经有账户？',
+                              _isLogin ? '还没有账号？' : '已经有账号？',
                               style: oneKeepInter(
                                 color: oneKeepTextSecondary(context),
                                 size: 14,
