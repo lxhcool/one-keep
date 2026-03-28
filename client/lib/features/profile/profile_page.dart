@@ -35,26 +35,24 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         : '夜间模式';
     return Scaffold(
       backgroundColor: Colors.transparent,
+      extendBodyBehindAppBar: true,
       body: AnnotatedRegion<SystemUiOverlayStyle>(
         value: SystemUiOverlayStyle.light,
         child: OneKeepPageBackground(
           variant: OneKeepPageVariant.profile,
-          child: SafeArea(
-            top: false,
-            bottom: false,
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
-              children: [
-                _ProfileSummaryCard(
-                  displayName: displayName,
-                  avatarIndex: preferences.avatarIndex,
-                  avatarImageData: preferences.avatarImageData,
-                  backgroundImageData: preferences.profileBackgroundImageData,
-                  onEditAvatar: _showAvatarStudio,
-                  onEditBackground: _showBackgroundStudio,
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 24),
+          child: ListView(
+            padding: EdgeInsets.zero,
+            children: [
+              _ProfileSummaryCard(
+                displayName: displayName,
+                avatarIndex: preferences.avatarIndex,
+                avatarImageData: preferences.avatarImageData,
+                backgroundImageData: preferences.profileBackgroundImageData,
+                onEditAvatar: _showAvatarStudio,
+                onEditBackground: _showBackgroundStudio,
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 24, 20, 120),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -132,7 +130,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             ),
           ),
         ),
-      ),
     );
   }
 
@@ -568,17 +565,24 @@ class _ProfileSummaryCardState extends State<_ProfileSummaryCard> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final statusBarHeight = MediaQuery.of(context).padding.top;
 
     return Container(
-      height: 220,
+      height: 220 + statusBarHeight,
       width: double.infinity,
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
-        borderRadius: BorderRadius.circular(32), // Rounder for premium feel
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(32),
+          bottomRight: Radius.circular(32),
+        ),
         boxShadow: oneKeepCardShadows(context),
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(32),
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(32),
+          bottomRight: Radius.circular(32),
+        ),
         child: Stack(
           fit: StackFit.expand,
           children: [
@@ -605,7 +609,7 @@ class _ProfileSummaryCardState extends State<_ProfileSummaryCard> {
               ),
             ),
             Positioned(
-              top: 16,
+              top: 16 + statusBarHeight,
               right: 16,
               child: _HeroActionButton(
                 icon: Icons.wallpaper_outlined,
@@ -614,7 +618,7 @@ class _ProfileSummaryCardState extends State<_ProfileSummaryCard> {
             ),
             Positioned(
               left: 24,
-              top: 72,
+              top: 72 + statusBarHeight,
               child: Stack(
                 clipBehavior: Clip.none,
                 children: [
@@ -666,7 +670,7 @@ class _ProfileSummaryCardState extends State<_ProfileSummaryCard> {
             Positioned(
               left: 24,
               right: 24,
-              bottom: 24, // position at the bottom of the card
+              bottom: 24 + statusBarHeight,
               child: Text(
                 widget.displayName,
                 maxLines: 1,

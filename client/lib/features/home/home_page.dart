@@ -59,7 +59,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               : RefreshIndicator(
                   onRefresh: () => ref.read(homeProvider.notifier).load(),
                   child: ListView(
-                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 110),
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 110),
                     children: [
                       _buildHeader(
                         state.summary,
@@ -72,7 +72,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                           state.summary!,
                           preferences.profileBackgroundImageData,
                         ),
-                        const SizedBox(height: 14),
+                        const SizedBox(height: 20),
                         _buildIncomeExpenseRow(state.summary!),
                         const SizedBox(height: 20),
                         _buildRecentSection(state.summary!.recentTransactions),
@@ -160,11 +160,11 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: oneKeepCardShadows(context, prominent: true),
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(24),
         child: Stack(
           children: [
             // 背景层：图片或深色高级渐变
@@ -180,14 +180,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: isDark
-                          ? const [
-                              Color(0xFF18181B), // Sleek very dark grey
-                              Color(0xFF09090B), // True black
-                            ]
-                          : const [
-                              Color(0xFF27272A), // Zinc 800
-                              Color(0xFF18181B), // Zinc 900
-                            ],
+                          ? AppColors.balanceGradientDark
+                          : AppColors.balanceGradientLight,
                     ),
                   ),
                 ),
@@ -215,11 +209,13 @@ class _HomePageState extends ConsumerState<HomePage> {
 
             // 内容层
             Container(
-              padding: const EdgeInsets.fromLTRB(28, 28, 28, 28),
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(28),
+                borderRadius: BorderRadius.circular(24),
                 border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.08),
+                  color: isDark
+                    ? Colors.white.withValues(alpha: 0.1)
+                    : Colors.white.withValues(alpha: 0.2),
                   width: 1,
                 ),
               ),
@@ -358,7 +354,7 @@ class _HomePageState extends ConsumerState<HomePage> {
             visible: _balanceVisible,
           ),
         ),
-        const SizedBox(width: 14),
+        const SizedBox(width: 16),
         Expanded(
           child: _MetricTile(
             label: '本月收入',
@@ -599,8 +595,8 @@ class _MetricTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF18181B) : Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        color: isDark ? AppColors.darkCard : Colors.white,
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.04),
@@ -669,8 +665,14 @@ class _HomeTransactionRow extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF18181B) : Colors.white,
-          borderRadius: BorderRadius.circular(20),
+          color: isDark ? AppColors.darkCard : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isDark
+              ? AppColors.darkCardBorder
+              : AppColors.lightCardBorder,
+            width: 1.0,
+          ),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
@@ -682,13 +684,13 @@ class _HomeTransactionRow extends StatelessWidget {
         child: Row(
           children: [
             Container(
-              width: 44,
-              height: 44,
+              width: 48,
+              height: 48,
               decoration: BoxDecoration(
-                color: tone.withValues(alpha: 0.1),
+                color: tone.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(14),
               ),
-              child: Icon(icon, size: 20, color: tone),
+              child: Icon(icon, size: 22, color: tone),
             ),
             const SizedBox(width: 16),
             Expanded(

@@ -12,7 +12,7 @@ String _resolveApiBaseUrl() {
   if (override.isNotEmpty) return override;
 
   if (kIsWeb) {
-    return 'http://localhost:3000';
+    return Uri.base.origin;
   }
 
   switch (defaultTargetPlatform) {

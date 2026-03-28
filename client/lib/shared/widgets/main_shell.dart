@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -59,65 +61,70 @@ class _MainShellState extends ConsumerState<MainShell> {
         ? AppColors.darkTextTertiary
         : AppColors.lightTextSecondary;
 
-    return SizedBox(
-      height: 100,
-      child: SafeArea(
-        top: false,
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: OneKeepGlassCard(
-              radius: 36, // Fully rounded capsule
-              blurSigma: 24,
-              fillColor: isDark
-                  ? AppColors.darkNav
-                  : Colors.white.withValues(alpha: 0.9),
-              borderColor: oneKeepBorderStrong(context),
-              shadows: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.08),
-                  blurRadius: 32,
-                  offset: const Offset(0, 16),
+    return Container(
+      height: 80 + MediaQuery.of(context).padding.bottom,
+      decoration: BoxDecoration(
+        color: isDark
+            ? AppColors.darkBg.withValues(alpha: 0.85)
+            : AppColors.lightBg.withValues(alpha: 0.85),
+      ),
+      child: ClipRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: Container(
+            height: 80 + MediaQuery.of(context).padding.bottom,
+            decoration: BoxDecoration(
+              border: Border(
+                top: BorderSide(
+                  color: isDark
+                      ? AppColors.darkCardBorder
+                      : AppColors.lightCardBorder,
+                  width: 0.5,
                 ),
-              ],
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _NavSlot(
-                    icon: Icons.grid_view_rounded,
-                    label: '首页',
-                    active: _currentIndex == 0,
-                    activeColor: active,
-                    inactiveColor: inactive,
-                    onTap: () => _onTap(0),
-                  ),
-                  _NavSlot(
-                    icon: Icons.insert_chart_rounded,
-                    label: '统计',
-                    active: _currentIndex == 1,
-                    activeColor: active,
-                    inactiveColor: inactive,
-                    onTap: () => _onTap(1),
-                  ),
-                  _buildFabItem(isDark), // Integrated FAB
-                  _NavSlot(
-                    icon: Icons.receipt_long_rounded,
-                    label: '账单',
-                    active: _currentIndex == 2,
-                    activeColor: active,
-                    inactiveColor: inactive,
-                    onTap: () => _onTap(2),
-                  ),
-                  _NavSlot(
-                    icon: Icons.person_rounded,
-                    label: '我的',
-                    active: _currentIndex == 3,
-                    activeColor: active,
-                    inactiveColor: inactive,
-                    onTap: () => _onTap(3),
-                  ),
-                ],
+              ),
+            ),
+            child: SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _NavSlot(
+                      icon: Icons.grid_view_rounded,
+                      label: '首页',
+                      active: _currentIndex == 0,
+                      activeColor: active,
+                      inactiveColor: inactive,
+                      onTap: () => _onTap(0),
+                    ),
+                    _NavSlot(
+                      icon: Icons.insert_chart_rounded,
+                      label: '统计',
+                      active: _currentIndex == 1,
+                      activeColor: active,
+                      inactiveColor: inactive,
+                      onTap: () => _onTap(1),
+                    ),
+                    _buildFabItem(isDark), // Integrated FAB
+                    _NavSlot(
+                      icon: Icons.receipt_long_rounded,
+                      label: '账单',
+                      active: _currentIndex == 2,
+                      activeColor: active,
+                      inactiveColor: inactive,
+                      onTap: () => _onTap(2),
+                    ),
+                    _NavSlot(
+                      icon: Icons.person_rounded,
+                      label: '我的',
+                      active: _currentIndex == 3,
+                      activeColor: active,
+                      inactiveColor: inactive,
+                      onTap: () => _onTap(3),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -130,16 +137,19 @@ class _MainShellState extends ConsumerState<MainShell> {
     return GestureDetector(
       onTap: () => _showQuickAddSheet(context),
       child: Container(
-        width: 52,
-        height: 52,
-        margin: const EdgeInsets.symmetric(horizontal: 8),
+        width: 56,
+        height: 56,
         decoration: BoxDecoration(
-          color: AppColors.teal,
-          borderRadius: BorderRadius.circular(26),
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [AppColors.teal, AppColors.purple],
+          ),
+          borderRadius: BorderRadius.circular(28),
           boxShadow: [
             BoxShadow(
-              color: AppColors.teal.withValues(alpha: 0.3),
-              blurRadius: 16,
+              color: AppColors.teal.withValues(alpha: 0.4),
+              blurRadius: 20,
               offset: const Offset(0, 8),
             ),
           ],

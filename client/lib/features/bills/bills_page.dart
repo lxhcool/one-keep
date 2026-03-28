@@ -54,7 +54,7 @@ class _BillsPageState extends ConsumerState<BillsPage> {
           child: Column(
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
                 child: Column(
                   children: [
                     _searchExpanded ? _buildSearchHeader() : _buildHeader(),
@@ -82,7 +82,7 @@ class _BillsPageState extends ConsumerState<BillsPage> {
                       )
                     : ListView.builder(
                         controller: _scrollController,
-                        padding: const EdgeInsets.fromLTRB(24, 0, 24, 110),
+                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 110),
                         itemCount:
                             state.groups.length + (state.isLoading ? 1 : 0),
                         itemBuilder: (context, index) {
@@ -220,13 +220,13 @@ class _BillsPageState extends ConsumerState<BillsPage> {
           active: _filterType == 'all',
           onTap: () => _setFilter('all'),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 12),
         _FilterChip(
           label: '支出',
           active: _filterType == 'expense',
           onTap: () => _setFilter('expense'),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 12),
         _FilterChip(
           label: '收入',
           active: _filterType == 'income',
@@ -460,12 +460,17 @@ class _FilterChip extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           color: active
-              ? AppColors.teal.withValues(alpha: 0.12)
-              : oneKeepGlass(context),
+              ? AppColors.teal.withValues(alpha: 0.15)
+              : (Theme.of(context).brightness == Brightness.dark
+                  ? AppColors.darkElevated
+                  : AppColors.lightBgSecondary),
           borderRadius: BorderRadius.circular(20),
+          border: active
+              ? Border.all(color: AppColors.teal, width: 1.5)
+              : null,
         ),
         child: Text(
           label,
@@ -507,8 +512,14 @@ class _BillRow extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF18181B) : Colors.white,
-          borderRadius: BorderRadius.circular(20),
+          color: isDark ? AppColors.darkCard : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isDark
+              ? AppColors.darkCardBorder
+              : AppColors.lightCardBorder,
+            width: 1.0,
+          ),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
@@ -520,13 +531,13 @@ class _BillRow extends StatelessWidget {
         child: Row(
           children: [
             Container(
-              width: 44,
-              height: 44,
+              width: 48,
+              height: 48,
               decoration: BoxDecoration(
-                color: tone.withValues(alpha: 0.1),
+                color: tone.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(14),
               ),
-              child: Icon(icon, size: 20, color: tone),
+              child: Icon(icon, size: 22, color: tone),
             ),
             const SizedBox(width: 16),
             Expanded(

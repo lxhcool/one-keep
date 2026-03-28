@@ -47,7 +47,7 @@ class _StatsPageState extends ConsumerState<StatsPage> {
               : state.error != null
               ? Center(child: Text(state.error!))
               : ListView(
-                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 110),
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 110),
                   children: [
                     _buildHeader(),
                     const SizedBox(height: 20),
@@ -121,7 +121,7 @@ class _StatsPageState extends ConsumerState<StatsPage> {
             color: AppColors.expense,
           ),
         ),
-        const SizedBox(width: 14),
+        const SizedBox(width: 16),
         Expanded(
           child: _SummaryCard(
             label: '总收入',
@@ -563,7 +563,7 @@ class _TrendBars extends StatelessWidget {
         );
 
     return SizedBox(
-      height: 160,
+      height: 180,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         mainAxisAlignment: MainAxisAlignment.spaceAround,

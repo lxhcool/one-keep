@@ -3,52 +3,56 @@ import 'package:flutter/material.dart';
 class AppColors {
   AppColors._();
 
-  static const teal = Color(0xFF14B8A6);
-  static const tealLight = Color(0xFF5EEAD4);
-  static const tealDark = Color(0xFF0F8D83);
-  static const tealMuted = Color(0xFF9AEAE2);
+  // Primary Colors - Elegant Green Gold System
+  static const teal = Color(0xFF059669); // Emerald 600 - Main brand color
+  static const tealLight = Color(0xFF10B981); // Emerald 500
+  static const tealDark = Color(0xFF047857); // Emerald 700
+  static const tealMuted = Color(0xFF6EE7B7); // Emerald 300
 
-  static const purple = Color(0xFF8B5CF6);
-  static const purpleLight = Color(0xFFC4B5FD);
+  static const purple = Color(0xFF6366F1); // Indigo 500 - Accent color
+  static const purpleLight = Color(0xFFA5B4FC); // Indigo 300
   static const coral = Color(0xFFFB7185);
-  static const amber = Color(0xFFF59E0B);
+  static const amber = Color(0xFFF59E0B); // Amber 500 - Secondary color
+  static const amberLight = Color(0xFFFBBF24); // Amber 400
 
-  static const expense = Color(0xFFF43F5E); // Sleek rose
-  static const expenseLight = Color(0xFFFFE4E6);
-  static const income = Color(0xFF10B981); // Sleek emerald
-  static const incomeLight = Color(0xFFD1FAE5);
+  static const expense = Color(0xFFEF4444); // Red 500 - Softer red
+  static const expenseLight = Color(0xFFFCA5A5); // Red 300
+  static const income = Color(0xFF22C55E); // Green 500 - Brighter green
+  static const incomeLight = Color(0xFF86EFAC); // Green 300
 
   // Minimalist Premium Dark Mode
-  static const darkBg = Color(0xFF09090B); // Deeper, true black-ish
-  static const darkSurface = Color(0xFF18181B);
-  static const darkElevated = Color(0xFF27272A);
-  static const darkCard = Color(0x9918181B); // Slight glass effect
-  static const darkCardHover = Color(0xFF27272A);
-  static const darkCardBorder = Color(0x1AFFFFFF);
-  static const darkCardBorderStrong = Color(0x33FFFFFF);
-  static const darkGlass = Color(0x8018181B);
-  static const darkGlassStrong = Color(0xCC18181B);
-  static const darkGlassSoft = Color(0x4018181B);
-  static const darkNav = Color(0xE609090B);
-  static const darkInputBg = Color(0xFF18181B);
-  static const darkInputBorder = Color(0x26FFFFFF);
+  static const darkBg = Color(0xFF0A0A0B); // True black for OLED
+  static const darkBgSecondary = Color(0xFF121214); // Secondary background
+  static const darkSurface = Color(0xFF1C1C1F); // Surface color
+  static const darkElevated = Color(0xFF2C2C30); // Elevated surface
+  static const darkCard = Color(0xFF27272A); // Card color
+  static const darkCardHover = Color(0xFF2C2C30);
+  static const darkCardBorder = Color(0x28FFFFFF); // Improved contrast
+  static const darkCardBorderStrong = Color(0x40FFFFFF); // Stronger border
+  static const darkGlass = Color(0x80272727);
+  static const darkGlassStrong = Color(0xCC1C1C1F);
+  static const darkGlassSoft = Color(0x40272727);
+  static const darkNav = Color(0xE60A0A0B);
+  static const darkInputBg = Color(0xFF1C1C1F);
+  static const darkInputBorder = Color(0x28FFFFFF);
   static const darkHairline = Color(0x1AFFFFFF);
   static const darkShadow = Color(0x99000000);
   static const darkDimOverlay = Color(0xB3000000);
 
   static const darkTextPrimary = Color(0xFFFAFAFA);
-  static const darkTextSecondary = Color(0xFFA1A1AA);
-  static const darkTextTertiary = Color(0xFF71717A);
+  static const darkTextSecondary = Color(0xFFB4B4B8); // Improved contrast
+  static const darkTextTertiary = Color(0xFF85858A); // Improved contrast
   static const darkTextMuted = Color(0xFF52525B);
 
   // Minimalist Premium Light Mode
-  static const lightBg = Color(0xFFF4F4F5); // Crisp, cool off-white
+  static const lightBg = Color(0xFFFAFAFA); // Softer gray-white
+  static const lightBgSecondary = Color(0xFFF5F5F5); // Secondary background
   static const lightSurface = Color(0xFFFFFFFF);
-  static const lightElevated = Color(0xFFFFFFFF);
-  static const lightCard = Color(0xCCFFFFFF); // Slight glass effect
-  static const lightCardHover = Color(0xFFF4F4F5);
-  static const lightCardBorder = Color(0x1A000000); // 10% black
-  static const lightCardBorderStrong = Color(0x26000000); // 15% black
+  static const lightElevated = Color(0xFFFAFAFA);
+  static const lightCard = Color(0xFFFFFFFF); // Solid white cards
+  static const lightCardHover = Color(0xFFF5F5F5);
+  static const lightCardBorder = Color(0x14000000); // Improved contrast
+  static const lightCardBorderStrong = Color(0x28000000); // Stronger border
   static const lightGlass = Color(0xCCFFFFFF);
   static const lightGlassStrong = Color(0xE6FFFFFF);
   static const lightGlassSoft = Color(0x80FFFFFF);
@@ -59,16 +63,20 @@ class AppColors {
   static const lightShadow = Color(0x1A000000); // Softer shadows
   static const lightDimOverlay = Color(0x66000000);
 
-  static const lightTextPrimary = Color(0xFF09090B);
+  static const lightTextPrimary = Color(0xFF18181B); // Improved contrast
   static const lightTextSecondary = Color(0xFF52525B);
   static const lightTextTertiary = Color(0xFF71717A);
   static const lightTextMuted = Color(0xFFA1A1AA);
 
-  static const expenseGradient = [Color(0xFFF43F5E), Color(0xFFE11D48)];
-  static const incomeGradient = [Color(0xFF10B981), Color(0xFF059669)];
-  static const fabGradient = [Color(0xFF14B8A6), Color(0xFF8B5CF6)];
-  static const cardGradientDark = [Color(0xFF18181B), Color(0xFF09090B)];
-  static const cardGradientLight = [Color(0xFFFFFFFF), Color(0xFFF4F4F5)];
+  static const expenseGradient = [Color(0xFFEF4444), Color(0xFFDC2626)];
+  static const incomeGradient = [Color(0xFF22C55E), Color(0xFF16A34A)];
+  static const fabGradient = [Color(0xFF059669), Color(0xFF6366F1)];
+  
+  // Balance card gradients
+  static const balanceGradientDark = [Color(0xFF1E293B), Color(0xFF0F172A)]; // Slate
+  static const balanceGradientLight = [Color(0xFF059669), Color(0xFF0891B2)]; // Emerald to Cyan
+  static const cardGradientDark = [Color(0xFF1C1C1F), Color(0xFF0A0A0B)];
+  static const cardGradientLight = [Color(0xFFFFFFFF), Color(0xFFFAFAFA)];
 
   static const error = Color(0xFFEF4444);
   static const errorLight = Color(0xFFFEE2E2);
@@ -83,25 +91,70 @@ class AppColors {
 class AppSpacing {
   AppSpacing._();
 
-  static const xs = 4.0;
-  static const sm = 8.0;
-  static const md = 12.0;
-  static const lg = 16.0;
-  static const xl = 20.0;
-  static const xxl = 24.0;
-  static const xxxl = 32.0;
+  // 8pt Grid System
+  static const unit = 8.0;
+  
+  static const xxs = 4.0;   // 0.5x
+  static const xs = 8.0;    // 1x
+  static const sm = 12.0;   // 1.5x
+  static const md = 16.0;   // 2x
+  static const lg = 24.0;   // 3x
+  static const xl = 32.0;   // 4x
+  static const xxl = 40.0;  // 5x
+  static const xxxl = 48.0; // 6x
+  
+  // Page spacing
+  static const pagePadding = 20.0;
+  static const pageTop = 16.0;
+  static const pageBottom = 110.0;
+  
+  // Card spacing
+  static const cardGap = 16.0;
+  static const cardPadding = 20.0;
+  
+  // List spacing
+  static const listItemGap = 12.0;
+  static const listSectionGap = 24.0;
+}
+
+class AppSize {
+  AppSize._();
+  
+  // Touch targets
+  static const minTouchTarget = 44.0;
+  
+  // Icons
+  static const iconXs = 16.0;
+  static const iconSm = 20.0;
+  static const iconMd = 24.0;
+  static const iconLg = 28.0;
+  static const iconXl = 32.0;
+  
+  // Avatars
+  static const avatarSm = 32.0;
+  static const avatarMd = 48.0;
+  static const avatarLg = 64.0;
+  
+  // Buttons
+  static const buttonSm = 36.0;
+  static const buttonMd = 44.0;
+  static const buttonLg = 52.0;
 }
 
 class AppRadius {
   AppRadius._();
 
-  static const sm = 8.0;
-  static const md = 12.0;
-  static const lg = 16.0;
-  static const xl = 20.0;
-  static const xxl = 24.0;
-  static const sheet = 28.0;
-  static const card = 20.0;
+  static const xs = 8.0;    // Small components
+  static const sm = 12.0;   // Buttons, inputs
+  static const md = 16.0;   // Small cards, list items
+  static const lg = 20.0;   // Standard cards
+  static const xl = 24.0;   // Large cards, balance card
+  static const xxl = 28.0;  // Bottom sheets
+  
+  static const sheet = 24.0;
+  static const card = 16.0;
   static const chip = 20.0;
-  static const button = 14.0;
+  static const button = 12.0;
+  static const round = 999.0;
+  static const pill = 100.0;
 }
