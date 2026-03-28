@@ -318,7 +318,7 @@ class _BillsPageState extends ConsumerState<BillsPage> {
     final action = await showModalBottomSheet<_TransactionDetailAction>(
       context: context,
       backgroundColor: Colors.transparent,
-      barrierColor: AppColors.darkDimOverlay,
+      barrierColor: oneKeepDimOverlay(context),
       builder: (_) => _BillDetailSheet(transaction: tx),
     );
     if (!mounted || action == null) return;
@@ -335,7 +335,7 @@ class _BillsPageState extends ConsumerState<BillsPage> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      barrierColor: AppColors.darkDimOverlay,
+      barrierColor: oneKeepDimOverlay(context),
       builder: (_) => OneKeepTransactionEditorSheet(transaction: tx),
     );
     if (!mounted || draft == null) return;
@@ -581,14 +581,7 @@ class _BillDetailSheet extends StatelessWidget {
         ? '${transaction.title} - $detail'
         : transaction.title;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: oneKeepSurface(context),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border(
-          top: BorderSide(color: oneKeepBorder(context), width: 0.5),
-        ),
-      ),
+    return OneKeepSheetSurface(
       child: SafeArea(
         top: false,
         child: SizedBox(

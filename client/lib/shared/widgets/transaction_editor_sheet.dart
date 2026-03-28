@@ -93,14 +93,7 @@ class _OneKeepTransactionEditorSheetState
         amount > 0 &&
         (_selectedCategoryId?.isNotEmpty ?? false);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: oneKeepSurface(context),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-        border: Border(
-          top: BorderSide(color: oneKeepBorderStrong(context), width: 0.6),
-        ),
-      ),
+    return OneKeepSheetSurface(
       child: SafeArea(
         top: false,
         child: Padding(

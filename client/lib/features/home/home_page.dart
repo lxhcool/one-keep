@@ -68,7 +68,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                       ),
                       const SizedBox(height: 20),
                       if (state.summary != null) ...[
-                        _buildBalanceCard(state.summary!, preferences.profileBackgroundImageData),
+                        _buildBalanceCard(
+                          state.summary!,
+                          preferences.profileBackgroundImageData,
+                        ),
                         const SizedBox(height: 14),
                         _buildIncomeExpenseRow(state.summary!),
                         const SizedBox(height: 20),
@@ -152,8 +155,9 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   Widget _buildBalanceCard(HomeSummary summary, String? backgroundImageData) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final hasBackgroundImage = backgroundImageData != null && backgroundImageData.isNotEmpty;
-    
+    final hasBackgroundImage =
+        backgroundImageData != null && backgroundImageData.isNotEmpty;
+
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
@@ -171,19 +175,21 @@ class _HomePageState extends ConsumerState<HomePage> {
           children: [
             // 背景层：图片或渐变 - 使用 Positioned.fill 填充
             if (hasBackgroundImage)
-              Positioned.fill(child: _buildBlurredBackground(backgroundImageData))
+              Positioned.fill(
+                child: _buildBlurredBackground(backgroundImageData),
+              )
             else
               Positioned.fill(child: _buildGradientBackground(isDark)),
-            
+
             // 内容层
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: isDark 
-                    ? Colors.white.withValues(alpha: 0.08)
-                    : Colors.white.withValues(alpha: 0.25),
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.08)
+                      : Colors.white.withValues(alpha: 0.25),
                   width: 0.5,
                 ),
               ),
@@ -198,21 +204,23 @@ class _HomePageState extends ConsumerState<HomePage> {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: isDark 
-                            ? Colors.white.withValues(alpha: 0.15)
-                            : Colors.white.withValues(alpha: 0.25),
+                          color: isDark
+                              ? Colors.white.withValues(alpha: 0.15)
+                              : Colors.white.withValues(alpha: 0.25),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: isDark 
-                              ? Colors.white.withValues(alpha: 0.2)
-                              : Colors.white.withValues(alpha: 0.3),
+                            color: isDark
+                                ? Colors.white.withValues(alpha: 0.2)
+                                : Colors.white.withValues(alpha: 0.3),
                             width: 0.5,
                           ),
                         ),
                         child: Text(
                           '本月结余',
                           style: oneKeepManrope(
-                            color: isDark ? Colors.white : AppColors.lightTextPrimary,
+                            color: isDark
+                                ? Colors.white
+                                : AppColors.lightTextPrimary,
                             size: 12,
                             weight: FontWeight.w600,
                             letterSpacing: 1,
@@ -221,15 +229,16 @@ class _HomePageState extends ConsumerState<HomePage> {
                       ),
                       const Spacer(),
                       GestureDetector(
-                        onTap: () => setState(() => _balanceVisible = !_balanceVisible),
+                        onTap: () =>
+                            setState(() => _balanceVisible = !_balanceVisible),
                         child: Icon(
                           _balanceVisible
                               ? Icons.visibility_outlined
                               : Icons.visibility_off_outlined,
                           size: 20,
-                          color: isDark 
-                            ? Colors.white.withValues(alpha: 0.8)
-                            : AppColors.lightTextSecondary,
+                          color: isDark
+                              ? Colors.white.withValues(alpha: 0.8)
+                              : AppColors.lightTextSecondary,
                         ),
                       ),
                     ],
@@ -239,7 +248,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                     Text(
                       '¥ ${oneKeepCurrency(summary.balance)}',
                       style: oneKeepGrotesk(
-                        color: isDark ? Colors.white : AppColors.lightTextPrimary,
+                        color: isDark
+                            ? Colors.white
+                            : AppColors.lightTextPrimary,
                         size: 36,
                         weight: FontWeight.w700,
                         letterSpacing: 1.2,
@@ -249,7 +260,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                     Text(
                       '¥ ••••••••',
                       style: oneKeepGrotesk(
-                        color: isDark ? Colors.white : AppColors.lightTextPrimary,
+                        color: isDark
+                            ? Colors.white
+                            : AppColors.lightTextPrimary,
                         size: 36,
                         weight: FontWeight.w700,
                         letterSpacing: 1.2,
@@ -259,9 +272,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                   Text(
                     '较上月 +8.2%',
                     style: oneKeepManrope(
-                      color: isDark 
-                        ? Colors.white.withValues(alpha: 0.7)
-                        : AppColors.lightTextSecondary.withValues(alpha: 0.8),
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.7)
+                          : AppColors.lightTextSecondary.withValues(alpha: 0.8),
                       size: 13,
                       weight: FontWeight.w500,
                     ),
@@ -277,8 +290,12 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   Widget _buildBlurredBackground(String imageData) {
     final bytes = _decodeImageBytes(imageData);
-    if (bytes == null) return _buildGradientBackground(Theme.of(context).brightness == Brightness.dark);
-    
+    if (bytes == null) {
+      return _buildGradientBackground(
+        Theme.of(context).brightness == Brightness.dark,
+      );
+    }
+
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -291,9 +308,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         // 高斯模糊层
         BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-          child: Container(
-            color: Colors.black.withValues(alpha: 0.35),
-          ),
+          child: Container(color: Colors.black.withValues(alpha: 0.35)),
         ),
       ],
     );
@@ -306,14 +321,14 @@ class _HomePageState extends ConsumerState<HomePage> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: isDark
-            ? [
-                const Color(0xFF5B6B7C),  // 深灰蓝
-                const Color(0xFF6B7B8C),  // 灰蓝
-              ]
-            : [
-                const Color(0xFF7B8B9C),  // 浅灰蓝
-                const Color(0xFF9BABB9),  // 淡灰蓝
-              ],
+              ? [
+                  const Color(0xFF5B6B7C), // 深灰蓝
+                  const Color(0xFF6B7B8C), // 灰蓝
+                ]
+              : [
+                  const Color(0xFF7B8B9C), // 浅灰蓝
+                  const Color(0xFF9BABB9), // 淡灰蓝
+                ],
         ),
       ),
     );
@@ -442,7 +457,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     final action = await showModalBottomSheet<_TransactionDetailAction>(
       context: context,
       backgroundColor: Colors.transparent,
-      barrierColor: AppColors.darkDimOverlay,
+      barrierColor: oneKeepDimOverlay(context),
       builder: (_) => _HomeTransactionDetailSheet(transaction: tx),
     );
     if (!mounted || action == null) return;
@@ -459,7 +474,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      barrierColor: AppColors.darkDimOverlay,
+      barrierColor: oneKeepDimOverlay(context),
       builder: (_) => OneKeepTransactionEditorSheet(transaction: tx),
     );
     if (!mounted || draft == null) return;
@@ -711,14 +726,7 @@ class _HomeTransactionDetailSheet extends StatelessWidget {
       transaction.categoryIcon,
     );
 
-    return Container(
-      decoration: BoxDecoration(
-        color: oneKeepSurface(context),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border(
-          top: BorderSide(color: oneKeepBorder(context), width: 0.5),
-        ),
-      ),
+    return OneKeepSheetSurface(
       child: SafeArea(
         top: false,
         child: SizedBox(

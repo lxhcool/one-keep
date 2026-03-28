@@ -56,73 +56,75 @@ class _MainShellState extends ConsumerState<MainShell> {
   }
 
   Widget _buildBottomBar(bool isDark) {
-    final bg = isDark ? AppColors.darkBg : AppColors.lightBg;
     final active = AppColors.teal;
     final inactive = isDark
         ? AppColors.darkTextTertiary
         : AppColors.lightTextSecondary;
 
-    return Container(
-      height: 78,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [bg.withValues(alpha: 0), bg.withValues(alpha: 0.84), bg],
-          stops: const [0, 0.3, 1],
-        ),
-      ),
+    return SizedBox(
+      height: 96,
       child: SafeArea(
         top: false,
         child: Center(
           child: SizedBox(
-            height: 58,
+            height: 68,
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _NavSlot(
-                      icon: Icons.home_rounded,
-                      label: '首页',
-                      active: _currentIndex == 0,
-                      activeColor: active,
-                      inactiveColor: inactive,
-                      onTap: () => _onTap(0),
+              padding: const EdgeInsets.symmetric(horizontal: 18),
+              child: OneKeepGlassCard(
+                radius: 26,
+                blurSigma: 24,
+                fillColor: isDark ? AppColors.darkNav : AppColors.lightNav,
+                borderColor: oneKeepBorderStrong(context),
+                shadows: oneKeepCardShadows(context, prominent: true),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _NavSlot(
+                        icon: Icons.home_rounded,
+                        label: '首页',
+                        active: _currentIndex == 0,
+                        activeColor: active,
+                        inactiveColor: inactive,
+                        onTap: () => _onTap(0),
+                      ),
                     ),
-                  ),
-                  Expanded(
-                    child: _NavSlot(
-                      icon: Icons.bar_chart_rounded,
-                      label: '统计',
-                      active: _currentIndex == 1,
-                      activeColor: active,
-                      inactiveColor: inactive,
-                      onTap: () => _onTap(1),
+                    Expanded(
+                      child: _NavSlot(
+                        icon: Icons.bar_chart_rounded,
+                        label: '统计',
+                        active: _currentIndex == 1,
+                        activeColor: active,
+                        inactiveColor: inactive,
+                        onTap: () => _onTap(1),
+                      ),
                     ),
-                  ),
-                  const Expanded(child: SizedBox()),
-                  Expanded(
-                    child: _NavSlot(
-                      icon: Icons.receipt_long_rounded,
-                      label: '账单',
-                      active: _currentIndex == 2,
-                      activeColor: active,
-                      inactiveColor: inactive,
-                      onTap: () => _onTap(2),
+                    const Expanded(child: SizedBox()),
+                    Expanded(
+                      child: _NavSlot(
+                        icon: Icons.receipt_long_rounded,
+                        label: '账单',
+                        active: _currentIndex == 2,
+                        activeColor: active,
+                        inactiveColor: inactive,
+                        onTap: () => _onTap(2),
+                      ),
                     ),
-                  ),
-                  Expanded(
-                    child: _NavSlot(
-                      icon: Icons.person_rounded,
-                      label: '我的',
-                      active: _currentIndex == 3,
-                      activeColor: active,
-                      inactiveColor: inactive,
-                      onTap: () => _onTap(3),
+                    Expanded(
+                      child: _NavSlot(
+                        icon: Icons.person_rounded,
+                        label: '我的',
+                        active: _currentIndex == 3,
+                        activeColor: active,
+                        inactiveColor: inactive,
+                        onTap: () => _onTap(3),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -153,6 +155,13 @@ class _MainShellState extends ConsumerState<MainShell> {
                   : AppColors.lightHairline,
               width: 0.8,
             ),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.teal.withValues(alpha: isDark ? 0.28 : 0.18),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
           ),
           child: const Icon(Icons.add_rounded, color: Colors.white, size: 34),
         ),
@@ -165,7 +174,7 @@ class _MainShellState extends ConsumerState<MainShell> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      barrierColor: AppColors.darkDimOverlay,
+      barrierColor: oneKeepDimOverlay(context),
       builder: (_) => const _QuickAddSheet(),
     );
   }
@@ -247,14 +256,7 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet> {
         double.parse(_amount) > 0 &&
         _selectedCategoryId != null;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: oneKeepSurface(context),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border(
-          top: BorderSide(color: oneKeepBorder(context), width: 0.5),
-        ),
-      ),
+    return OneKeepSheetSurface(
       child: SafeArea(
         top: false,
         child: SizedBox(

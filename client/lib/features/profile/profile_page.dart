@@ -32,16 +32,12 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     final themeLabel = preferences.themeMode == ThemeMode.light
         ? '白天模式'
         : '夜间模式';
-    final background = Theme.of(context).brightness == Brightness.dark
-        ? AppColors.darkBg
-        : AppColors.lightBg;
-
     return Scaffold(
-      backgroundColor: background,
+      backgroundColor: Colors.transparent,
       body: AnnotatedRegion<SystemUiOverlayStyle>(
         value: SystemUiOverlayStyle.light,
-        child: DecoratedBox(
-          decoration: BoxDecoration(color: background),
+        child: OneKeepPageBackground(
+          variant: OneKeepPageVariant.profile,
           child: SafeArea(
             top: false,
             bottom: false,
@@ -105,12 +101,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                         style: OutlinedButton.styleFrom(
                           minimumSize: const Size.fromHeight(54),
                           side: BorderSide(
-                            color: AppColors.expense.withValues(
-                              alpha: 0.18,
-                            ),
+                            color: AppColors.expense.withValues(alpha: 0.18),
                             width: 0.9,
                           ),
                           backgroundColor: oneKeepSurface(context),
+                          shadowColor: Colors.transparent,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(18),
                           ),
@@ -118,9 +113,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                         child: Text(
                           '退出登录',
                           style: oneKeepManrope(
-                          color: AppColors.expense,
-                          size: 15,
-                          weight: FontWeight.w800,
+                            color: AppColors.expense,
+                            size: 15,
+                            weight: FontWeight.w800,
                           ),
                         ),
                       ),
@@ -250,20 +245,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     await showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
-      barrierColor: AppColors.darkDimOverlay,
+      barrierColor: oneKeepDimOverlay(context),
       builder: (sheetContext) {
         final preferences = ref.watch(preferencesProvider);
-        return Container(
-          decoration: BoxDecoration(
-            color: oneKeepSurface(sheetContext),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-            border: Border(
-              top: BorderSide(
-                color: oneKeepBorderStrong(sheetContext),
-                width: 0.6,
-              ),
-            ),
-          ),
+        return OneKeepSheetSurface(
           child: SafeArea(
             top: false,
             child: Padding(
@@ -336,7 +321,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      barrierColor: AppColors.darkDimOverlay,
+      barrierColor: oneKeepDimOverlay(context),
       builder: (_) => _AvatarStudioSheet(onUpload: _pickAvatarFromGallery),
     );
   }
@@ -360,7 +345,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     await showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
-      barrierColor: AppColors.darkDimOverlay,
+      barrierColor: oneKeepDimOverlay(context),
       builder: (_) =>
           _BackgroundStudioSheet(onUpload: _pickProfileBackgroundFromGallery),
     );
@@ -408,7 +393,7 @@ class _ProfileSummaryCard extends StatelessWidget {
       height: 220 + topInset,
       width: double.infinity,
       decoration: BoxDecoration(
-        color: const Color(0xFF0F1720),
+        gradient: oneKeepPanelGradient(context),
         border: Border(
           bottom: BorderSide(color: oneKeepBorderStrong(context), width: 0.8),
         ),
@@ -535,12 +520,9 @@ class _HeroActionButton extends StatelessWidget {
         width: 38,
         height: 38,
         decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.28),
+          color: oneKeepGlass(context),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: Colors.white.withValues(alpha: 0.16),
-            width: 0.8,
-          ),
+          border: Border.all(color: oneKeepBorderStrong(context), width: 0.8),
         ),
         child: Icon(icon, size: 18, color: Colors.white),
       ),
@@ -638,13 +620,12 @@ class _MenuTile extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
-      child: Container(
+      child: OneKeepGlassCard(
+        radius: 20,
+        blurSigma: 18,
+        fillColor: oneKeepGlass(context),
+        borderColor: oneKeepBorder(context),
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
-        decoration: BoxDecoration(
-          color: oneKeepSurface(context),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: oneKeepBorder(context), width: 0.8),
-        ),
         child: Row(
           children: [
             Container(
@@ -771,14 +752,7 @@ class _AvatarStudioSheet extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final preferences = ref.watch(preferencesProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      decoration: BoxDecoration(
-        color: oneKeepSurface(context),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-        border: Border(
-          top: BorderSide(color: oneKeepBorderStrong(context), width: 0.6),
-        ),
-      ),
+    return OneKeepSheetSurface(
       child: SafeArea(
         top: false,
         child: Padding(
@@ -943,14 +917,7 @@ class _BackgroundStudioSheet extends ConsumerWidget {
         ? null
         : base64Decode(preferences.profileBackgroundImageData!);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: oneKeepSurface(context),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-        border: Border(
-          top: BorderSide(color: oneKeepBorderStrong(context), width: 0.6),
-        ),
-      ),
+    return OneKeepSheetSurface(
       child: SafeArea(
         top: false,
         child: Padding(

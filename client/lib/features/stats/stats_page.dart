@@ -252,20 +252,11 @@ class _StatsPageState extends ConsumerState<StatsPage> {
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
-      barrierColor: AppColors.darkDimOverlay,
+      barrierColor: oneKeepDimOverlay(context),
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
-            return Container(
-              decoration: BoxDecoration(
-                color: oneKeepSurface(context),
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(24),
-                ),
-                border: Border(
-                  top: BorderSide(color: oneKeepBorder(context), width: 0.5),
-                ),
-              ),
+            return OneKeepSheetSurface(
               child: SafeArea(
                 top: false,
                 child: SizedBox(
