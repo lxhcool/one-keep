@@ -52,84 +52,84 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 onEditBackground: _showBackgroundStudio,
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 24, 20, 120),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _MenuGroup(
-                        children: [
-                          _MenuTile(
-                            icon: Icons.wallpaper_outlined,
-                            tone: AppColors.info,
-                            title: '背景图',
-                            subtitle:
-                                preferences.profileBackgroundImageData != null
-                                ? '已应用于个人中心和首页结余卡片'
-                                : '上传背景图，将显示在个人中心和首页',
-                            onTap: _showBackgroundStudio,
-                          ),
-                          _MenuTile(
-                            icon: Icons.add_a_photo_outlined,
-                            tone: AppColors.teal,
-                            title: '头像设置',
-                            subtitle: preferences.avatarImageData != null
-                                ? '已上传头像'
-                                : '使用预设头像',
-                            onTap: _showAvatarStudio,
-                          ),
-                          _MenuTile(
-                            icon: Icons.drive_file_rename_outline_rounded,
-                            tone: AppColors.purple,
-                            title: '昵称设置',
-                            subtitle: displayName,
-                            onTap: _showNicknameSheet,
-                          ),
-                          _MenuTile(
-                            icon: Icons.category_outlined,
-                            tone: AppColors.teal,
-                            title: '分类设置',
-                            subtitle: '管理快速记账使用的分类和图标',
-                            onTap: _openCategorySettings,
-                          ),
-                          _MenuTile(
-                            icon: Icons.light_mode_outlined,
-                            tone: AppColors.warning,
-                            title: '主题模式',
-                            subtitle: themeLabel,
-                            onTap: _showThemePicker,
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 32),
-                      GestureDetector(
-                        onTap: () => ref.read(authProvider.notifier).logout(),
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(vertical: 18),
-                          decoration: BoxDecoration(
-                            color: AppColors.expense.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Center(
-                            child: Text(
-                              '退出登录',
-                              style: oneKeepManrope(
-                                color: AppColors.expense,
-                                size: 16,
-                                weight: FontWeight.w700,
-                                letterSpacing: 0.5,
-                              ),
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _MenuGroup(
+                      children: [
+                        _MenuTile(
+                          icon: Icons.wallpaper_outlined,
+                          tone: AppColors.info,
+                          title: '背景图',
+                          subtitle:
+                              preferences.profileBackgroundImageData != null
+                              ? '已应用于个人中心和首页结余卡片'
+                              : '上传背景图，将显示在个人中心和首页',
+                          onTap: _showBackgroundStudio,
+                        ),
+                        _MenuTile(
+                          icon: Icons.add_a_photo_outlined,
+                          tone: AppColors.teal,
+                          title: '头像设置',
+                          subtitle: preferences.avatarImageData != null
+                              ? '已上传头像'
+                              : '使用预设头像',
+                          onTap: _showAvatarStudio,
+                        ),
+                        _MenuTile(
+                          icon: Icons.drive_file_rename_outline_rounded,
+                          tone: AppColors.purple,
+                          title: '昵称设置',
+                          subtitle: displayName,
+                          onTap: _showNicknameSheet,
+                        ),
+                        _MenuTile(
+                          icon: Icons.category_outlined,
+                          tone: AppColors.teal,
+                          title: '分类设置',
+                          subtitle: '管理快速记账使用的分类和图标',
+                          onTap: _openCategorySettings,
+                        ),
+                        _MenuTile(
+                          icon: Icons.light_mode_outlined,
+                          tone: AppColors.warning,
+                          title: '主题模式',
+                          subtitle: themeLabel,
+                          onTap: _showThemePicker,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 32),
+                    GestureDetector(
+                      onTap: () => ref.read(authProvider.notifier).logout(),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 18),
+                        decoration: BoxDecoration(
+                          color: AppColors.expense.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Center(
+                          child: Text(
+                            '退出登录',
+                            style: oneKeepManrope(
+                              color: AppColors.expense,
+                              size: 16,
+                              weight: FontWeight.w700,
+                              letterSpacing: 0.5,
                             ),
                           ),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
+      ),
     );
   }
 
@@ -572,119 +572,109 @@ class _ProfileSummaryCardState extends State<_ProfileSummaryCard> {
       width: double.infinity,
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(32),
-          bottomRight: Radius.circular(32),
-        ),
         boxShadow: oneKeepCardShadows(context),
       ),
-      child: ClipRRect(
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(32),
-          bottomRight: Radius.circular(32),
-        ),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            if (_coverImageProvider != null)
-              Image(
-                image: _coverImageProvider!,
-                fit: BoxFit.cover,
-                gaplessPlayback: true,
-              )
-            else
-              const _ProfileCoverFallback(),
-            DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black.withValues(alpha: 0.1),
-                    Colors.black.withValues(alpha: 0.3),
-                    Colors.black.withValues(alpha: 0.6),
-                    Colors.black.withValues(alpha: 0.8),
-                  ],
-                ),
-              ),
-            ),
-            Positioned(
-              top: 16 + statusBarHeight,
-              right: 16,
-              child: _HeroActionButton(
-                icon: Icons.wallpaper_outlined,
-                onTap: widget.onEditBackground,
-              ),
-            ),
-            Positioned(
-              left: 24,
-              top: 72 + statusBarHeight,
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.1), // subtle ring
-                      shape: BoxShape.circle,
-                    ),
-                    child: OneKeepAvatar(
-                      avatarIndex: widget.avatarIndex,
-                      avatarImageData: widget.avatarImageData,
-                      size: 80, // slightly larger
-                      iconSize: 32,
-                    ),
-                  ),
-                  Positioned(
-                    right: 0,
-                    bottom: 0,
-                    child: GestureDetector(
-                      onTap: widget.onEditAvatar,
-                      child: Container(
-                        width: 28,
-                        height: 28,
-                        decoration: BoxDecoration(
-                          color: isDark ? AppColors.darkSurface : Colors.white,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.2),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Icon(
-                          Icons.edit_rounded,
-                          size: 14,
-                          color: isDark
-                              ? Colors.white
-                              : AppColors.lightTextPrimary,
-                        ),
-                      ),
-                    ),
-                  ),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          if (_coverImageProvider != null)
+            Image(
+              image: _coverImageProvider!,
+              fit: BoxFit.cover,
+              gaplessPlayback: true,
+            )
+          else
+            const _ProfileCoverFallback(),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.black.withValues(alpha: 0.1),
+                  Colors.black.withValues(alpha: 0.3),
+                  Colors.black.withValues(alpha: 0.6),
+                  Colors.black.withValues(alpha: 0.8),
                 ],
               ),
             ),
-            Positioned(
-              left: 24,
-              right: 24,
-              bottom: 24 + statusBarHeight,
-              child: Text(
-                widget.displayName,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: oneKeepGrotesk(
-                  color: Colors.white,
-                  size: 28,
-                  weight: FontWeight.w700,
-                  letterSpacing: 0.5,
+          ),
+          Positioned(
+            top: 16 + statusBarHeight,
+            right: 16,
+            child: _HeroActionButton(
+              icon: Icons.wallpaper_outlined,
+              onTap: widget.onEditBackground,
+            ),
+          ),
+          Positioned(
+            left: 24,
+            top: 72 + statusBarHeight,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.1), // subtle ring
+                    shape: BoxShape.circle,
+                  ),
+                  child: OneKeepAvatar(
+                    avatarIndex: widget.avatarIndex,
+                    avatarImageData: widget.avatarImageData,
+                    size: 80, // slightly larger
+                    iconSize: 32,
+                  ),
                 ),
+                Positioned(
+                  right: 0,
+                  bottom: 0,
+                  child: GestureDetector(
+                    onTap: widget.onEditAvatar,
+                    child: Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        color: isDark ? AppColors.darkSurface : Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.2),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        Icons.edit_rounded,
+                        size: 14,
+                        color: isDark
+                            ? Colors.white
+                            : AppColors.lightTextPrimary,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Positioned(
+            left: 24,
+            right: 24,
+            bottom: 24 + statusBarHeight,
+            child: Text(
+              widget.displayName,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: oneKeepGrotesk(
+                color: Colors.white,
+                size: 28,
+                weight: FontWeight.w700,
+                letterSpacing: 0.5,
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
