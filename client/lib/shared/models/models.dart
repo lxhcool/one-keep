@@ -32,6 +32,7 @@ class Transaction {
   final String title;
   final String categoryName;
   final String categoryIcon;
+  final String? categoryColor;
   final DateTime occurredAt;
   final double amount;
   final String direction;
@@ -44,6 +45,7 @@ class Transaction {
     required this.title,
     required this.categoryName,
     required this.categoryIcon,
+    this.categoryColor,
     required this.occurredAt,
     required this.amount,
     required this.direction,
@@ -60,6 +62,9 @@ class Transaction {
     title: _readString(json, 'title', fallback: '未命名交易'),
     categoryName: _readString(json, 'categoryName', fallback: '未分类'),
     categoryIcon: _readString(json, 'categoryIcon', fallback: 'receipt_long'),
+    categoryColor:
+        _readNullableString(json, 'categoryColor') ??
+        _readNullableString(json, 'color'),
     occurredAt:
         DateTime.tryParse(_readString(json, 'occurredAt')) ?? DateTime.now(),
     amount: _readDouble(json, 'amount'),
@@ -178,6 +183,7 @@ class CategoryRank {
   final String categoryId;
   final String categoryName;
   final String categoryIcon;
+  final String? categoryColor;
   final double amount;
   final double progressRatio;
 
@@ -185,6 +191,7 @@ class CategoryRank {
     required this.categoryId,
     required this.categoryName,
     required this.categoryIcon,
+    this.categoryColor,
     required this.amount,
     required this.progressRatio,
   });
@@ -193,6 +200,9 @@ class CategoryRank {
     categoryId: _readString(json, 'categoryId'),
     categoryName: _readString(json, 'categoryName', fallback: '未分类'),
     categoryIcon: _readString(json, 'categoryIcon', fallback: 'receipt_long'),
+    categoryColor:
+        _readNullableString(json, 'categoryColor') ??
+        _readNullableString(json, 'color'),
     amount: _readDouble(json, 'amount'),
     progressRatio: _readDouble(json, 'progressRatio'),
   );
@@ -243,12 +253,14 @@ class Category {
   final String name;
   final String icon;
   final String type;
+  final String? color;
 
   const Category({
     required this.id,
     required this.name,
     required this.icon,
     required this.type,
+    this.color,
   });
 
   factory Category.fromJson(Map<String, dynamic> json) => Category(
@@ -256,5 +268,8 @@ class Category {
     name: _readString(json, 'name', fallback: '未分类'),
     icon: _readString(json, 'icon', fallback: 'receipt_long'),
     type: _readString(json, 'type', fallback: 'expense'),
+    color:
+        _readNullableString(json, 'color') ??
+        _readNullableString(json, 'categoryColor'),
   );
 }

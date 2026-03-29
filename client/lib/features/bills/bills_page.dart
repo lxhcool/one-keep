@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
@@ -10,6 +10,8 @@ import '../../shared/models/models.dart';
 import '../../shared/widgets/onekeep_ui.dart';
 import '../../shared/widgets/transaction_editor_sheet.dart';
 
+const _billsPageBackground = Color(0xFFF2F3F5);
+
 class BillsPage extends ConsumerStatefulWidget {
   const BillsPage({super.key});
 
@@ -18,14 +20,14 @@ class BillsPage extends ConsumerStatefulWidget {
 }
 
 class _BillsPageState extends ConsumerState<BillsPage> {
-  final String _selectedMonth = DateFormat('yyyy-MM').format(DateTime.now());
-  final TextEditingController _searchController = TextEditingController();
+  DateTime _selectedMonth = DateTime(DateTime.now().year, DateTime.now().month);
   final ScrollController _scrollController = ScrollController();
 
   String _filterType = 'all';
-  bool _searchExpanded = false;
 
   static const _weekdays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+
+  String get _monthKey => DateFormat('yyyy-MM').format(_selectedMonth);
 
   @override
   void initState() {
@@ -36,7 +38,6 @@ class _BillsPageState extends ConsumerState<BillsPage> {
 
   @override
   void dispose() {
-    _searchController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
@@ -44,65 +45,67 @@ class _BillsPageState extends ConsumerState<BillsPage> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(billsProvider);
+    final categories = ref.watch(categoriesProvider).valueOrNull ?? const <Category>[];
+    final categoryColors = <String, String?>{
+      for (final item in categories) item.id: item.color,
+    };
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: OneKeepPageBackground(
-        variant: OneKeepPageVariant.bills,
-        child: SafeArea(
-          bottom: false,
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                child: Column(
-                  children: [
-                    _searchExpanded ? _buildSearchHeader() : _buildHeader(),
-                    const SizedBox(height: 16),
-                    _buildFilterRow(),
-                  ],
-                ),
+      backgroundColor: isDark ? AppColors.darkBg : _billsPageBackground,
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+              child: Column(
+                children: [
+                  _buildHeader(),
+                  const SizedBox(height: 16),
+                  _buildFilterRow(),
+                ],
               ),
-              const SizedBox(height: 16),
-              Expanded(
-                child: state.isLoading && state.groups.isEmpty
-                    ? const Center(child: CircularProgressIndicator())
-                    : state.error != null && state.groups.isEmpty
-                    ? Center(child: Text(state.error!))
-                    : state.groups.isEmpty
-                    ? Center(
-                        child: Text(
-                          '暂无账单记录',
-                          style: oneKeepInter(
-                            color: oneKeepTextSecondary(context),
-                            size: 12,
-                            weight: FontWeight.w400,
-                          ),
+            ),
+            const SizedBox(height: 16),
+            Expanded(
+              child: state.isLoading && state.groups.isEmpty
+                  ? const Center(child: CircularProgressIndicator())
+                  : state.error != null && state.groups.isEmpty
+                  ? Center(child: Text(state.error!))
+                  : state.groups.isEmpty
+                  ? Center(
+                      child: Text(
+                        '暂无账单记录',
+                        style: oneKeepInter(
+                          color: oneKeepTextSecondary(context),
+                          size: 12,
+                          weight: FontWeight.w400,
                         ),
-                      )
-                    : ListView.builder(
-                        controller: _scrollController,
-                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 110),
-                        itemCount:
-                            state.groups.length + (state.isLoading ? 1 : 0),
-                        itemBuilder: (context, index) {
-                          if (index >= state.groups.length) {
-                            return const Padding(
-                              padding: EdgeInsets.symmetric(vertical: 16),
-                              child: Center(child: CircularProgressIndicator()),
-                            );
-                          }
-                          return Padding(
-                            padding: EdgeInsets.only(
-                              bottom: index == state.groups.length - 1 ? 0 : 16,
-                            ),
-                            child: _buildDateGroup(state.groups[index]),
-                          );
-                        },
                       ),
-              ),
-            ],
-          ),
+                    )
+                  : ListView.builder(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 110),
+                      itemCount:
+                          state.groups.length + (state.isLoading ? 1 : 0),
+                      itemBuilder: (context, index) {
+                        if (index >= state.groups.length) {
+                          return const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 16),
+                            child: Center(child: CircularProgressIndicator()),
+                          );
+                        }
+                        return Padding(
+                          padding: EdgeInsets.only(
+                            bottom: index == state.groups.length - 1 ? 0 : 16,
+                          ),
+                          child: _buildDateGroup(state.groups[index], categoryColors),
+                        );
+                      },
+                    ),
+            ),
+          ],
         ),
       ),
     );
@@ -121,94 +124,35 @@ class _BillsPageState extends ConsumerState<BillsPage> {
         ),
         const Spacer(),
         GestureDetector(
-          onTap: () => setState(() => _searchExpanded = true),
-          child: OneKeepGlassCard(
-            radius: 12,
-            blurSigma: 10,
-            fillColor: oneKeepGlassStrong(context),
-            borderColor: Colors.transparent,
-            padding: EdgeInsets.zero,
-            child: SizedBox(
-              width: 40,
-              height: 40,
-              child: Icon(
-                Icons.search_rounded,
-                size: 20,
-                color: oneKeepTextSecondary(context),
-              ),
+          onTap: _showMonthPicker,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: oneKeepGlassStrong(context),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  [_selectedMonth.year, _selectedMonth.month.toString().padLeft(2, '0')].join('/'),
+                  style: oneKeepInter(
+                    color: oneKeepTextSecondary(context),
+                    size: 13,
+                    weight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Icon(
+                  Icons.expand_more_rounded,
+                  size: 14,
+                  color: oneKeepTextSecondary(context),
+                ),
+              ],
             ),
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildSearchHeader() {
-    return SizedBox(
-      height: 44,
-      child: Row(
-        children: [
-          Expanded(
-            child: OneKeepGlassCard(
-              radius: 12,
-              blurSigma: 10,
-              fillColor: oneKeepGlassStrong(context),
-              borderColor: oneKeepBorderStrong(context),
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.search_rounded,
-                    size: 18,
-                    color: oneKeepTextSecondary(context),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: TextField(
-                      controller: _searchController,
-                      autofocus: true,
-                      onSubmitted: (_) => _reload(),
-                      style: oneKeepInter(
-                        color: oneKeepTextPrimary(context),
-                        size: 13,
-                        weight: FontWeight.w400,
-                      ),
-                      decoration: InputDecoration(
-                        isCollapsed: true,
-                        border: InputBorder.none,
-                        hintText: '搜索账单',
-                        hintStyle: oneKeepInter(
-                          color: oneKeepTextSecondary(context),
-                          size: 13,
-                          weight: FontWeight.w400,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          GestureDetector(
-            onTap: () {
-              setState(() {
-                _searchExpanded = false;
-                _searchController.clear();
-              });
-              _reload();
-            },
-            child: Text(
-              '取消',
-              style: oneKeepManrope(
-                color: AppColors.teal,
-                size: 14,
-                weight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -236,7 +180,7 @@ class _BillsPageState extends ConsumerState<BillsPage> {
     );
   }
 
-  Widget _buildDateGroup(BillGroup group) {
+  Widget _buildDateGroup(BillGroup group, Map<String, String?> categoryColors) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -278,7 +222,14 @@ class _BillsPageState extends ConsumerState<BillsPage> {
         ...group.items.map(
           (tx) => Padding(
             padding: const EdgeInsets.only(bottom: 12),
-            child: _BillRow(transaction: tx, onTap: () => _showDetailSheet(tx)),
+            child: _BillRow(
+              transaction: tx,
+              categoryColor: categoryColors[tx.categoryId] ?? tx.categoryColor,
+              onTap: () => _showDetailSheet(
+                tx,
+                categoryColors[tx.categoryId] ?? tx.categoryColor,
+              ),
+            ),
           ),
         ),
       ],
@@ -289,9 +240,8 @@ class _BillsPageState extends ConsumerState<BillsPage> {
     ref
         .read(billsProvider.notifier)
         .load(
-          month: _selectedMonth,
+          month: _monthKey,
           filterType: _filterType,
-          query: _searchController.text.trim(),
         );
   }
 
@@ -301,9 +251,8 @@ class _BillsPageState extends ConsumerState<BillsPage> {
       ref
           .read(billsProvider.notifier)
           .loadMore(
-            month: _selectedMonth,
+            month: _monthKey,
             filterType: _filterType,
-            query: _searchController.text.trim(),
           );
     }
   }
@@ -314,12 +263,175 @@ class _BillsPageState extends ConsumerState<BillsPage> {
     _reload();
   }
 
-  Future<void> _showDetailSheet(Transaction tx) async {
+  void _showMonthPicker() {
+    var displayYear = _selectedMonth.year;
+    final now = DateTime.now();
+
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      barrierColor: oneKeepDimOverlay(context),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return OneKeepSheetSurface(
+              child: SafeArea(
+                top: false,
+                child: SizedBox(
+                  height: 374,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 12, 24, 36),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Align(
+                          alignment: Alignment.center,
+                          child: Container(
+                            width: 40,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: oneKeepTextTertiary(context).withValues(alpha: 0.32),
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 18),
+                        Row(
+                          children: [
+                            Text(
+                              '选择月份',
+                              style: oneKeepManrope(
+                                color: oneKeepTextPrimary(context),
+                                size: 18,
+                                weight: FontWeight.w700,
+                              ),
+                            ),
+                            const Spacer(),
+                            GestureDetector(
+                              onTap: () => Navigator.pop(context),
+                              child: Icon(
+                                Icons.close_rounded,
+                                color: oneKeepTextSecondary(context),
+                                size: 24,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            GestureDetector(
+                              onTap: () => setModalState(() => displayYear -= 1),
+                              child: Icon(
+                                Icons.chevron_left_rounded,
+                                color: oneKeepTextSecondary(context),
+                                size: 20,
+                              ),
+                            ),
+                            const Spacer(),
+                            Text(
+                              '$displayYear',
+                              style: oneKeepManrope(
+                                color: oneKeepTextPrimary(context),
+                                size: 16,
+                                weight: FontWeight.w600,
+                              ),
+                            ),
+                            const Spacer(),
+                            GestureDetector(
+                              onTap: displayYear < now.year
+                                  ? () => setModalState(() => displayYear += 1)
+                                  : null,
+                              child: Icon(
+                                Icons.chevron_right_rounded,
+                                color: displayYear < now.year
+                                    ? oneKeepTextSecondary(context)
+                                    : oneKeepTextTertiary(context).withValues(alpha: 0.5),
+                                size: 20,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Expanded(
+                          child: GridView.builder(
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: 12,
+                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 4,
+                              crossAxisSpacing: 10,
+                              mainAxisSpacing: 10,
+                              mainAxisExtent: 32,
+                            ),
+                            itemBuilder: (context, index) {
+                              final month = index + 1;
+                              final disabled = displayYear == now.year && month > now.month;
+                              final selected =
+                                  displayYear == _selectedMonth.year &&
+                                  month == _selectedMonth.month;
+
+                              return GestureDetector(
+                                onTap: disabled
+                                    ? null
+                                    : () {
+                                        setState(() {
+                                          _selectedMonth = DateTime(displayYear, month);
+                                        });
+                                        Navigator.pop(context);
+                                        _reload();
+                                      },
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: selected
+                                        ? AppColors.teal.withValues(alpha: 0.18)
+                                        : oneKeepGlassStrong(context),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: selected
+                                          ? AppColors.teal.withValues(alpha: 0.32)
+                                          : Colors.transparent,
+                                      width: 0.8,
+                                    ),
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: Text(
+                                    '$month月',
+                                    style: oneKeepInter(
+                                      color: selected
+                                          ? AppColors.tealDark
+                                          : disabled
+                                          ? oneKeepTextTertiary(context).withValues(alpha: 0.5)
+                                          : oneKeepTextTertiary(context),
+                                      size: 12,
+                                      weight: selected ? FontWeight.w600 : FontWeight.w400,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _showDetailSheet(Transaction tx, String? categoryColor) async {
     final action = await showModalBottomSheet<_TransactionDetailAction>(
       context: context,
       backgroundColor: Colors.transparent,
       barrierColor: oneKeepDimOverlay(context),
-      builder: (_) => _BillDetailSheet(transaction: tx),
+      builder: (_) => _BillDetailSheet(
+        transaction: tx,
+        categoryColor: categoryColor,
+      ),
     );
     if (!mounted || action == null) return;
 
@@ -369,7 +481,7 @@ class _BillsPageState extends ConsumerState<BillsPage> {
       builder: (dialogContext) => AlertDialog(
         backgroundColor: oneKeepSurface(dialogContext),
         title: Text(
-          '删除这条记账？',
+          '删除这条记录？',
           style: oneKeepManrope(
             color: oneKeepTextPrimary(dialogContext),
             size: 18,
@@ -487,59 +599,67 @@ class _FilterChip extends StatelessWidget {
 
 class _BillRow extends StatelessWidget {
   final Transaction transaction;
+  final String? categoryColor;
   final VoidCallback onTap;
 
-  const _BillRow({required this.transaction, required this.onTap});
+  const _BillRow({
+    required this.transaction,
+    required this.categoryColor,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isExpense = transaction.isExpense;
     final tone = isExpense ? AppColors.expense : AppColors.income;
-    final icon = oneKeepResolvedCategoryIcon(
-      transaction.title,
-      transaction.categoryName,
-      transaction.categoryIcon,
-    );
     final detail = transaction.merchant ?? transaction.note;
     final title = detail != null && detail.isNotEmpty
         ? '${transaction.title} - $detail'
         : transaction.title;
+    final normalizedTitle = title.trim();
+    final normalizedCategory = transaction.categoryName.trim();
+    final subtitleParts = <String>[
+      DateFormat('HH:mm').format(transaction.occurredAt),
+      if (normalizedCategory.isNotEmpty && normalizedCategory != normalizedTitle)
+        normalizedCategory,
+    ];
 
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
         decoration: BoxDecoration(
           color: isDark ? AppColors.darkCard : Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isDark
-              ? AppColors.darkCardBorder
-              : AppColors.lightCardBorder,
-            width: 1.0,
-          ),
+          borderRadius: BorderRadius.circular(20),
+          border: isDark
+              ? Border.all(
+                  color: AppColors.darkCardBorder,
+                  width: 0.8,
+                )
+              : null,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+              color: Colors.black.withValues(alpha: isDark ? 0.18 : 0.04),
+              blurRadius: 18,
+              offset: const Offset(0, 8),
             ),
           ],
         ),
         child: Row(
           children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: tone.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Icon(icon, size: 22, color: tone),
+            OneKeepCategoryBadge(
+              title: transaction.title,
+              categoryName: transaction.categoryName,
+              categoryIcon: transaction.categoryIcon,
+              categoryId: transaction.categoryId,
+              colorHex: categoryColor,
+              size: 40,
+              iconSize: 18,
+              radius: 12,
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -550,13 +670,13 @@ class _BillRow extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: oneKeepManrope(
                       color: oneKeepTextPrimary(context),
-                      size: 16,
-                      weight: FontWeight.w600,
+                      size: 14,
+                      weight: FontWeight.w500,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
                   Text(
-                    '${DateFormat('HH:mm').format(transaction.occurredAt)} · ${transaction.categoryName}',
+                    subtitleParts.join(' · '),
                     style: oneKeepInter(
                       color: oneKeepTextSecondary(context),
                       size: 12,
@@ -584,18 +704,17 @@ class _BillRow extends StatelessWidget {
 
 class _BillDetailSheet extends StatelessWidget {
   final Transaction transaction;
+  final String? categoryColor;
 
-  const _BillDetailSheet({required this.transaction});
+  const _BillDetailSheet({
+    required this.transaction,
+    required this.categoryColor,
+  });
 
   @override
   Widget build(BuildContext context) {
     final isExpense = transaction.isExpense;
     final tone = isExpense ? AppColors.expense : AppColors.income;
-    final icon = oneKeepResolvedCategoryIcon(
-      transaction.title,
-      transaction.categoryName,
-      transaction.categoryIcon,
-    );
     final detail = transaction.merchant ?? transaction.note;
     final title = detail != null && detail.isNotEmpty
         ? '${transaction.title} - $detail'
@@ -627,14 +746,15 @@ class _BillDetailSheet extends StatelessWidget {
                 const SizedBox(height: 18),
                 Row(
                   children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: tone.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(icon, size: 20, color: tone),
+                    OneKeepCategoryBadge(
+                      title: transaction.title,
+                      categoryName: transaction.categoryName,
+                      categoryIcon: transaction.categoryIcon,
+                      categoryId: transaction.categoryId,
+                      colorHex: categoryColor,
+                      size: 40,
+                      iconSize: 20,
+                      radius: 12,
                     ),
                     const SizedBox(width: 14),
                     Expanded(

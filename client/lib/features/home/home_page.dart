@@ -1,8 +1,8 @@
 import 'dart:convert';
-import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -16,6 +16,106 @@ import '../../shared/models/models.dart';
 import '../../shared/widgets/onekeep_ui.dart';
 import '../../shared/widgets/transaction_editor_sheet.dart';
 
+const _homeHeroSurfaceTop = Color(0xFFFFF4CC);
+const _homeHeroSurfaceMid = Color(0xFFF3D36D);
+const _homeHeroSurfaceBottom = Color(0xFFE3B34C);
+const _homeHeroCardTop = Color(0xFFF3D24A);
+const _homeHeroCardBottom = Color(0xFFEDC100);
+const _homeListPrimaryText = Color(0xFF333333);
+const _homeListSecondaryText = Color(0xFFBFBFBF);
+const _homeDarkHeroTop = Color(0xFF322400);
+const _homeDarkHeroMid = Color(0xFF6C4F00);
+const _homeDarkHeroBottom = Color(0xFFA07600);
+const _homeDarkCardTop = Color(0xFF846200);
+const _homeDarkCardBottom = Color(0xFF5B4300);
+const _homeDarkListPrimaryText = Color(0xFFF3F4F6);
+const _homeDarkListSecondaryText = Color(0xFF8E8E93);
+
+class _HomePalette {
+  final Color scaffoldBackground;
+  final SystemUiOverlayStyle overlayStyle;
+  final List<Color> heroGradient;
+  final Color heroGlowPrimary;
+  final Color heroGlowSecondary;
+  final Color heroGreetingText;
+  final Color heroNameText;
+  final Color heroActionBackground;
+  final Color heroActionBorder;
+  final Color heroActionIcon;
+  final List<Color> cardGradient;
+  final Color cardGlow;
+  final Color cardShadow;
+  final Color listPrimaryText;
+  final Color listSecondaryText;
+  final Color listAccent;
+
+  const _HomePalette({
+    required this.scaffoldBackground,
+    required this.overlayStyle,
+    required this.heroGradient,
+    required this.heroGlowPrimary,
+    required this.heroGlowSecondary,
+    required this.heroGreetingText,
+    required this.heroNameText,
+    required this.heroActionBackground,
+    required this.heroActionBorder,
+    required this.heroActionIcon,
+    required this.cardGradient,
+    required this.cardGlow,
+    required this.cardShadow,
+    required this.listPrimaryText,
+    required this.listSecondaryText,
+    required this.listAccent,
+  });
+
+  static _HomePalette of(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    if (isDark) {
+      return const _HomePalette(
+        scaffoldBackground: AppColors.darkBg,
+        overlayStyle: SystemUiOverlayStyle.light,
+        heroGradient: [_homeDarkHeroTop, _homeDarkHeroMid, _homeDarkHeroBottom],
+        heroGlowPrimary: Color(0x40FFFFFF),
+        heroGlowSecondary: Color(0x22FBBF24),
+        heroGreetingText: Color(0xCCFDE68A),
+        heroNameText: Color(0xFFFFF9E7),
+        heroActionBackground: Color(0x2EFDE68A),
+        heroActionBorder: Color(0x33FDE68A),
+        heroActionIcon: Color(0xFFFFF0C0),
+        cardGradient: [_homeDarkCardTop, _homeDarkCardBottom],
+        cardGlow: Color(0x26FDE68A),
+        cardShadow: Color(0x66000000),
+        listPrimaryText: _homeDarkListPrimaryText,
+        listSecondaryText: _homeDarkListSecondaryText,
+        listAccent: Color(0xFFEDC100),
+      );
+    }
+
+    return const _HomePalette(
+      scaffoldBackground: Colors.white,
+      overlayStyle: SystemUiOverlayStyle.dark,
+      heroGradient: [
+        _homeHeroSurfaceTop,
+        _homeHeroSurfaceMid,
+        _homeHeroSurfaceBottom,
+      ],
+      heroGlowPrimary: Color(0x42FFFFFF),
+      heroGlowSecondary: Color(0x29FFFFFF),
+      heroGreetingText: Color(0xAA4B2E08),
+      heroNameText: Color(0xFF4B3800),
+      heroActionBackground: Color(0x38FFFFFF),
+      heroActionBorder: Color(0x2EFFFFFF),
+      heroActionIcon: Color(0xFF6A4E00),
+      cardGradient: [_homeHeroCardTop, _homeHeroCardBottom],
+      cardGlow: Color(0x24FFFFFF),
+      cardShadow: Color(0x387C5316),
+      listPrimaryText: _homeListPrimaryText,
+      listSecondaryText: _homeListSecondaryText,
+      listAccent: _homeHeroCardBottom,
+    );
+  }
+}
+
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
 
@@ -24,6 +124,7 @@ class HomePage extends ConsumerStatefulWidget {
 }
 
 class _HomePageState extends ConsumerState<HomePage> {
+  // ignore: unused_field
   bool _balanceVisible = true;
 
   @override
@@ -32,6 +133,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     Future.microtask(() => ref.read(homeProvider.notifier).load());
   }
 
+  // ignore: unused_element
   String _greeting() {
     final hour = DateTime.now().hour;
     if (hour < 6) return '凌晨好';
@@ -45,46 +147,45 @@ class _HomePageState extends ConsumerState<HomePage> {
     final state = ref.watch(homeProvider);
     final authState = ref.watch(authProvider);
     final preferences = ref.watch(preferencesProvider);
+    final categories = ref.watch(categoriesProvider).valueOrNull ?? const <Category>[];
+    final categoryColors = <String, String?>{
+      for (final item in categories) item.id: item.color,
+    };
+    final palette = _HomePalette.of(context);
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: OneKeepPageBackground(
-        variant: OneKeepPageVariant.home,
-        child: SafeArea(
-          bottom: false,
-          child: state.isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : state.error != null
-              ? Center(child: Text(state.error!))
-              : RefreshIndicator(
-                  onRefresh: () => ref.read(homeProvider.notifier).load(),
-                  child: ListView(
-                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 110),
-                    children: [
-                      _buildHeader(
-                        state.summary,
-                        authState.user?.name,
-                        preferences,
-                      ),
-                      const SizedBox(height: 20),
-                      if (state.summary != null) ...[
-                        _buildBalanceCard(
-                          state.summary!,
-                          preferences.profileBackgroundImageData,
-                        ),
-                        const SizedBox(height: 20),
-                        _buildIncomeExpenseRow(state.summary!),
-                        const SizedBox(height: 20),
-                        _buildRecentSection(state.summary!.recentTransactions),
-                      ],
-                    ],
-                  ),
+      backgroundColor: palette.scaffoldBackground,
+      body: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: palette.overlayStyle,
+        child: state.isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : state.error != null
+            ? Center(child: Text(state.error!))
+            : RefreshIndicator(
+                edgeOffset: MediaQuery.paddingOf(context).top + 12,
+                onRefresh: () => ref.read(homeProvider.notifier).load(),
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: EdgeInsets.zero,
+                  children: [
+	                    _buildHeroSection(
+	                      state.summary,
+	                      authState.user?.name,
+	                      preferences,
+	                    ),
+	                    if (state.summary != null)
+	                      _buildContentSection(
+	                        state.summary!.recentTransactions,
+	                        categoryColors,
+	                      ),
+	                  ],
                 ),
-        ),
+              ),
       ),
     );
   }
 
+  // ignore: unused_element
   Widget _buildHeader(
     HomeSummary? summary,
     String? authUserName,
@@ -153,6 +254,292 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
+  String _heroGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 6) return '凌晨好';
+    if (hour < 12) return '早上好';
+    if (hour < 18) return '下午好';
+    return '晚上好';
+  }
+
+  Widget _buildHeroSection(
+    HomeSummary? summary,
+    String? authUserName,
+    PreferencesState preferences,
+  ) {
+    final palette = _HomePalette.of(context);
+    final userName = preferences.nickname.isNotEmpty
+        ? preferences.nickname
+        : (summary?.user.name.isNotEmpty == true
+              ? summary!.user.name
+              : (authUserName?.isNotEmpty == true
+                    ? authUserName!
+                    : 'OneKeep 用户'));
+
+    return SizedBox(
+      height: 332,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          SizedBox(
+            height: 322,
+            child: ClipPath(
+              clipper: _HeroFanClipper(),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: palette.heroGradient,
+                        stops: [0.0, 0.48, 1.0],
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    left: -84,
+                    top: -110,
+                    child: Container(
+                      width: 260,
+                      height: 260,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: RadialGradient(
+                          colors: [palette.heroGlowPrimary, Colors.transparent],
+                        ),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    right: -46,
+                    top: 36,
+                    child: Container(
+                      width: 180,
+                      height: 180,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: RadialGradient(
+                          colors: [
+                            palette.heroGlowSecondary,
+                            Colors.transparent,
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  Align(
+                    alignment: Alignment.topCenter,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          OneKeepAvatar(
+                            avatarIndex: preferences.avatarIndex,
+                            avatarImageData: preferences.avatarImageData,
+                            size: 54,
+                            iconSize: 24,
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: SizedBox(
+                              height: 54,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    _heroGreeting(),
+                                    style: oneKeepManrope(
+                                      color: palette.heroGreetingText,
+                                      size: 14,
+                                      weight: FontWeight.w600,
+                                      height: 1,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    userName,
+                                    style: oneKeepGrotesk(
+                                      color: palette.heroNameText,
+                                      size: 22,
+                                      weight: FontWeight.w700,
+                                      height: 1,
+                                      letterSpacing: 0.1,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: palette.heroActionBackground,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: palette.heroActionBorder,
+                              ),
+                            ),
+                            child: Icon(
+                              Icons.notifications_none_rounded,
+                              size: 20,
+                              color: palette.heroActionIcon,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (summary != null)
+            Positioned(
+              left: 20,
+              right: 20,
+              top: 110,
+              child: _buildHeroBalanceCard(summary),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeroBalanceCard(HomeSummary summary) {
+    final palette = _HomePalette.of(context);
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: palette.cardShadow,
+            blurRadius: 18,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: palette.cardGradient,
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              right: -54,
+              top: -32,
+              child: Container(
+                width: 180,
+                height: 180,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [palette.cardGlow, Colors.transparent],
+                  ),
+                ),
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.fromLTRB(24, 28, 24, 28),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.14),
+                  width: 1,
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '本月结余',
+                        style: oneKeepManrope(
+                          color: Colors.white.withValues(alpha: 0.72),
+                          size: 14,
+                          weight: FontWeight.w600,
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () =>
+                            setState(() => _balanceVisible = !_balanceVisible),
+                        child: Container(
+                          padding: const EdgeInsets.all(5),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Icon(
+                            _balanceVisible
+                                ? Icons.visibility_outlined
+                                : Icons.visibility_off_outlined,
+                            size: 15,
+                            color: Colors.white.withValues(alpha: 0.92),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    _balanceVisible
+                        ? '¥ ${oneKeepCurrency(summary.balance)}'
+                        : '¥ ********',
+                    style: oneKeepGrotesk(
+                      color: Colors.white,
+                      size: 32,
+                      weight: FontWeight.w700,
+                      letterSpacing: _balanceVisible ? 0.6 : 1.6,
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _BalanceInlineMetric(
+                          label: '收入',
+                          amount: summary.income,
+                          icon: Icons.south_west_rounded,
+                          visible: _balanceVisible,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _BalanceInlineMetric(
+                          label: '支出',
+                          amount: summary.expense,
+                          icon: Icons.north_east_rounded,
+                          visible: _balanceVisible,
+                          alignEnd: true,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ignore: unused_element
   Widget _buildBalanceCard(HomeSummary summary, String? backgroundImageData) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final hasBackgroundImage =
@@ -214,8 +601,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
                   color: isDark
-                    ? Colors.white.withValues(alpha: 0.1)
-                    : Colors.white.withValues(alpha: 0.2),
+                      ? Colors.white.withValues(alpha: 0.1)
+                      : Colors.white.withValues(alpha: 0.2),
                   width: 1,
                 ),
               ),
@@ -342,6 +729,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     }
   }
 
+  // ignore: unused_element
   Widget _buildIncomeExpenseRow(HomeSummary summary) {
     return Row(
       children: [
@@ -368,7 +756,26 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-  Widget _buildRecentSection(List<Transaction> items) {
+  Widget _buildContentSection(
+    List<Transaction> items,
+    Map<String, String?> categoryColors,
+  ) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        20,
+        8,
+        20,
+        MediaQuery.paddingOf(context).bottom + 110,
+      ),
+      child: _buildRecentSection(items, categoryColors),
+    );
+  }
+
+  Widget _buildRecentSection(
+    List<Transaction> items,
+    Map<String, String?> categoryColors,
+  ) {
+    final palette = _HomePalette.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -379,10 +786,13 @@ class _HomePageState extends ConsumerState<HomePage> {
               height: 16,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(2),
-                gradient: const LinearGradient(
+                gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [AppColors.teal, AppColors.purple],
+                  colors: [
+                    palette.listAccent.withValues(alpha: 0.82),
+                    palette.listAccent,
+                  ],
                 ),
               ),
             ),
@@ -441,7 +851,11 @@ class _HomePageState extends ConsumerState<HomePage> {
               padding: const EdgeInsets.only(bottom: 10),
               child: _HomeTransactionRow(
                 transaction: item,
-                onTap: () => _showTransactionSheet(item),
+                categoryColor: categoryColors[item.categoryId] ?? item.categoryColor,
+                onTap: () => _showTransactionSheet(
+                  item,
+                  categoryColors[item.categoryId] ?? item.categoryColor,
+                ),
               ),
             ),
           ),
@@ -449,12 +863,15 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-  Future<void> _showTransactionSheet(Transaction tx) async {
+  Future<void> _showTransactionSheet(Transaction tx, String? categoryColor) async {
     final action = await showModalBottomSheet<_TransactionDetailAction>(
       context: context,
       backgroundColor: Colors.transparent,
       barrierColor: oneKeepDimOverlay(context),
-      builder: (_) => _HomeTransactionDetailSheet(transaction: tx),
+      builder: (_) => _HomeTransactionDetailSheet(
+        transaction: tx,
+        categoryColor: categoryColor,
+      ),
     );
     if (!mounted || action == null) return;
 
@@ -573,6 +990,96 @@ class _HomePageState extends ConsumerState<HomePage> {
 
 enum _TransactionDetailAction { edit, delete }
 
+class _HeroFanClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    final path = Path()..moveTo(0, 0);
+    path.lineTo(0, size.height - 72);
+    path.cubicTo(
+      size.width * 0.22,
+      size.height - 6,
+      size.width * 0.78,
+      size.height - 6,
+      size.width,
+      size.height - 72,
+    );
+    path.lineTo(size.width, 0);
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
+}
+
+// ignore: unused_element
+class _BalanceInlineMetric extends StatelessWidget {
+  final String label;
+  final double amount;
+  final IconData icon;
+  final bool visible;
+  final bool alignEnd;
+
+  const _BalanceInlineMetric({
+    required this.label,
+    required this.amount,
+    required this.icon,
+    required this.visible,
+    this.alignEnd = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final alignment = alignEnd
+        ? CrossAxisAlignment.end
+        : CrossAxisAlignment.start;
+
+    return Column(
+      crossAxisAlignment: alignment,
+      children: [
+        Row(
+          mainAxisAlignment: alignEnd
+              ? MainAxisAlignment.end
+              : MainAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 18,
+              height: 18,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.14),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: 11, color: Colors.white),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: oneKeepManrope(
+                color: Colors.white.withValues(alpha: 0.72),
+                size: 12,
+                weight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Text(
+          visible ? '¥ ${oneKeepCurrency(amount)}' : '¥ ****',
+          textAlign: alignEnd ? TextAlign.right : TextAlign.left,
+          style: oneKeepGrotesk(
+            color: Colors.white,
+            size: 19,
+            weight: FontWeight.w700,
+            letterSpacing: 0.2,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ignore: unused_element
 class _MetricTile extends StatelessWidget {
   final String label;
   final double amount;
@@ -644,55 +1151,39 @@ class _MetricTile extends StatelessWidget {
 
 class _HomeTransactionRow extends StatelessWidget {
   final Transaction transaction;
+  final String? categoryColor;
   final VoidCallback onTap;
 
-  const _HomeTransactionRow({required this.transaction, required this.onTap});
+  const _HomeTransactionRow({
+    required this.transaction,
+    required this.categoryColor,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     final isExpense = transaction.isExpense;
-    final tone = isExpense ? AppColors.expense : AppColors.income;
-    final icon = oneKeepResolvedCategoryIcon(
-      transaction.title,
-      transaction.categoryName,
-      transaction.categoryIcon,
-    );
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final palette = _HomePalette.of(context);
+    final tone = palette.listAccent;
 
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        decoration: BoxDecoration(
-          color: isDark ? AppColors.darkCard : Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isDark
-              ? AppColors.darkCardBorder
-              : AppColors.lightCardBorder,
-            width: 1.0,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
+        padding: const EdgeInsets.fromLTRB(0, 14, 4, 14),
         child: Row(
           children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: tone.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Icon(icon, size: 22, color: tone),
+            OneKeepCategoryBadge(
+              title: transaction.title,
+              categoryName: transaction.categoryName,
+              categoryIcon: transaction.categoryIcon,
+              categoryId: transaction.categoryId,
+              colorHex: categoryColor,
+              size: 44,
+              iconSize: 22,
+              radius: 12,
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -700,8 +1191,8 @@ class _HomeTransactionRow extends StatelessWidget {
                   Text(
                     transaction.title,
                     style: oneKeepManrope(
-                      color: oneKeepTextPrimary(context),
-                      size: 16,
+                      color: palette.listPrimaryText,
+                      size: 15,
                       weight: FontWeight.w600,
                     ),
                   ),
@@ -709,7 +1200,7 @@ class _HomeTransactionRow extends StatelessWidget {
                   Text(
                     '${transaction.categoryName} · ${oneKeepDayTime(transaction.occurredAt)}',
                     style: oneKeepInter(
-                      color: oneKeepTextSecondary(context),
+                      color: palette.listSecondaryText,
                       size: 12,
                       weight: FontWeight.w500,
                     ),
@@ -720,7 +1211,7 @@ class _HomeTransactionRow extends StatelessWidget {
             Text(
               '${isExpense ? '-' : '+'} ¥${oneKeepCurrency(transaction.amount)}',
               style: oneKeepGrotesk(
-                color: oneKeepTextPrimary(context),
+                color: palette.listAccent,
                 size: 16,
                 weight: FontWeight.w700,
               ),
@@ -734,17 +1225,16 @@ class _HomeTransactionRow extends StatelessWidget {
 
 class _HomeTransactionDetailSheet extends StatelessWidget {
   final Transaction transaction;
+  final String? categoryColor;
 
-  const _HomeTransactionDetailSheet({required this.transaction});
+  const _HomeTransactionDetailSheet({
+    required this.transaction,
+    required this.categoryColor,
+  });
 
   @override
   Widget build(BuildContext context) {
     final tone = transaction.isExpense ? AppColors.expense : AppColors.income;
-    final icon = oneKeepResolvedCategoryIcon(
-      transaction.title,
-      transaction.categoryName,
-      transaction.categoryIcon,
-    );
 
     return OneKeepSheetSurface(
       child: SafeArea(
@@ -772,14 +1262,15 @@ class _HomeTransactionDetailSheet extends StatelessWidget {
                 const SizedBox(height: 18),
                 Row(
                   children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: tone.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(icon, size: 20, color: tone),
+                    OneKeepCategoryBadge(
+                      title: transaction.title,
+                      categoryName: transaction.categoryName,
+                      categoryIcon: transaction.categoryIcon,
+                      categoryId: transaction.categoryId,
+                      colorHex: categoryColor,
+                      size: 40,
+                      iconSize: 20,
+                      radius: 12,
                     ),
                     const SizedBox(width: 14),
                     Expanded(

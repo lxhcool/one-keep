@@ -1,11 +1,61 @@
+﻿import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/providers/api_provider.dart';
 import '../../core/providers/data_providers.dart';
 import '../../core/theme/app_colors.dart';
 import '../../shared/models/models.dart';
 import '../../shared/widgets/onekeep_ui.dart';
+
+const _statsPageBackground = Color(0xFFF2F3F5);
+
+enum _StatsRange { day, week, month, year }
+
+extension _StatsRangeLabel on _StatsRange {
+  String get label {
+    switch (this) {
+      case _StatsRange.day:
+        return '天';
+      case _StatsRange.week:
+        return '周';
+      case _StatsRange.month:
+        return '月';
+      case _StatsRange.year:
+        return '年';
+    }
+  }
+}
+
+class _ResolvedStats {
+  final double totalIncome;
+  final double totalExpense;
+  final List<TrendPoint> trendSeries;
+  final List<CategoryRank> categoryRanks;
+
+  const _ResolvedStats({
+    required this.totalIncome,
+    required this.totalExpense,
+    required this.trendSeries,
+    required this.categoryRanks,
+  });
+}
+
+class _CategoryAggregate {
+  final String id;
+  final String name;
+  final String icon;
+  double amount;
+
+  _CategoryAggregate({
+    required this.id,
+    required this.name,
+    required this.icon,
+    required this.amount,
+  });
+}
 
 class StatsPage extends ConsumerStatefulWidget {
   const StatsPage({super.key});
@@ -17,6 +67,12 @@ class StatsPage extends ConsumerStatefulWidget {
 class _StatsPageState extends ConsumerState<StatsPage> {
   DateTime _selectedMonth = DateTime(DateTime.now().year, DateTime.now().month);
   String _metricType = 'expense';
+  _StatsRange _range = _StatsRange.month;
+
+  final Map<String, StatsOverview> _overviewCache = {};
+  bool _isAggregateLoading = false;
+  String? _aggregateError;
+  _ResolvedStats? _aggregateStats;
 
   String get _monthKey => DateFormat('yyyy-MM').format(_selectedMonth);
 
@@ -26,222 +82,459 @@ class _StatsPageState extends ConsumerState<StatsPage> {
     Future.microtask(_reload);
   }
 
-  void _reload() {
-    ref
-        .read(statsProvider.notifier)
-        .load(month: _monthKey, metricType: _metricType);
+  Future<void> _reload() async {
+    await ref.read(statsProvider.notifier).load(
+      month: _monthKey,
+      metricType: _metricType,
+    );
+    await _refreshAggregateData();
   }
 
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(statsProvider);
+    final categories = ref.watch(categoriesProvider).valueOrNull ?? const <Category>[];
+    final categoryColors = <String, String?>{
+      for (final item in categories) item.id: item.color,
+    };
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final currentOverview =
+        state.overview ?? _overviewCache[_cacheKey(_selectedMonth)];
+    if (state.overview != null) {
+      _overviewCache[_cacheKey(_selectedMonth)] = state.overview!;
+    }
+
+    final displayStats = _resolveDisplayStats(currentOverview);
+    final showLoading =
+        (state.isLoading && currentOverview == null) ||
+        (_needsAggregateFetch && _isAggregateLoading && displayStats == null);
+    final showError =
+        displayStats == null &&
+        ((state.error != null && currentOverview == null) ||
+            (_needsAggregateFetch && _aggregateError != null));
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: OneKeepPageBackground(
-        variant: OneKeepPageVariant.stats,
-        child: SafeArea(
-          bottom: false,
-          child: state.isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : state.error != null
-              ? Center(child: Text(state.error!))
-              : ListView(
-                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 110),
-                  children: [
-                    _buildHeader(),
-                    const SizedBox(height: 20),
-                    if (state.overview != null) ...[
-                      _buildSummaryRow(state.overview!),
-                      const SizedBox(height: 20),
-                      _buildTrendCard(state.overview!),
-                      const SizedBox(height: 20),
-                      _buildCategoryCard(state.overview!),
-                    ],
-                  ],
-                ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Row(
-      children: [
-        Text(
-          '统计',
-          style: oneKeepGrotesk(
-            color: oneKeepTextPrimary(context),
-            size: 24,
-            weight: FontWeight.w700,
-            letterSpacing: 0.5,
-          ),
-        ),
-        const Spacer(),
-        GestureDetector(
-          onTap: _showMonthPicker,
-          child: OneKeepGlassCard(
-            radius: 12,
-            blurSigma: 12,
-            fillColor: oneKeepGlass(context),
-            borderColor: oneKeepBorder(context),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  DateFormat('yyyy年M月').format(_selectedMonth),
+      backgroundColor: isDark ? AppColors.darkBg : _statsPageBackground,
+      body: SafeArea(
+        bottom: false,
+        child: showLoading
+            ? const Center(child: CircularProgressIndicator())
+            : showError
+            ? Center(
+                child: Text(
+                  _aggregateError ?? state.error ?? '加载失败',
                   style: oneKeepInter(
                     color: oneKeepTextSecondary(context),
                     size: 13,
                     weight: FontWeight.w500,
                   ),
                 ),
-                const SizedBox(width: 6),
-                Icon(
-                  Icons.expand_more_rounded,
-                  size: 14,
-                  color: oneKeepTextSecondary(context),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
+              )
+            : ListView(
+                padding: const EdgeInsets.fromLTRB(20, 18, 20, 120),
+                children: [
+                  _buildHeader(),
+                  const SizedBox(height: 24),
+                  if (displayStats != null) ...[
+                  _buildTrendSection(displayStats),
+                  const SizedBox(height: 28),
+                    _buildCategorySection(displayStats, categoryColors),
+                  ],
+                ],
+              ),
+      ),
     );
   }
 
-  Widget _buildSummaryRow(StatsOverview overview) {
+  bool get _needsAggregateFetch {
+    return _range == _StatsRange.month || _range == _StatsRange.year;
+  }
+
+  String _cacheKey(DateTime month) {
+    return '${DateFormat('yyyy-MM').format(month)}|$_metricType';
+  }
+
+  _ResolvedStats? _resolveDisplayStats(StatsOverview? overview) {
+    if (overview == null) return _aggregateStats;
+
+    switch (_range) {
+      case _StatsRange.day:
+        return _ResolvedStats(
+          totalIncome: overview.totalIncome,
+          totalExpense: overview.totalExpense,
+          trendSeries: overview.trendSeries,
+          categoryRanks: overview.categoryRanks,
+        );
+      case _StatsRange.week:
+        return _ResolvedStats(
+          totalIncome: overview.totalIncome,
+          totalExpense: overview.totalExpense,
+          trendSeries: _buildWeeklySeries(overview.trendSeries),
+          categoryRanks: overview.categoryRanks,
+        );
+      case _StatsRange.month:
+      case _StatsRange.year:
+        return _aggregateStats;
+    }
+  }
+
+  Future<void> _refreshAggregateData() async {
+    if (!_needsAggregateFetch) {
+      if (!mounted) return;
+      setState(() {
+        _aggregateStats = null;
+        _aggregateError = null;
+        _isAggregateLoading = false;
+      });
+      return;
+    }
+
+    setState(() {
+      _isAggregateLoading = true;
+      _aggregateError = null;
+    });
+
+    try {
+      final resolved = _range == _StatsRange.month
+          ? await _buildYearMonthStats(_selectedMonth.year)
+          : await _buildYearStats(_selectedMonth.year);
+
+      if (!mounted) return;
+      setState(() {
+        _aggregateStats = resolved;
+        _aggregateError = null;
+        _isAggregateLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _aggregateError = '加载失败';
+        _isAggregateLoading = false;
+      });
+    }
+  }
+
+  Future<StatsOverview> _fetchOverview(DateTime month) async {
+    final key = _cacheKey(month);
+    final cached = _overviewCache[key];
+    if (cached != null) return cached;
+
+    final api = ref.read(apiClientProvider);
+    final response = await api.dio.get(
+      '/api/stats/overview',
+      queryParameters: {
+        'month': DateFormat('yyyy-MM').format(month),
+        'metricType': _metricType,
+      },
+    );
+    final overview = StatsOverview.fromJson(response.data as Map<String, dynamic>);
+    _overviewCache[key] = overview;
+    return overview;
+  }
+
+  Future<_ResolvedStats> _buildYearMonthStats(int year) async {
+    final now = DateTime.now();
+    final monthCount = year == now.year ? now.month : 12;
+    final overviews = await Future.wait(
+      List.generate(monthCount, (index) => _fetchOverview(DateTime(year, index + 1))),
+    );
+
+    return _ResolvedStats(
+      totalIncome: overviews.fold(0.0, (sum, item) => sum + item.totalIncome),
+      totalExpense: overviews.fold(0.0, (sum, item) => sum + item.totalExpense),
+      trendSeries: [
+        for (var index = 0; index < overviews.length; index++)
+          TrendPoint(
+            label: '${index + 1}月',
+            value: _metricType == 'expense'
+                ? overviews[index].totalExpense
+                : overviews[index].totalIncome,
+          ),
+      ],
+      categoryRanks: _aggregateCategoryRanks(overviews),
+    );
+  }
+  Future<_ResolvedStats> _buildYearStats(int endYear) async {
+    final now = DateTime.now();
+    final startYear = math.max(2023, endYear - 3);
+    final points = <TrendPoint>[];
+    final allOverviews = <StatsOverview>[];
+    var totalIncome = 0.0;
+    var totalExpense = 0.0;
+
+    for (var year = startYear; year <= endYear; year++) {
+      final monthCount = year == now.year ? now.month : 12;
+      final yearOverviews = await Future.wait(
+        List.generate(monthCount, (index) => _fetchOverview(DateTime(year, index + 1))),
+      );
+      final yearIncome = yearOverviews.fold(0.0, (sum, item) => sum + item.totalIncome);
+      final yearExpense = yearOverviews.fold(0.0, (sum, item) => sum + item.totalExpense);
+
+      totalIncome += yearIncome;
+      totalExpense += yearExpense;
+      allOverviews.addAll(yearOverviews);
+      points.add(
+        TrendPoint(
+          label: '$year',
+          value: _metricType == 'expense' ? yearExpense : yearIncome,
+        ),
+      );
+    }
+
+    return _ResolvedStats(
+      totalIncome: totalIncome,
+      totalExpense: totalExpense,
+      trendSeries: points,
+      categoryRanks: _aggregateCategoryRanks(allOverviews),
+    );
+  }
+
+  List<TrendPoint> _buildWeeklySeries(List<TrendPoint> points) {
+    if (points.isEmpty) return const [];
+
+    final weekTotals = <int, double>{};
+    for (final point in points) {
+      final day = int.tryParse(point.label.split('-').last) ?? 1;
+      final weekIndex = ((day - 1) ~/ 7) + 1;
+      weekTotals[weekIndex] = (weekTotals[weekIndex] ?? 0) + point.value;
+    }
+
+    final keys = weekTotals.keys.toList()..sort();
+    return keys
+        .map((week) => TrendPoint(label: '第$week周', value: weekTotals[week] ?? 0))
+        .toList();
+  }
+
+  List<CategoryRank> _aggregateCategoryRanks(List<StatsOverview> overviews) {
+    final aggregates = <String, _CategoryAggregate>{};
+
+    for (final overview in overviews) {
+      for (final rank in overview.categoryRanks) {
+        final current = aggregates[rank.categoryId];
+        if (current == null) {
+          aggregates[rank.categoryId] = _CategoryAggregate(
+            id: rank.categoryId,
+            name: rank.categoryName,
+            icon: rank.categoryIcon,
+            amount: rank.amount,
+          );
+        } else {
+          current.amount += rank.amount;
+        }
+      }
+    }
+
+    final items = aggregates.values.toList()
+      ..sort((a, b) => b.amount.compareTo(a.amount));
+    final maxAmount = items.isEmpty ? 0.0 : items.first.amount;
+    return items.take(5).map((item) {
+      return CategoryRank(
+        categoryId: item.id,
+        categoryName: item.name,
+        categoryIcon: item.icon,
+        amount: item.amount,
+        progressRatio: maxAmount > 0 ? item.amount / maxAmount : 0,
+      );
+    }).toList();
+  }
+
+  Widget _buildHeader() {
     return Row(
       children: [
-        Expanded(
-          child: _SummaryCard(
-            label: '总支出',
-            amount: overview.totalExpense,
-            color: AppColors.expense,
-          ),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '统计',
+              style: oneKeepGrotesk(
+                color: oneKeepTextPrimary(context),
+                size: 28,
+                weight: FontWeight.w700,
+                letterSpacing: 0.2,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '查看你的收支趋势',
+              style: oneKeepInter(
+                color: oneKeepTextSecondary(context),
+                size: 13,
+                weight: FontWeight.w400,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: _SummaryCard(
-            label: '总收入',
-            amount: overview.totalIncome,
-            color: oneKeepIncomeTone(context),
+      ],
+    );
+  }
+
+  Widget _buildTrendSection(_ResolvedStats stats) {
+    const tone = Color(0xFFFFCB24);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              '收支趋势',
+              style: oneKeepManrope(
+                color: oneKeepTextPrimary(context),
+                size: 18,
+                weight: FontWeight.w700,
+              ),
+            ),
+            const Spacer(),
+            _MetricToggle(
+              isExpense: _metricType == 'expense',
+              onChanged: (value) async {
+                setState(() => _metricType = value ? 'expense' : 'income');
+                await _reload();
+              },
+            ),
+          ],
+        ),
+        const SizedBox(height: 18),
+        Container(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(22),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Text(
+                    _metricType == 'expense'
+                        ? '¥${oneKeepCurrency(stats.totalExpense)}'
+                        : '¥${oneKeepCurrency(stats.totalIncome)}',
+                    style: oneKeepGrotesk(
+                      color: oneKeepTextPrimary(context),
+                      size: 24,
+                      weight: FontWeight.w700,
+                    ),
+                  ),
+                  const Spacer(),
+                  GestureDetector(
+                    onTap: _showRangePicker,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: oneKeepGlassStrong(context),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            _range.label,
+                            style: oneKeepInter(
+                              color: oneKeepTextTertiary(context),
+                              size: 12,
+                              weight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Icon(
+                            Icons.expand_more_rounded,
+                            size: 14,
+                            color: oneKeepTextTertiary(context),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              _needsAggregateFetch && _isAggregateLoading
+                  ? SizedBox(
+                      height: 184,
+                      child: Center(
+                        child: CircularProgressIndicator(color: tone),
+                      ),
+                    )
+                  : _needsAggregateFetch && _aggregateError != null
+                  ? SizedBox(
+                      height: 184,
+                      child: Center(
+                        child: Text(
+                          _aggregateError!,
+                          style: oneKeepInter(
+                            color: oneKeepTextSecondary(context),
+                            size: 13,
+                            weight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    )
+                  : _TrendBars(
+                      points: stats.trendSeries,
+                      tone: tone,
+                    ),
+            ],
           ),
         ),
       ],
     );
   }
 
-  Widget _buildTrendCard(StatsOverview overview) {
-    final isExpense = _metricType == 'expense';
-    final series = overview.trendSeries.take(7).toList();
+  Widget _buildCategorySection(
+    _ResolvedStats stats,
+    Map<String, String?> categoryColors,
+  ) {
+    final ranks = stats.categoryRanks.take(5).toList();
+    final totalAmount = ranks.isEmpty
+        ? 0.0
+        : ranks
+              .map((rank) => rank.amount)
+              .reduce((current, next) => current + next);
 
-    return OneKeepGlassCard(
-      radius: 18,
-      blurSigma: 16,
-      fillColor: oneKeepGlass(context),
-      borderColor: oneKeepBorder(context),
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Text(
-                isExpense ? '支出趋势' : '收入趋势',
-                style: oneKeepManrope(
-                  color: oneKeepTextPrimary(context),
-                  size: 16,
-                  weight: FontWeight.w600,
-                ),
-              ),
-              const Spacer(),
-              _MetricToggle(
-                isExpense: isExpense,
-                onChanged: (value) {
-                  setState(() => _metricType = value ? 'expense' : 'income');
-                  _reload();
-                },
-              ),
-            ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '分类排行',
+          style: oneKeepManrope(
+            color: oneKeepTextPrimary(context),
+            size: 18,
+            weight: FontWeight.w700,
           ),
-          const SizedBox(height: 16),
-          _TrendBars(
-            points: series,
-            colors: isExpense
-                ? const [AppColors.teal, AppColors.purple]
-                : [oneKeepIncomeTone(context), AppColors.teal],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCategoryCard(StatsOverview overview) {
-    final ranks = overview.categoryRanks.take(3).toList();
-    final tones = _metricType == 'expense'
-        ? const [AppColors.expense, AppColors.purple, AppColors.teal]
-        : [oneKeepIncomeTone(context), AppColors.teal, AppColors.purple];
-
-    return OneKeepGlassCard(
-      radius: 18,
-      blurSigma: 16,
-      fillColor: oneKeepGlass(context),
-      borderColor: oneKeepBorder(context),
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text(
-                '分类排行',
-                style: oneKeepManrope(
-                  color: oneKeepTextPrimary(context),
-                  size: 16,
-                  weight: FontWeight.w600,
-                ),
-              ),
-              const Spacer(),
-              Text(
-                '查看全部',
-                style: oneKeepInter(
-                  color: oneKeepTextTertiary(context),
-                  size: 12,
-                  weight: FontWeight.w400,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          if (ranks.isEmpty)
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                child: Text(
-                  '暂无数据',
-                  style: oneKeepInter(
-                    color: oneKeepTextSecondary(context),
-                    size: 12,
-                    weight: FontWeight.w400,
-                  ),
-                ),
-              ),
-            )
-          else
-            ...ranks.asMap().entries.map(
-              (entry) => Padding(
-                padding: EdgeInsets.only(
-                  bottom: entry.key == ranks.length - 1 ? 0 : 16,
-                ),
-                child: _RankRow(
-                  rank: entry.value,
-                  tone: tones[entry.key % tones.length],
-                ),
+        ),
+        const SizedBox(height: 18),
+        if (ranks.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Text(
+              '暂无数据',
+              style: oneKeepInter(
+                color: oneKeepTextSecondary(context),
+                size: 13,
+                weight: FontWeight.w400,
               ),
             ),
-        ],
-      ),
+          )
+        else
+          ...ranks.asMap().entries.map((entry) {
+            return Padding(
+              padding: EdgeInsets.only(bottom: entry.key == ranks.length - 1 ? 0 : 18),
+              child: _RankRow(
+                rank: entry.value,
+                categoryColor: categoryColors[entry.value.categoryId] ?? entry.value.categoryColor,
+                progressRatio: totalAmount > 0 ? entry.value.amount / totalAmount : 0,
+              ),
+            );
+          }),
+      ],
     );
   }
 
@@ -272,9 +565,7 @@ class _StatsPageState extends ConsumerState<StatsPage> {
                             width: 40,
                             height: 4,
                             decoration: BoxDecoration(
-                              color: oneKeepTextTertiary(
-                                context,
-                              ).withValues(alpha: 0.32),
+                              color: oneKeepTextTertiary(context).withValues(alpha: 0.32),
                               borderRadius: BorderRadius.circular(2),
                             ),
                           ),
@@ -305,8 +596,7 @@ class _StatsPageState extends ConsumerState<StatsPage> {
                         Row(
                           children: [
                             GestureDetector(
-                              onTap: () =>
-                                  setModalState(() => displayYear -= 1),
+                              onTap: () => setModalState(() => displayYear -= 1),
                               child: Icon(
                                 Icons.chevron_left_rounded,
                                 color: oneKeepTextSecondary(context),
@@ -331,9 +621,7 @@ class _StatsPageState extends ConsumerState<StatsPage> {
                                 Icons.chevron_right_rounded,
                                 color: displayYear < now.year
                                     ? oneKeepTextSecondary(context)
-                                    : oneKeepTextTertiary(
-                                        context,
-                                      ).withValues(alpha: 0.5),
+                                    : oneKeepTextTertiary(context).withValues(alpha: 0.5),
                                 size: 20,
                               ),
                             ),
@@ -344,17 +632,15 @@ class _StatsPageState extends ConsumerState<StatsPage> {
                           child: GridView.builder(
                             physics: const NeverScrollableScrollPhysics(),
                             itemCount: 12,
-                            gridDelegate:
-                                const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 4,
-                                  crossAxisSpacing: 10,
-                                  mainAxisSpacing: 10,
-                                  mainAxisExtent: 32,
-                                ),
+                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 4,
+                              crossAxisSpacing: 10,
+                              mainAxisSpacing: 10,
+                              mainAxisExtent: 32,
+                            ),
                             itemBuilder: (context, index) {
                               final month = index + 1;
-                              final disabled =
-                                  displayYear == now.year && month > now.month;
+                              final disabled = displayYear == now.year && month > now.month;
                               final selected =
                                   displayYear == _selectedMonth.year &&
                                   month == _selectedMonth.month;
@@ -362,27 +648,22 @@ class _StatsPageState extends ConsumerState<StatsPage> {
                               return GestureDetector(
                                 onTap: disabled
                                     ? null
-                                    : () {
+                                    : () async {
                                         setState(() {
-                                          _selectedMonth = DateTime(
-                                            displayYear,
-                                            month,
-                                          );
+                                          _selectedMonth = DateTime(displayYear, month);
                                         });
                                         Navigator.pop(context);
-                                        _reload();
+                                        await _reload();
                                       },
                                 child: Container(
                                   decoration: BoxDecoration(
                                     color: selected
-                                        ? AppColors.teal.withValues(alpha: 0.2)
+                                        ? AppColors.teal.withValues(alpha: 0.18)
                                         : oneKeepGlassStrong(context),
                                     borderRadius: BorderRadius.circular(8),
                                     border: Border.all(
                                       color: selected
-                                          ? AppColors.teal.withValues(
-                                              alpha: 0.28,
-                                            )
+                                          ? AppColors.teal.withValues(alpha: 0.32)
                                           : Colors.transparent,
                                       width: 0.8,
                                     ),
@@ -392,16 +673,12 @@ class _StatsPageState extends ConsumerState<StatsPage> {
                                     '$month月',
                                     style: oneKeepInter(
                                       color: selected
-                                          ? AppColors.teal
+                                          ? AppColors.tealDark
                                           : disabled
-                                          ? oneKeepTextTertiary(
-                                              context,
-                                            ).withValues(alpha: 0.5)
+                                          ? oneKeepTextTertiary(context).withValues(alpha: 0.5)
                                           : oneKeepTextTertiary(context),
                                       size: 12,
-                                      weight: selected
-                                          ? FontWeight.w600
-                                          : FontWeight.w400,
+                                      weight: selected ? FontWeight.w600 : FontWeight.w400,
                                     ),
                                   ),
                                 ),
@@ -420,49 +697,108 @@ class _StatsPageState extends ConsumerState<StatsPage> {
       },
     );
   }
-}
 
-class _SummaryCard extends StatelessWidget {
-  final String label;
-  final double amount;
-  final Color color;
-
-  const _SummaryCard({
-    required this.label,
-    required this.amount,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return OneKeepGlassCard(
-      radius: 18,
-      blurSigma: 12,
-      fillColor: oneKeepGlass(context),
-      borderColor: oneKeepBorder(context),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: oneKeepInter(
-              color: oneKeepTextSecondary(context),
-              size: 12,
-              weight: FontWeight.w400,
+  void _showRangePicker() {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      barrierColor: oneKeepDimOverlay(context),
+      builder: (sheetContext) {
+        return OneKeepSheetSurface(
+          child: SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 12, 24, 28),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Align(
+                    alignment: Alignment.center,
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: oneKeepTextTertiary(context).withValues(alpha: 0.32),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  Row(
+                    children: [
+                      Text(
+                        '切换统计范围',
+                        style: oneKeepManrope(
+                          color: oneKeepTextPrimary(context),
+                          size: 18,
+                          weight: FontWeight.w700,
+                        ),
+                      ),
+                      const Spacer(),
+                      GestureDetector(
+                        onTap: () => Navigator.pop(sheetContext),
+                        child: Icon(
+                          Icons.close_rounded,
+                          color: oneKeepTextSecondary(context),
+                          size: 24,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  ..._StatsRange.values.map((range) {
+                    final selected = range == _range;
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: GestureDetector(
+                        onTap: () async {
+                          Navigator.pop(sheetContext);
+                          if (selected) return;
+                          setState(() => _range = range);
+                          if (_needsAggregateFetch) {
+                            await _refreshAggregateData();
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          decoration: BoxDecoration(
+                            color: selected
+                                ? AppColors.teal.withValues(alpha: 0.14)
+                                : oneKeepGlassStrong(context),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Row(
+                            children: [
+                              Text(
+                                range.label,
+                                style: oneKeepInter(
+                                  color: selected
+                                      ? AppColors.tealDark
+                                      : oneKeepTextPrimary(context),
+                                  size: 14,
+                                  weight: selected ? FontWeight.w600 : FontWeight.w500,
+                                ),
+                              ),
+                              const Spacer(),
+                              if (selected)
+                                Icon(
+                                  Icons.check_rounded,
+                                  color: AppColors.tealDark,
+                                  size: 18,
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                ],
+              ),
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            '¥ ${oneKeepCurrency(amount)}',
-            style: oneKeepGrotesk(
-              color: color,
-              size: 20,
-              weight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
@@ -476,10 +812,10 @@ class _MetricToggle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(4),
+      padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
         color: oneKeepGlassStrong(context),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -488,14 +824,12 @@ class _MetricToggle extends StatelessWidget {
             context: context,
             label: '支出',
             active: isExpense,
-            tone: AppColors.teal,
             onTap: () => onChanged(true),
           ),
           _toggleChip(
             context: context,
             label: '收入',
             active: !isExpense,
-            tone: AppColors.teal,
             onTap: () => onChanged(false),
           ),
         ],
@@ -507,21 +841,22 @@ class _MetricToggle extends StatelessWidget {
     required BuildContext context,
     required String label,
     required bool active,
-    required Color tone,
     required VoidCallback onTap,
   }) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOut,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: active ? tone.withValues(alpha: 0.2) : Colors.transparent,
-          borderRadius: BorderRadius.circular(6),
+          color: active ? AppColors.teal.withValues(alpha: 0.18) : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
         ),
         child: Text(
           label,
           style: oneKeepInter(
-            color: active ? tone : oneKeepTextTertiary(context),
+            color: active ? AppColors.tealDark : oneKeepTextTertiary(context),
             size: 12,
             weight: active ? FontWeight.w600 : FontWeight.w400,
           ),
@@ -533,21 +868,21 @@ class _MetricToggle extends StatelessWidget {
 
 class _TrendBars extends StatelessWidget {
   final List<TrendPoint> points;
-  final List<Color> colors;
+  final Color tone;
 
-  const _TrendBars({required this.points, required this.colors});
+  const _TrendBars({required this.points, required this.tone});
 
   @override
   Widget build(BuildContext context) {
     if (points.isEmpty) {
       return SizedBox(
-        height: 160,
+        height: 184,
         child: Center(
           child: Text(
             '暂无数据',
             style: oneKeepInter(
               color: oneKeepTextSecondary(context),
-              size: 12,
+              size: 13,
               weight: FontWeight.w400,
             ),
           ),
@@ -555,128 +890,202 @@ class _TrendBars extends StatelessWidget {
       );
     }
 
-    final maxValue = points
-        .map((point) => point.value)
-        .fold<double>(
-          0,
-          (previous, value) => previous > value ? previous : value,
-        );
+    final maxValue = points.fold<double>(0, (max, point) => math.max(max, point.value));
+    final showEvery = math.max(1, (points.length / 6).ceil());
 
-    return SizedBox(
-      height: 180,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: points.map((point) {
-          final ratio = maxValue == 0
-              ? 0.25
-              : (point.value / maxValue).clamp(0.2, 1.0);
-          return Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Container(
-                  width: 20,
-                  height: 120 * ratio,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(6),
-                    gradient: LinearGradient(
-                      begin: Alignment.bottomCenter,
-                      end: Alignment.topCenter,
-                      colors: colors,
-                    ),
+    return Column(
+      children: [
+        SizedBox(
+          height: 166,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: points.asMap().entries.map((entry) {
+              final point = entry.value;
+              final ratio = maxValue <= 0 ? 0.18 : (point.value / maxValue).clamp(0.12, 1.0);
+              final active = entry.key == points.length - 1;
+
+              return Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      if (point.value > 0)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 4),
+                          child: Text(
+                            '¥${oneKeepCurrency(point.value)}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: oneKeepInter(
+                              color: oneKeepTextTertiary(context),
+                              size: 10,
+                              weight: FontWeight.w400,
+                            ),
+                          ),
+                        )
+                      else
+                        const SizedBox(height: 14),
+                      Container(
+                        width: 18,
+                        height: 116 * ratio,
+                        decoration: BoxDecoration(
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(999),
+                            topRight: Radius.circular(999),
+                          ),
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              tone.withValues(alpha: active ? 1 : 0.86),
+                              tone.withValues(alpha: active ? 0.78 : 0.58),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  point.label,
-                  style: oneKeepInter(
-                    color: oneKeepTextTertiary(context),
-                    size: 10,
-                    weight: FontWeight.w400,
-                  ),
+              );
+            }).toList(),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Row(
+          children: points.asMap().entries.map((entry) {
+            final visible =
+                entry.key == 0 ||
+                entry.key == points.length - 1 ||
+                entry.key % showEvery == 0;
+            return Expanded(
+              child: Text(
+                visible ? entry.value.label : '',
+                textAlign: TextAlign.center,
+                style: oneKeepInter(
+                  color: oneKeepTextTertiary(context),
+                  size: 10,
+                  weight: FontWeight.w400,
                 ),
-              ],
-            ),
-          );
-        }).toList(),
-      ),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
     );
   }
 }
 
 class _RankRow extends StatelessWidget {
   final CategoryRank rank;
-  final Color tone;
+  final String? categoryColor;
+  final double progressRatio;
 
-  const _RankRow({required this.rank, required this.tone});
+  const _RankRow({
+    required this.rank,
+    required this.categoryColor,
+    required this.progressRatio,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final icon = oneKeepResolvedCategoryIcon(
-      rank.categoryName,
-      rank.categoryName,
-      rank.categoryIcon,
+    final tone = oneKeepCategoryTone(
+      colorHex: categoryColor,
+      categoryId: rank.categoryId,
+      categoryName: rank.categoryName,
+      categoryIcon: rank.categoryIcon,
     );
+    final visibleProgress = rank.amount <= 0
+        ? 0.0
+        : progressRatio.clamp(0.04, 1.0);
 
-    return Row(
-      children: [
-        Container(
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(
-            color: tone.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(10),
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
           ),
-          child: Icon(icon, size: 18, color: tone),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      rank.categoryName,
-                      style: oneKeepInter(
-                        color: oneKeepTextPrimary(context),
-                        size: 14,
-                        weight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                  Text(
-                    '¥${oneKeepCurrency(rank.amount)}',
-                    style: oneKeepGrotesk(
-                      color: tone,
-                      size: 13,
-                      weight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(2),
-                child: SizedBox(
-                  height: 4,
-                  child: Stack(
-                    children: [
-                      Container(color: oneKeepGlassStrong(context)),
-                      FractionallySizedBox(
-                        widthFactor: rank.progressRatio.clamp(0, 1),
-                        child: Container(color: tone),
-                      ),
-                    ],
+        ],
+      ),
+      child: Row(
+        children: [
+          OneKeepCategoryBadge(
+            title: rank.categoryName,
+            categoryName: rank.categoryName,
+            categoryIcon: rank.categoryIcon,
+            categoryId: rank.categoryId,
+            colorHex: categoryColor,
+            size: 40,
+            iconSize: 18,
+            radius: 12,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  rank.categoryName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: oneKeepInter(
+                    color: oneKeepTextPrimary(context),
+                    size: 14,
+                    weight: FontWeight.w500,
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 8),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final barWidth = constraints.maxWidth * 0.5;
+                    return SizedBox(
+                      width: barWidth,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(999),
+                        child: Container(
+                          height: 8,
+                          color: tone.withValues(alpha: 0.14),
+                          alignment: Alignment.centerLeft,
+                          child: FractionallySizedBox(
+                            widthFactor: visibleProgress,
+                            child: SizedBox.expand(
+                              child: DecoratedBox(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      tone.withValues(alpha: 0.72),
+                                      tone,
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
-        ),
-      ],
+          const SizedBox(width: 12),
+          Text(
+            '¥${oneKeepCurrency(rank.amount)}',
+            style: oneKeepGrotesk(
+              color: tone,
+              size: 16,
+              weight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

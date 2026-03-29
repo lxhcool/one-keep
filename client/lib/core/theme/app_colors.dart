@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 class AppColors {
   AppColors._();
 
-  // Primary Colors - Elegant Green Gold System
-  static const teal = Color(0xFF059669); // Emerald 600 - Main brand color
-  static const tealLight = Color(0xFF10B981); // Emerald 500
-  static const tealDark = Color(0xFF047857); // Emerald 700
-  static const tealMuted = Color(0xFF6EE7B7); // Emerald 300
+  // Primary Colors - Warm Yellow Brand System
+  static const teal = Color(0xFFEDC100); // Main brand color
+  static const tealLight = Color(0xFFF3D24A);
+  static const tealDark = Color(0xFFC99F00);
+  static const tealMuted = Color(0xFFF8E28A);
 
   static const purple = Color(0xFF6366F1); // Indigo 500 - Accent color
   static const purpleLight = Color(0xFFA5B4FC); // Indigo 300
@@ -70,11 +70,11 @@ class AppColors {
 
   static const expenseGradient = [Color(0xFFEF4444), Color(0xFFDC2626)];
   static const incomeGradient = [Color(0xFF22C55E), Color(0xFF16A34A)];
-  static const fabGradient = [Color(0xFF059669), Color(0xFF6366F1)];
+  static const fabGradient = [Color(0xFFF3D24A), Color(0xFFEDC100)];
   
   // Balance card gradients
   static const balanceGradientDark = [Color(0xFF1E293B), Color(0xFF0F172A)]; // Slate
-  static const balanceGradientLight = [Color(0xFF059669), Color(0xFF0891B2)]; // Emerald to Cyan
+  static const balanceGradientLight = [Color(0xFFF3D24A), Color(0xFFEDC100)];
   static const cardGradientDark = [Color(0xFF1C1C1F), Color(0xFF0A0A0B)];
   static const cardGradientLight = [Color(0xFFFFFFFF), Color(0xFFFAFAFA)];
 

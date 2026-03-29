@@ -8,11 +8,11 @@ import '../../core/providers/auth_provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../shared/widgets/onekeep_ui.dart';
 
-const _authAccent = Color(0xFFE3A12C);
-const _authAccentDeep = Color(0xFFD5891B);
-const _authAccentSoft = Color(0xFFF5D36C);
-const _authAccentPale = Color(0xFFFFEAC2);
-const _authAccentWarm = Color(0xFFF6BE73);
+const _authAccent = Color(0xFFEDC100);
+const _authAccentDeep = Color(0xFFC99F00);
+const _authAccentSoft = Color(0xFFF3D24A);
+const _authAccentPale = Color(0xFFFFF0B8);
+const _authAccentWarm = Color(0xFFF0D06F);
 const _brandLogoAsset = 'assets/images/app-logo.png';
 
 class LoginPage extends ConsumerStatefulWidget {
@@ -343,7 +343,7 @@ class _TopFlowBackground extends StatelessWidget {
               end: Alignment.bottomCenter,
               colors: [
                 _authAccentPale.withValues(alpha: 0.82),
-                const Color(0xFFFFE1A3),
+                const Color(0xFFFFE7A8),
                 Colors.white.withValues(alpha: 0.82),
                 Colors.white,
               ],
@@ -384,7 +384,7 @@ class _TopAuroraPainter extends CustomPainter {
     _drawBlob(
       canvas,
       size,
-      color: const Color(0xFFFFD38A).withValues(alpha: 0.18),
+      color: const Color(0xFFFFD96E).withValues(alpha: 0.18),
       anchorX: 0.48 + 0.05 * math.sin(travel * 1.12),
       anchorY: 0.42 + 0.05 * math.cos(travel * 0.70),
       radius: size.width * 0.44,

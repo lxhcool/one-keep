@@ -74,6 +74,106 @@ TextStyle oneKeepMono({
   );
 }
 
+const List<Color> oneKeepCategoryColorPresets = <Color>[
+  Color(0xFFFF8A65),
+  Color(0xFFFFB74D),
+  Color(0xFFFFD54F),
+  Color(0xFF81C784),
+  Color(0xFF4DB6AC),
+  Color(0xFF4FC3F7),
+  Color(0xFF7986CB),
+  Color(0xFFBA68C8),
+  Color(0xFFF06292),
+  Color(0xFFA1887F),
+];
+
+Color? oneKeepParseHexColor(String? value) {
+  if (value == null || value.isEmpty) return null;
+  final normalized = value.trim().replaceAll('#', '');
+  if (normalized.length != 6 && normalized.length != 8) return null;
+  final hex = normalized.length == 6 ? 'FF$normalized' : normalized;
+  final parsed = int.tryParse(hex, radix: 16);
+  return parsed == null ? null : Color(parsed);
+}
+
+String oneKeepColorToHex(Color color) {
+  final rgb = color.toARGB32() & 0x00FFFFFF;
+  return '#${rgb.toRadixString(16).padLeft(6, '0').toUpperCase()}';
+}
+
+Color oneKeepCategoryTone({
+  String? colorHex,
+  String? categoryId,
+  String? categoryName,
+  String? categoryIcon,
+}) {
+  final explicit = oneKeepParseHexColor(colorHex);
+  if (explicit != null) return explicit;
+
+  final seed = '${categoryId ?? ''}|${categoryName ?? ''}|${categoryIcon ?? ''}';
+  var hash = 0;
+  for (final codeUnit in seed.codeUnits) {
+    hash = (hash * 31 + codeUnit) & 0x7fffffff;
+  }
+  return oneKeepCategoryColorPresets[hash % oneKeepCategoryColorPresets.length];
+}
+
+class OneKeepCategoryBadge extends StatelessWidget {
+  final String title;
+  final String categoryName;
+  final String categoryIcon;
+  final String? categoryId;
+  final String? colorHex;
+  final double size;
+  final double iconSize;
+  final double radius;
+  final double fillOpacity;
+  final double borderOpacity;
+  final bool showBorder;
+
+  const OneKeepCategoryBadge({
+    super.key,
+    required this.title,
+    required this.categoryName,
+    required this.categoryIcon,
+    this.categoryId,
+    this.colorHex,
+    this.size = 44,
+    this.iconSize = 22,
+    this.radius = 12,
+    this.fillOpacity = 0.12,
+    this.borderOpacity = 0,
+    this.showBorder = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final tone = oneKeepCategoryTone(
+      colorHex: colorHex,
+      categoryId: categoryId,
+      categoryName: categoryName,
+      categoryIcon: categoryIcon,
+    );
+    final icon = oneKeepResolvedCategoryIcon(title, categoryName, categoryIcon);
+
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: tone.withValues(alpha: fillOpacity),
+        borderRadius: BorderRadius.circular(radius),
+        border: showBorder
+            ? Border.all(
+                color: tone.withValues(alpha: borderOpacity),
+                width: 0.8,
+              )
+            : null,
+      ),
+      child: Icon(icon, size: iconSize, color: tone),
+    );
+  }
+}
+
 class OneKeepGradientText extends StatelessWidget {
   final String text;
   final TextStyle style;

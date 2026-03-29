@@ -6,6 +6,76 @@
   "description": "",
   "glyphs": [
     {
+      "icon_id": "45264080",
+      "name": "173_设置",
+      "font_class": "a-173_shezhi",
+      "unicode": "e8fe",
+      "unicode_decimal": 59646
+    },
+    {
+      "icon_id": "45264086",
+      "name": "173_我的",
+      "font_class": "a-173_wode",
+      "unicode": "e8ff",
+      "unicode_decimal": 59647
+    },
+    {
+      "icon_id": "45264092",
+      "name": "173_零食时间",
+      "font_class": "a-173_lingshishijian",
+      "unicode": "e900",
+      "unicode_decimal": 59648
+    },
+    {
+      "icon_id": "45264095",
+      "name": "173_日历",
+      "font_class": "a-173_rili",
+      "unicode": "e901",
+      "unicode_decimal": 59649
+    },
+    {
+      "icon_id": "40098100",
+      "name": "064_水滴",
+      "font_class": "a-064_shuidi",
+      "unicode": "e74a",
+      "unicode_decimal": 59210
+    },
+    {
+      "icon_id": "40098105",
+      "name": "064_文本",
+      "font_class": "a-064_wenben",
+      "unicode": "e74b",
+      "unicode_decimal": 59211
+    },
+    {
+      "icon_id": "40098108",
+      "name": "064_我的",
+      "font_class": "a-064_wode",
+      "unicode": "e74c",
+      "unicode_decimal": 59212
+    },
+    {
+      "icon_id": "40098115",
+      "name": "064_心动",
+      "font_class": "a-064_xindong",
+      "unicode": "e74d",
+      "unicode_decimal": 59213
+    },
+    {
+      "icon_id": "40098119",
+      "name": "064_主页",
+      "font_class": "a-064_zhuye",
+      "unicode": "e74e",
+      "unicode_decimal": 59214
+    },
+    {
+      "icon_id": "46258573",
+      "name": "202_小猫",
+      "font_class": "a-202_xiaomao",
+      "unicode": "e96b",
+      "unicode_decimal": 59755
+    },
+    {
       "icon_id": "40369700",
       "name": "068_保健品",
       "font_class": "a-068_baojianpin",

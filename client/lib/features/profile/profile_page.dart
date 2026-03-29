@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 
 import 'category_settings_page.dart';
 import '../../core/providers/auth_provider.dart';
+import '../../core/providers/data_providers.dart';
 import '../../core/providers/preferences_provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../shared/widgets/onekeep_ui.dart';
@@ -22,9 +23,17 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   final ImagePicker _imagePicker = ImagePicker();
 
   @override
+  void initState() {
+    super.initState();
+    Future.microtask(() => ref.read(statsProvider.notifier).load());
+  }
+
+  @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
     final preferences = ref.watch(preferencesProvider);
+    final statsState = ref.watch(statsProvider);
+    final statsOverview = statsState.overview;
     final displayName = preferences.nickname.isNotEmpty
         ? preferences.nickname
         : (authState.user?.name.isNotEmpty == true
@@ -45,6 +54,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             children: [
               _ProfileSummaryCard(
                 displayName: displayName,
+                username: authState.user?.username?.isNotEmpty == true
+                    ? '@${authState.user!.username!}'
+                    : '',
                 avatarIndex: preferences.avatarIndex,
                 avatarImageData: preferences.avatarImageData,
                 backgroundImageData: preferences.profileBackgroundImageData,
@@ -52,10 +64,16 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 onEditBackground: _showBackgroundStudio,
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
+                padding: const EdgeInsets.fromLTRB(20, 24, 20, 120),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    _ProfileStatsRow(
+                      totalExpense: statsOverview?.totalExpense,
+                      totalIncome: statsOverview?.totalIncome,
+                      isLoading: statsState.isLoading && statsOverview == null,
+                    ),
+                    const SizedBox(height: 20),
                     _MenuGroup(
                       children: [
                         _MenuTile(
@@ -526,6 +544,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
 class _ProfileSummaryCard extends StatefulWidget {
   final String displayName;
+  final String username;
   final int avatarIndex;
   final String? avatarImageData;
   final String? backgroundImageData;
@@ -534,6 +553,7 @@ class _ProfileSummaryCard extends StatefulWidget {
 
   const _ProfileSummaryCard({
     required this.displayName,
+    required this.username,
     required this.avatarIndex,
     required this.avatarImageData,
     required this.backgroundImageData,
@@ -566,112 +586,116 @@ class _ProfileSummaryCardState extends State<_ProfileSummaryCard> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final statusBarHeight = MediaQuery.of(context).padding.top;
+    const heroHeight = 280.0;
+    const avatarSize = 92.0;
 
-    return Container(
-      height: 220 + statusBarHeight,
+    return SizedBox(
+      height: heroHeight + statusBarHeight + 56,
       width: double.infinity,
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
-        boxShadow: oneKeepCardShadows(context),
-      ),
       child: Stack(
-        fit: StackFit.expand,
+        clipBehavior: Clip.none,
         children: [
-          if (_coverImageProvider != null)
-            Image(
-              image: _coverImageProvider!,
-              fit: BoxFit.cover,
-              gaplessPlayback: true,
-            )
-          else
-            const _ProfileCoverFallback(),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.black.withValues(alpha: 0.1),
-                  Colors.black.withValues(alpha: 0.3),
-                  Colors.black.withValues(alpha: 0.6),
-                  Colors.black.withValues(alpha: 0.8),
+          SizedBox(
+            height: heroHeight + statusBarHeight,
+            child: ClipPath(
+              clipper: _ProfileHeroFanClipper(),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (_coverImageProvider != null)
+                    Image(
+                      image: _coverImageProvider!,
+                      fit: BoxFit.cover,
+                      gaplessPlayback: true,
+                    )
+                  else
+                    const _ProfileCoverFallback(),
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.black.withValues(alpha: isDark ? 0.12 : 0.06),
+                          Colors.black.withValues(alpha: isDark ? 0.26 : 0.14),
+                          Colors.black.withValues(alpha: isDark ? 0.48 : 0.24),
+                        ],
+                        stops: const [0.0, 0.55, 1.0],
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    top: 16 + statusBarHeight,
+                    right: 16,
+                    child: _HeroActionButton(
+                      icon: Icons.wallpaper_outlined,
+                      onTap: widget.onEditBackground,
+                    ),
+                  ),
                 ],
               ),
             ),
           ),
           Positioned(
-            top: 16 + statusBarHeight,
-            right: 16,
-            child: _HeroActionButton(
-              icon: Icons.wallpaper_outlined,
-              onTap: widget.onEditBackground,
-            ),
-          ),
-          Positioned(
-            left: 24,
-            top: 72 + statusBarHeight,
-            child: Stack(
-              clipBehavior: Clip.none,
+            left: 0,
+            right: 0,
+             top: heroHeight + statusBarHeight - 70,
+            child: Column(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(4),
+                  padding: const EdgeInsets.all(2),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.1), // subtle ring
+                    color: isDark ? AppColors.darkSurface : Colors.white,
                     shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.12),
+                        blurRadius: 22,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
                   ),
                   child: OneKeepAvatar(
                     avatarIndex: widget.avatarIndex,
                     avatarImageData: widget.avatarImageData,
-                    size: 80, // slightly larger
-                    iconSize: 32,
+                    size: avatarSize - 4,
+                    iconSize: 34,
                   ),
                 ),
-                Positioned(
-                  right: 0,
-                  bottom: 0,
-                  child: GestureDetector(
-                    onTap: widget.onEditAvatar,
-                    child: Container(
-                      width: 28,
-                      height: 28,
-                      decoration: BoxDecoration(
-                        color: isDark ? AppColors.darkSurface : Colors.white,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.2),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Icon(
-                        Icons.edit_rounded,
-                        size: 14,
-                        color: isDark
-                            ? Colors.white
-                            : AppColors.lightTextPrimary,
-                      ),
+                const SizedBox(height: 8),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 18),
+                  child: Text(
+                    widget.displayName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: oneKeepGrotesk(
+                      color: oneKeepTextPrimary(context),
+                      size: 18,
+                      weight: FontWeight.w800,
+                      letterSpacing: 0.3,
                     ),
                   ),
                 ),
+                if (widget.username.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Text(
+                      widget.username,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: oneKeepInter(
+                        color: const Color(0xFFFFCB24),
+                        size: 13,
+                        weight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
               ],
-            ),
-          ),
-          Positioned(
-            left: 24,
-            right: 24,
-            bottom: 24 + statusBarHeight,
-            child: Text(
-              widget.displayName,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: oneKeepGrotesk(
-                color: Colors.white,
-                size: 28,
-                weight: FontWeight.w700,
-                letterSpacing: 0.5,
-              ),
             ),
           ),
         ],
@@ -721,13 +745,110 @@ class _HeroActionButton extends StatelessWidget {
   }
 }
 
+class _ProfileStatsRow extends StatelessWidget {
+  final double? totalExpense;
+  final double? totalIncome;
+  final bool isLoading;
+
+  const _ProfileStatsRow({
+    required this.totalExpense,
+    required this.totalIncome,
+    required this.isLoading,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: _ProfileStatTile(
+            label: '总支出',
+            amount: totalExpense,
+            isLoading: isLoading,
+            tone: AppColors.expense,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _ProfileStatTile(
+            label: '总收入',
+            amount: totalIncome,
+            isLoading: isLoading,
+            tone: AppColors.tealDark,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ProfileStatTile extends StatelessWidget {
+  final String label;
+  final double? amount;
+  final bool isLoading;
+  final Color tone;
+
+  const _ProfileStatTile({
+    required this.label,
+    required this.amount,
+    required this.isLoading,
+    required this.tone,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return OneKeepGlassCard(
+      radius: 18,
+      blurSigma: 12,
+      fillColor: oneKeepGlass(context),
+      borderColor: oneKeepBorder(context),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: oneKeepInter(
+              color: oneKeepTextSecondary(context),
+              size: 12,
+              weight: FontWeight.w400,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            isLoading && amount == null ? '--' : '¥${oneKeepCurrency(amount ?? 0)}',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: oneKeepGrotesk(
+              color: tone,
+              size: 20,
+              weight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _ProfileCoverFallback extends StatelessWidget {
   const _ProfileCoverFallback();
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFF223229),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFFFFF4CC),
+            Color(0xFFF3D36D),
+            Color(0xFFE3B34C),
+          ],
+          stops: [0.0, 0.48, 1.0],
+        ),
+      ),
       child: Stack(
         fit: StackFit.expand,
         children: [
@@ -737,9 +858,14 @@ class _ProfileCoverFallback extends StatelessWidget {
             child: Container(
               width: 220,
               height: 220,
-              decoration: const BoxDecoration(
-                color: Color(0x662E5D38),
+              decoration: BoxDecoration(
                 shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    Colors.white.withValues(alpha: 0.28),
+                    Colors.transparent,
+                  ],
+                ),
               ),
             ),
           ),
@@ -749,9 +875,14 @@ class _ProfileCoverFallback extends StatelessWidget {
             child: Container(
               width: 180,
               height: 180,
-              decoration: const BoxDecoration(
-                color: Color(0x5534662B),
+              decoration: BoxDecoration(
                 shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    Colors.white.withValues(alpha: 0.18),
+                    Colors.transparent,
+                  ],
+                ),
               ),
             ),
           ),
@@ -761,9 +892,14 @@ class _ProfileCoverFallback extends StatelessWidget {
             child: Container(
               width: 240,
               height: 200,
-              decoration: const BoxDecoration(
-                color: Color(0x66315E35),
+              decoration: BoxDecoration(
                 shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    Colors.white.withValues(alpha: 0.14),
+                    Colors.transparent,
+                  ],
+                ),
               ),
             ),
           ),
@@ -771,6 +907,28 @@ class _ProfileCoverFallback extends StatelessWidget {
       ),
     );
   }
+}
+
+class _ProfileHeroFanClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    final path = Path()..moveTo(0, 0);
+    path.lineTo(0, size.height - 72);
+    path.cubicTo(
+      size.width * 0.22,
+      size.height - 6,
+      size.width * 0.78,
+      size.height - 6,
+      size.width,
+      size.height - 72,
+    );
+    path.lineTo(size.width, 0);
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
 }
 
 class _MenuGroup extends StatelessWidget {

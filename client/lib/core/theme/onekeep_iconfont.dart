@@ -3,6 +3,12 @@ import 'package:flutter/widgets.dart';
 const String oneKeepIconFontFamily = 'OneKeepIconFont';
 
 const Map<String, IconData> _oneKeepIcons = {
+  'a-064_shuidi': IconData(0xe74a, fontFamily: oneKeepIconFontFamily),
+  'a-064_wenben': IconData(0xe74b, fontFamily: oneKeepIconFontFamily),
+  'a-064_wode': IconData(0xe74c, fontFamily: oneKeepIconFontFamily),
+  'a-064_xindong': IconData(0xe74d, fontFamily: oneKeepIconFontFamily),
+  'a-064_zhuye': IconData(0xe74e, fontFamily: oneKeepIconFontFamily),
+  'a-202_xiaomao': IconData(0xe96b, fontFamily: oneKeepIconFontFamily),
   'a-068_baojianpin': IconData(0xe762, fontFamily: oneKeepIconFontFamily),
   'a-068_baoxian': IconData(0xe763, fontFamily: oneKeepIconFontFamily),
   'a-068_baoxiao': IconData(0xe764, fontFamily: oneKeepIconFontFamily),

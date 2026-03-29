@@ -9,6 +9,7 @@ import '../../core/network/api_client.dart';
 import '../../core/providers/api_provider.dart';
 import '../../core/providers/data_providers.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/onekeep_iconfont.dart';
 import '../models/models.dart';
 import 'onekeep_ui.dart';
 
@@ -25,6 +26,7 @@ class _MainShellState extends ConsumerState<MainShell> {
   int _currentIndex = 0;
 
   static const _paths = ['/home', '/stats', '/bills', '/profile'];
+  static const _navAccent = Color(0xFFFFCB24);
 
   void _onTap(int index) {
     if (index == _currentIndex) return;
@@ -56,42 +58,65 @@ class _MainShellState extends ConsumerState<MainShell> {
   }
 
   Widget _buildBottomBar(bool isDark) {
-    final active = isDark ? Colors.white : AppColors.teal;
+    final active = _navAccent;
     final inactive = isDark
         ? AppColors.darkTextTertiary
         : AppColors.lightTextSecondary;
+    final bottomInset = MediaQuery.of(context).padding.bottom;
 
-    return Container(
-      height: 80 + MediaQuery.of(context).padding.bottom,
-      decoration: BoxDecoration(
-        color: isDark
-            ? AppColors.darkBg.withValues(alpha: 0.85)
-            : AppColors.lightBg.withValues(alpha: 0.85),
-      ),
-      child: ClipRect(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-          child: Container(
-            height: 80 + MediaQuery.of(context).padding.bottom,
-            decoration: BoxDecoration(
-              border: Border(
-                top: BorderSide(
-                  color: isDark
-                      ? AppColors.darkCardBorder
-                      : AppColors.lightCardBorder,
-                  width: 0.5,
-                ),
-              ),
-            ),
-            child: SafeArea(
-              top: false,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
+    return SizedBox(
+      height: 108 + bottomInset,
+      child: Stack(
+        clipBehavior: Clip.none,
+        alignment: Alignment.topCenter,
+        children: [
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Container(
+              height: 84 + bottomInset,
+              color: Colors.transparent,
+              child: ClipRect(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 38, sigmaY: 38),
+                  child: Container(
+                    height: 84 + bottomInset,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: isDark
+                            ? [
+                                AppColors.darkBg.withValues(alpha: 0.34),
+                                AppColors.darkBg.withValues(alpha: 0.22),
+                              ]
+                            : [
+                                Colors.white.withValues(alpha: 0.34),
+                                Colors.white.withValues(alpha: 0.18),
+                              ],
+                      ),
+                      border: Border(
+                        top: BorderSide(
+                          color: isDark
+                              ? AppColors.darkCardBorder
+                              : AppColors.lightCardBorderStrong,
+                          width: 0.7,
+                        ),
+                      ),
+                    ),
+                    child: SafeArea(
+                      top: false,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 8,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
                     _NavSlot(
-                      icon: Icons.grid_view_rounded,
+                      icon: oneKeepIconFont('a-202_xiaomao')!,
                       label: '首页',
                       active: _currentIndex == 0,
                       activeColor: active,
@@ -99,16 +124,16 @@ class _MainShellState extends ConsumerState<MainShell> {
                       onTap: () => _onTap(0),
                     ),
                     _NavSlot(
-                      icon: Icons.insert_chart_rounded,
+                      icon: oneKeepIconFont('a-064_shuidi')!,
                       label: '统计',
                       active: _currentIndex == 1,
                       activeColor: active,
                       inactiveColor: inactive,
                       onTap: () => _onTap(1),
                     ),
-                    _buildFabItem(isDark), // Integrated FAB
+                    const SizedBox(width: 76),
                     _NavSlot(
-                      icon: Icons.receipt_long_rounded,
+                      icon: oneKeepIconFont('a-064_wenben')!,
                       label: '账单',
                       active: _currentIndex == 2,
                       activeColor: active,
@@ -116,7 +141,7 @@ class _MainShellState extends ConsumerState<MainShell> {
                       onTap: () => _onTap(2),
                     ),
                     _NavSlot(
-                      icon: Icons.person_rounded,
+                      icon: oneKeepIconFont('a-064_wode')!,
                       label: '我的',
                       active: _currentIndex == 3,
                       activeColor: active,
@@ -126,35 +151,32 @@ class _MainShellState extends ConsumerState<MainShell> {
                   ],
                 ),
               ),
+                    ),
+                  ),
+                ),
+              ),
             ),
           ),
-        ),
+          Positioned(
+            top: 0,
+            child: _buildFabItem(),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildFabItem(bool isDark) {
+  Widget _buildFabItem() {
     return GestureDetector(
       onTap: () => _showQuickAddSheet(context),
       child: Container(
-        width: 56,
-        height: 56,
+        width: 72,
+        height: 72,
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [AppColors.teal, AppColors.purple],
-          ),
-          borderRadius: BorderRadius.circular(28),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.teal.withValues(alpha: 0.4),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
-            ),
-          ],
+          color: _navAccent,
+          borderRadius: BorderRadius.circular(36),
         ),
-        child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
+        child: const Icon(Icons.add_rounded, color: Colors.white, size: 36),
       ),
     );
   }
@@ -196,13 +218,13 @@ class _NavSlot extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 22, color: color),
-          const SizedBox(height: 2),
+          Icon(icon, size: 24, color: color),
+          const SizedBox(height: 3),
           Text(
             label,
             style: oneKeepInter(
               color: color,
-              size: 10,
+              size: 11,
               weight: active ? FontWeight.w600 : FontWeight.w400,
             ),
           ),

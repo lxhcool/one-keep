@@ -139,7 +139,7 @@ class _CategorySettingsPageState extends ConsumerState<CategorySettingsPage> {
   }
 
   String _categoryFingerprint(Category category) {
-    return '${category.id}|${category.name}|${category.icon}|${category.type}';
+    return '${category.id}|${category.name}|${category.icon}|${category.type}|${category.color ?? ''}';
   }
 
   Future<void> _handleCreate() async {
@@ -170,6 +170,7 @@ class _CategorySettingsPageState extends ConsumerState<CategorySettingsPage> {
         initialType: category.type,
         initialName: category.name,
         initialIcon: category.icon,
+        initialColor: category.color,
       ),
     );
     if (result == null) return;
@@ -468,9 +469,12 @@ class _CategoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tone = category.type == 'expense'
-        ? AppColors.expense
-        : AppColors.income;
+    final tone = oneKeepCategoryTone(
+      colorHex: category.color,
+      categoryId: category.id,
+      categoryName: category.name,
+      categoryIcon: category.icon,
+    );
     return OneKeepGlassCard(
       radius: 24,
       blurSigma: 18,
@@ -479,26 +483,18 @@ class _CategoryCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(
         children: [
-          Container(
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(
-              color: tone.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                color: tone.withValues(alpha: 0.22),
-                width: 0.8,
-              ),
-            ),
-            child: Icon(
-              oneKeepResolvedCategoryIcon(
-                category.name,
-                category.name,
-                category.icon,
-              ),
-              color: tone,
-              size: 24,
-            ),
+          OneKeepCategoryBadge(
+            title: category.name,
+            categoryName: category.name,
+            categoryIcon: category.icon,
+            categoryId: category.id,
+            colorHex: category.color,
+            size: 52,
+            iconSize: 24,
+            radius: 18,
+            fillOpacity: 0.12,
+            borderOpacity: 0.22,
+            showBorder: true,
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -669,15 +665,17 @@ class _CategoryEditorResult {
   final String name;
   final String icon;
   final String type;
+  final String color;
 
   const _CategoryEditorResult({
     required this.name,
     required this.icon,
     required this.type,
+    required this.color,
   });
 
   Map<String, dynamic> toJson() {
-    return {'name': name, 'icon': icon, 'type': type};
+    return {'name': name, 'icon': icon, 'type': type, 'color': color};
   }
 }
 
@@ -685,11 +683,13 @@ class _CategoryEditorSheet extends StatefulWidget {
   final String initialType;
   final String initialName;
   final String initialIcon;
+  final String? initialColor;
 
   const _CategoryEditorSheet({
     required this.initialType,
     this.initialName = '',
     this.initialIcon = 'a-068_yongcan',
+    this.initialColor,
   });
 
   @override
@@ -700,6 +700,7 @@ class _CategoryEditorSheetState extends State<_CategoryEditorSheet> {
   late final TextEditingController _nameController;
   late String _type;
   late String _icon;
+  late Color _color;
 
   @override
   void initState() {
@@ -707,6 +708,9 @@ class _CategoryEditorSheetState extends State<_CategoryEditorSheet> {
     _nameController = TextEditingController(text: widget.initialName);
     _type = widget.initialType;
     _icon = widget.initialIcon;
+    _color =
+        oneKeepParseHexColor(widget.initialColor) ??
+        (widget.initialType == 'expense' ? AppColors.expense : AppColors.income);
   }
 
   @override
@@ -718,7 +722,7 @@ class _CategoryEditorSheetState extends State<_CategoryEditorSheet> {
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-    final tone = _type == 'expense' ? AppColors.expense : AppColors.income;
+    final tone = _color;
 
     return OneKeepSheetSurface(
       child: SafeArea(
@@ -761,22 +765,17 @@ class _CategoryEditorSheetState extends State<_CategoryEditorSheet> {
                   ),
                 ),
                 const SizedBox(height: 18),
-                Container(
-                  width: 68,
-                  height: 68,
-                  decoration: BoxDecoration(
-                    color: tone.withValues(alpha: 0.14),
-                    borderRadius: BorderRadius.circular(22),
-                    border: Border.all(
-                      color: tone.withValues(alpha: 0.22),
-                      width: 0.8,
-                    ),
-                  ),
-                  child: Icon(
-                    oneKeepIconFont(_icon) ?? Icons.receipt_long_rounded,
-                    color: tone,
-                    size: 30,
-                  ),
+                OneKeepCategoryBadge(
+                  title: _nameController.text,
+                  categoryName: _nameController.text,
+                  categoryIcon: _icon,
+                  colorHex: oneKeepColorToHex(_color),
+                  size: 68,
+                  iconSize: 30,
+                  radius: 22,
+                  fillOpacity: 0.14,
+                  borderOpacity: 0.22,
+                  showBorder: true,
                 ),
                 const SizedBox(height: 18),
                 TextField(
@@ -856,6 +855,55 @@ class _CategoryEditorSheetState extends State<_CategoryEditorSheet> {
                   ),
                 ),
                 const SizedBox(height: 10),
+                Text(
+                  '分类颜色',
+                  style: oneKeepManrope(
+                    color: oneKeepTextPrimary(context),
+                    size: 14,
+                    weight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: oneKeepCategoryColorPresets.map((preset) {
+                    final selected = preset.toARGB32() == _color.toARGB32();
+                    return GestureDetector(
+                      onTap: () => setState(() => _color = preset),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 180),
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          color: preset,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: selected
+                                ? oneKeepTextPrimary(context)
+                                : Colors.white.withValues(alpha: 0.92),
+                            width: selected ? 2 : 1,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: preset.withValues(alpha: 0.28),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: selected
+                            ? const Icon(
+                                Icons.check_rounded,
+                                color: Colors.white,
+                                size: 18,
+                              )
+                            : null,
+                      ),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 18),
                 GridView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
@@ -958,6 +1006,13 @@ class _CategoryEditorSheetState extends State<_CategoryEditorSheet> {
 
     Navigator.of(
       context,
-    ).pop(_CategoryEditorResult(name: name, icon: _icon, type: _type));
+    ).pop(
+      _CategoryEditorResult(
+        name: name,
+        icon: _icon,
+        type: _type,
+        color: oneKeepColorToHex(_color),
+      ),
+    );
   }
 }
