@@ -198,7 +198,6 @@ class _HomePageState extends ConsumerState<HomePage> {
               : (authUserName?.isNotEmpty == true
                     ? authUserName!
                     : 'OneKeep 用户'));
-
     return Row(
       children: [
         OneKeepAvatar(
@@ -268,6 +267,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     PreferencesState preferences,
   ) {
     final palette = _HomePalette.of(context);
+    final topInset = MediaQuery.paddingOf(context).top;
     final userName = preferences.nickname.isNotEmpty
         ? preferences.nickname
         : (summary?.user.name.isNotEmpty == true
@@ -275,7 +275,6 @@ class _HomePageState extends ConsumerState<HomePage> {
               : (authUserName?.isNotEmpty == true
                     ? authUserName!
                     : 'OneKeep 用户'));
-
     return SizedBox(
       height: 332,
       child: Stack(
@@ -332,7 +331,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                   Align(
                     alignment: Alignment.topCenter,
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+                      padding: EdgeInsets.fromLTRB(20, topInset + 24, 20, 0),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [

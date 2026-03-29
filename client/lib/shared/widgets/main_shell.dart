@@ -63,9 +63,11 @@ class _MainShellState extends ConsumerState<MainShell> {
         ? AppColors.darkTextTertiary
         : AppColors.lightTextSecondary;
     final bottomInset = MediaQuery.of(context).padding.bottom;
+    const barHeight = 62.0;
+    const fabLift = 24.0;
 
     return SizedBox(
-      height: 108 + bottomInset,
+      height: barHeight + bottomInset + fabLift,
       child: Stack(
         clipBehavior: Clip.none,
         alignment: Alignment.topCenter,
@@ -75,13 +77,13 @@ class _MainShellState extends ConsumerState<MainShell> {
             right: 0,
             bottom: 0,
             child: Container(
-              height: 84 + bottomInset,
+              height: barHeight + bottomInset,
               color: Colors.transparent,
               child: ClipRect(
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 38, sigmaY: 38),
                   child: Container(
-                    height: 84 + bottomInset,
+                    height: barHeight + bottomInset,
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
@@ -96,21 +98,13 @@ class _MainShellState extends ConsumerState<MainShell> {
                                 Colors.white.withValues(alpha: 0.18),
                               ],
                       ),
-                      border: Border(
-                        top: BorderSide(
-                          color: isDark
-                              ? AppColors.darkCardBorder
-                              : AppColors.lightCardBorderStrong,
-                          width: 0.7,
-                        ),
-                      ),
                     ),
-                    child: SafeArea(
+                      child: SafeArea(
                       top: false,
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 20,
-                          vertical: 8,
+                          vertical: 6,
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
