@@ -8,6 +8,13 @@ import '../../core/providers/auth_provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../shared/widgets/onekeep_ui.dart';
 
+const _authAccent = Color(0xFFE3A12C);
+const _authAccentDeep = Color(0xFFD5891B);
+const _authAccentSoft = Color(0xFFF5D36C);
+const _authAccentPale = Color(0xFFFFEAC2);
+const _authAccentWarm = Color(0xFFF6BE73);
+const _brandLogoAsset = 'assets/images/app-logo.png';
+
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
 
@@ -130,8 +137,8 @@ class _LoginPageState extends ConsumerState<LoginPage>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const _HeroBadge(),
-                      const SizedBox(height: 28),
+                      _BrandHeader(isLogin: _isLogin),
+                      const SizedBox(height: 24),
                       _ModeSwitch(
                         isLogin: _isLogin,
                         onLoginTap: () => _switchMode(true),
@@ -171,6 +178,105 @@ class _LoginPageState extends ConsumerState<LoginPage>
   }
 }
 
+class _BrandHeader extends StatelessWidget {
+  final bool isLogin;
+
+  const _BrandHeader({required this.isLogin});
+
+  @override
+  Widget build(BuildContext context) {
+    final title = isLogin ? '欢迎登录' : '欢迎注册';
+    final subtitle = isLogin ? 'OneKeep 轻量记账' : '创建你的 OneKeep 账号';
+
+    return SizedBox(
+      width: double.infinity,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Container(
+                  width: 4,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: _authAccentDeep,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: oneKeepManrope(
+                        color: AppColors.lightTextPrimary,
+                        size: 26,
+                        weight: FontWeight.w900,
+                        height: 1.1,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      subtitle,
+                      style: oneKeepInter(
+                        color: AppColors.lightTextSecondary,
+                        size: 15,
+                        weight: FontWeight.w600,
+                        letterSpacing: 0.1,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 20),
+          const _BrandLogo(size: 68),
+        ],
+      ),
+    );
+  }
+}
+
+class _BrandLogo extends StatelessWidget {
+  final double size;
+
+  const _BrandLogo({this.size = 54});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      padding: EdgeInsets.all(size * 0.12),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.92),
+        borderRadius: BorderRadius.circular(size * 0.32),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.035),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(size * 0.2),
+        child: Image.asset(
+          _brandLogoAsset,
+          fit: BoxFit.cover,
+          filterQuality: FilterQuality.high,
+        ),
+      ),
+    );
+  }
+}
+
+// ignore: unused_element
 class _HeroBadge extends StatelessWidget {
   const _HeroBadge();
 
@@ -199,7 +305,7 @@ class _HeroBadge extends StatelessWidget {
             decoration: const BoxDecoration(
               shape: BoxShape.circle,
               gradient: LinearGradient(
-                colors: [AppColors.tealLight, Color(0xFF22D3EE)],
+                colors: [_authAccentSoft, _authAccentDeep],
               ),
             ),
           ),
@@ -236,8 +342,8 @@ class _TopFlowBackground extends StatelessWidget {
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                const Color(0xA5D6FAFF),
-                const Color(0x8FC7F9FF),
+                _authAccentPale.withValues(alpha: 0.82),
+                const Color(0xFFFFE1A3),
                 Colors.white.withValues(alpha: 0.82),
                 Colors.white,
               ],
@@ -262,7 +368,7 @@ class _TopAuroraPainter extends CustomPainter {
     _drawBlob(
       canvas,
       size,
-      color: const Color(0xFF22CFE3).withValues(alpha: 0.24),
+      color: _authAccentSoft.withValues(alpha: 0.28),
       anchorX: 0.16 + 0.08 * math.sin(travel * 0.82),
       anchorY: 0.12 + 0.05 * math.cos(travel * 0.64),
       radius: size.width * 0.46,
@@ -270,7 +376,7 @@ class _TopAuroraPainter extends CustomPainter {
     _drawBlob(
       canvas,
       size,
-      color: const Color(0xFF5FD79C).withValues(alpha: 0.18),
+      color: _authAccentWarm.withValues(alpha: 0.22),
       anchorX: 0.76 + 0.07 * math.cos(travel * 0.90),
       anchorY: 0.22 + 0.06 * math.sin(travel * 0.78),
       radius: size.width * 0.40,
@@ -278,7 +384,7 @@ class _TopAuroraPainter extends CustomPainter {
     _drawBlob(
       canvas,
       size,
-      color: const Color(0xFF8FC5FF).withValues(alpha: 0.18),
+      color: const Color(0xFFFFD38A).withValues(alpha: 0.18),
       anchorX: 0.48 + 0.05 * math.sin(travel * 1.12),
       anchorY: 0.42 + 0.05 * math.cos(travel * 0.70),
       radius: size.width * 0.44,
@@ -369,7 +475,7 @@ class _ModeSwitch extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 116,
+      width: 108,
       child: Container(
         padding: const EdgeInsets.all(2),
         decoration: BoxDecoration(
@@ -390,7 +496,7 @@ class _ModeSwitch extends StatelessWidget {
                   heightFactor: 1,
                   child: Container(
                     decoration: BoxDecoration(
-                      color: AppColors.teal,
+                      color: _authAccent,
                       borderRadius: BorderRadius.circular(999),
                     ),
                   ),
@@ -439,7 +545,7 @@ class _ModeSwitchItem extends StatelessWidget {
         duration: const Duration(milliseconds: 160),
         curve: Curves.easeOut,
         child: SizedBox(
-          width: 56,
+          width: 52,
           height: 30,
           child: Center(
             child: Text(
@@ -577,7 +683,7 @@ class _AuthFormSection extends StatelessWidget {
                 child: Text(
                   isLogin ? '立即注册' : '返回登录',
                   style: oneKeepInter(
-                    color: AppColors.teal,
+                    color: _authAccentDeep,
                     size: 14,
                     weight: FontWeight.w700,
                   ),
@@ -671,6 +777,7 @@ class _AuthField extends StatelessWidget {
         keyboardType: keyboardType,
         autofillHints: autofillHints,
         onChanged: onChanged,
+        cursorColor: _authAccentDeep,
         style: oneKeepInter(
           color: AppColors.lightTextPrimary,
           size: 15,
@@ -726,12 +833,12 @@ class _AuthSubmitButton extends StatelessWidget {
 
     return SizedBox(
       width: double.infinity,
-      height: 54,
+      height: 50,
       child: ElevatedButton(
         onPressed: isEnabled ? onTap : null,
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.teal,
-          disabledBackgroundColor: AppColors.teal.withValues(alpha: 0.42),
+          backgroundColor: _authAccent,
+          disabledBackgroundColor: _authAccent.withValues(alpha: 0.42),
           foregroundColor: Colors.white,
           elevation: 0,
           shape: RoundedRectangleBorder(

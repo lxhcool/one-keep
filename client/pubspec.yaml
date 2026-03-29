@@ -31,10 +31,20 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   riverpod_generator: ^2.6.0
   build_runner: ^2.4.0
+  flutter_launcher_icons: ^0.14.4
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/images/app-logo.png
   fonts:
     - family: OneKeepIconFont
       fonts:
         - asset: assets/iconfont/iconfont.ttf
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/images/app-logo.png
+  min_sdk_android: 21
+  remove_alpha_ios: true
