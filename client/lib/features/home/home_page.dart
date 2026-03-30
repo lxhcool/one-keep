@@ -16,15 +16,15 @@ import '../../shared/models/models.dart';
 import '../../shared/widgets/onekeep_ui.dart';
 import '../../shared/widgets/transaction_editor_sheet.dart';
 
-const _homeHeroSurfaceTop = Color(0xFF00537E);
-const _homeHeroSurfaceMid = Color(0xFF1F7A7A);
+const _homeHeroSurfaceTop = Color(0xFF287f79);
+const _homeHeroSurfaceMid = Color(0xFF2d8f7a);
 const _homeHeroSurfaceBottom = Color(0xFF3AA17E);
 const _homeHeroCardTop = Color(0xFF308781);
 const _homeHeroCardBottom = Color(0xFF287f79);
 const _homeListPrimaryText = Color(0xFF333333);
 const _homeListSecondaryText = Color(0xFFBFBFBF);
-const _homeDarkHeroTop = Color(0xFF003D5C);
-const _homeDarkHeroMid = Color(0xFF175C5C);
+const _homeDarkHeroTop = Color(0xFF1e5f5a);
+const _homeDarkHeroMid = Color(0xFF246b66);
 const _homeDarkHeroBottom = Color(0xFF2D7A5E);
 const _homeDarkCardTop = Color(0xFF246b66);
 const _homeDarkCardBottom = Color(0xFF1a4a46);
@@ -297,10 +297,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                   DecoratedBox(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
                         colors: palette.heroGradient,
-                        stops: [0.0, 0.48, 1.0],
+                        stops: [0.0, 0.55, 1.0],
                       ),
                     ),
                   ),

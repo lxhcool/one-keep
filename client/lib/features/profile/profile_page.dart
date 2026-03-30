@@ -586,7 +586,7 @@ class _ProfileSummaryCardState extends State<_ProfileSummaryCard> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final statusBarHeight = MediaQuery.of(context).padding.top;
-    const heroHeight = 280.0;
+    const heroHeight = 400.0;
     const avatarSize = 92.0;
 
     return SizedBox(
@@ -671,7 +671,7 @@ class _ProfileSummaryCardState extends State<_ProfileSummaryCard> {
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.center,
                     style: oneKeepGrotesk(
-                      color: oneKeepTextPrimary(context),
+                      color: Colors.white,
                       size: 18,
                       weight: FontWeight.w800,
                       letterSpacing: 0.3,
@@ -688,7 +688,7 @@ class _ProfileSummaryCardState extends State<_ProfileSummaryCard> {
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.center,
                       style: oneKeepInter(
-                        color: const Color(0xFF308781),
+                        color: Colors.white.withValues(alpha: 0.85),
                         size: 13,
                         weight: FontWeight.w600,
                       ),
@@ -836,17 +836,24 @@ class _ProfileCoverFallback extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFFd4e5e3),
-            Color(0xFF5aaa9f),
-            Color(0xFF287f79),
-          ],
-          stops: [0.0, 0.48, 1.0],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: isDark
+              ? [
+                  const Color(0xFF1e5f5a),
+                  const Color(0xFF246b66),
+                  const Color(0xFF2D7A5E),
+                ]
+              : [
+                  const Color(0xFF287f79),
+                  const Color(0xFF2d8f7a),
+                  const Color(0xFF3AA17E),
+                ],
+          stops: const [0.0, 0.55, 1.0],
         ),
       ),
       child: Stack(
@@ -862,7 +869,7 @@ class _ProfileCoverFallback extends StatelessWidget {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    Colors.white.withValues(alpha: 0.28),
+                    isDark ? const Color(0x302D7A5E) : const Color(0x303AA17E),
                     Colors.transparent,
                   ],
                 ),
@@ -879,7 +886,7 @@ class _ProfileCoverFallback extends StatelessWidget {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    Colors.white.withValues(alpha: 0.18),
+                    isDark ? const Color(0x18175C5C) : const Color(0x181F7A7A),
                     Colors.transparent,
                   ],
                 ),
@@ -896,7 +903,7 @@ class _ProfileCoverFallback extends StatelessWidget {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    Colors.white.withValues(alpha: 0.14),
+                    isDark ? const Color(0x102D7A5E) : const Color(0x103AA17E),
                     Colors.transparent,
                   ],
                 ),
