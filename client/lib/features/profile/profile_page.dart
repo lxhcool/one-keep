@@ -688,7 +688,7 @@ class _ProfileSummaryCardState extends State<_ProfileSummaryCard> {
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.center,
                       style: oneKeepInter(
-                        color: const Color(0xFFFFCB24),
+                        color: const Color(0xFF308781),
                         size: 13,
                         weight: FontWeight.w600,
                       ),
@@ -842,9 +842,9 @@ class _ProfileCoverFallback extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Color(0xFFFFF4CC),
-            Color(0xFFF3D36D),
-            Color(0xFFE3B34C),
+            Color(0xFFd4e5e3),
+            Color(0xFF5aaa9f),
+            Color(0xFF287f79),
           ],
           stops: [0.0, 0.48, 1.0],
         ),

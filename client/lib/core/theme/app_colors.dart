@@ -3,17 +3,17 @@ import 'package:flutter/material.dart';
 class AppColors {
   AppColors._();
 
-  // Primary Colors - Warm Yellow Brand System
-  static const teal = Color(0xFFEDC100); // Main brand color
-  static const tealLight = Color(0xFFF3D24A);
-  static const tealDark = Color(0xFFC99F00);
-  static const tealMuted = Color(0xFFF8E28A);
+  // Primary Colors - Teal Brand System
+  static const teal = Color(0xFF287f79); // Main brand color
+  static const tealLight = Color(0xFF308781);
+  static const tealDark = Color(0xFF1e5f5a);
+  static const tealMuted = Color(0xFF4a9993);
 
   static const purple = Color(0xFF6366F1); // Indigo 500 - Accent color
   static const purpleLight = Color(0xFFA5B4FC); // Indigo 300
   static const coral = Color(0xFFFB7185);
   static const amber = Color(0xFFF59E0B); // Amber 500 - Secondary color
-  static const amberLight = Color(0xFFFBBF24); // Amber 400
+  static const amberLight = Color(0xFF308781); // Teal light
 
   static const expense = Color(0xFFEF4444); // Red 500 - Softer red
   static const expenseLight = Color(0xFFFCA5A5); // Red 300
@@ -70,11 +70,11 @@ class AppColors {
 
   static const expenseGradient = [Color(0xFFEF4444), Color(0xFFDC2626)];
   static const incomeGradient = [Color(0xFF22C55E), Color(0xFF16A34A)];
-  static const fabGradient = [Color(0xFFF3D24A), Color(0xFFEDC100)];
+  static const fabGradient = [Color(0xFF308781), Color(0xFF287f79)];
   
   // Balance card gradients
   static const balanceGradientDark = [Color(0xFF1E293B), Color(0xFF0F172A)]; // Slate
-  static const balanceGradientLight = [Color(0xFFF3D24A), Color(0xFFEDC100)];
+  static const balanceGradientLight = [Color(0xFF308781), Color(0xFF287f79)];
   static const cardGradientDark = [Color(0xFF1C1C1F), Color(0xFF0A0A0B)];
   static const cardGradientLight = [Color(0xFFFFFFFF), Color(0xFFFAFAFA)];
 

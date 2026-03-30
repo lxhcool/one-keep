@@ -16,18 +16,18 @@ import '../../shared/models/models.dart';
 import '../../shared/widgets/onekeep_ui.dart';
 import '../../shared/widgets/transaction_editor_sheet.dart';
 
-const _homeHeroSurfaceTop = Color(0xFFFFF4CC);
-const _homeHeroSurfaceMid = Color(0xFFF3D36D);
-const _homeHeroSurfaceBottom = Color(0xFFE3B34C);
-const _homeHeroCardTop = Color(0xFFF3D24A);
-const _homeHeroCardBottom = Color(0xFFEDC100);
+const _homeHeroSurfaceTop = Color(0xFF00537E);
+const _homeHeroSurfaceMid = Color(0xFF1F7A7A);
+const _homeHeroSurfaceBottom = Color(0xFF3AA17E);
+const _homeHeroCardTop = Color(0xFF308781);
+const _homeHeroCardBottom = Color(0xFF287f79);
 const _homeListPrimaryText = Color(0xFF333333);
 const _homeListSecondaryText = Color(0xFFBFBFBF);
-const _homeDarkHeroTop = Color(0xFF322400);
-const _homeDarkHeroMid = Color(0xFF6C4F00);
-const _homeDarkHeroBottom = Color(0xFFA07600);
-const _homeDarkCardTop = Color(0xFF846200);
-const _homeDarkCardBottom = Color(0xFF5B4300);
+const _homeDarkHeroTop = Color(0xFF003D5C);
+const _homeDarkHeroMid = Color(0xFF175C5C);
+const _homeDarkHeroBottom = Color(0xFF2D7A5E);
+const _homeDarkCardTop = Color(0xFF246b66);
+const _homeDarkCardBottom = Color(0xFF1a4a46);
 const _homeDarkListPrimaryText = Color(0xFFF3F4F6);
 const _homeDarkListSecondaryText = Color(0xFF8E8E93);
 
@@ -75,19 +75,19 @@ class _HomePalette {
         scaffoldBackground: AppColors.darkBg,
         overlayStyle: SystemUiOverlayStyle.light,
         heroGradient: [_homeDarkHeroTop, _homeDarkHeroMid, _homeDarkHeroBottom],
-        heroGlowPrimary: Color(0x40FFFFFF),
-        heroGlowSecondary: Color(0x22FBBF24),
-        heroGreetingText: Color(0xCCFDE68A),
-        heroNameText: Color(0xFFFFF9E7),
-        heroActionBackground: Color(0x2EFDE68A),
-        heroActionBorder: Color(0x33FDE68A),
-        heroActionIcon: Color(0xFFFFF0C0),
+        heroGlowPrimary: Color(0x302D7A5E),
+        heroGlowSecondary: Color(0x18175C5C),
+        heroGreetingText: Color(0xCCFFFFFF),
+        heroNameText: Color(0xFFFFFFFF),
+        heroActionBackground: Color(0x2E4a9993),
+        heroActionBorder: Color(0x334a9993),
+        heroActionIcon: Color(0xFFd4e5e3),
         cardGradient: [_homeDarkCardTop, _homeDarkCardBottom],
-        cardGlow: Color(0x26FDE68A),
+        cardGlow: Color(0x264a9993),
         cardShadow: Color(0x66000000),
         listPrimaryText: _homeDarkListPrimaryText,
         listSecondaryText: _homeDarkListSecondaryText,
-        listAccent: Color(0xFFEDC100),
+        listAccent: Color(0xFF287f79),
       );
     }
 
@@ -99,13 +99,13 @@ class _HomePalette {
         _homeHeroSurfaceMid,
         _homeHeroSurfaceBottom,
       ],
-      heroGlowPrimary: Color(0x42FFFFFF),
-      heroGlowSecondary: Color(0x29FFFFFF),
-      heroGreetingText: Color(0xAA4B2E08),
-      heroNameText: Color(0xFF4B3800),
+      heroGlowPrimary: Color(0x303AA17E),
+      heroGlowSecondary: Color(0x181F7A7A),
+      heroGreetingText: Color(0xCCFFFFFF),
+      heroNameText: Color(0xFFFFFFFF),
       heroActionBackground: Color(0x38FFFFFF),
       heroActionBorder: Color(0x2EFFFFFF),
-      heroActionIcon: Color(0xFF6A4E00),
+      heroActionIcon: Color(0xFF246b66),
       cardGradient: [_homeHeroCardTop, _homeHeroCardBottom],
       cardGlow: Color(0x24FFFFFF),
       cardShadow: Color(0x387C5316),
@@ -288,7 +288,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         clipBehavior: Clip.none,
         children: [
           SizedBox(
-            height: 322,
+            height: 400,
             child: ClipPath(
               clipper: _HeroFanClipper(),
               child: Stack(

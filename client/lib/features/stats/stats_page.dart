@@ -369,7 +369,7 @@ class _StatsPageState extends ConsumerState<StatsPage> {
   }
 
   Widget _buildTrendSection(_ResolvedStats stats) {
-    const tone = Color(0xFFFFCB24);
+    const tone = Color(0xFF308781);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

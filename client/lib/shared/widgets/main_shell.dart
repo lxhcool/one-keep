@@ -26,7 +26,7 @@ class _MainShellState extends ConsumerState<MainShell> {
   int _currentIndex = 0;
 
   static const _paths = ['/home', '/stats', '/bills', '/profile'];
-  static const _navAccent = Color(0xFFFFCB24);
+  static const _navAccent = Color(0xFF308781);
 
   void _onTap(int index) {
     if (index == _currentIndex) return;
