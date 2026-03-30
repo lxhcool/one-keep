@@ -5,9 +5,12 @@
   "description": "OneKeep — 个人记账应用",
   "scripts": {
     "dev:client": "cd client && flutter run",
+    "dev:client:android-local": "cd client && flutter run --dart-define=API_BASE_URL=http://10.0.2.2:3001",
+    "dev:client:web-local": "cd client && flutter run -d chrome --dart-define=API_BASE_URL=http://127.0.0.1:3001",
     "analyze:client": "cd client && flutter analyze",
     "test:client": "cd client && flutter test",
     "dev:server": "cd server && npm run dev",
+    "dev:server:3001": "cd server && PORT=3001 HOST=0.0.0.0 npm run dev",
     "build:server": "cd server && npm run build",
     "start:server": "cd server && npm start"
   }

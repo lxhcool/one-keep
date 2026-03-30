@@ -268,6 +268,13 @@ class _HomePageState extends ConsumerState<HomePage> {
   ) {
     final palette = _HomePalette.of(context);
     final topInset = MediaQuery.paddingOf(context).top;
+    const headerTopSpacing = 24.0;
+    const avatarSize = 54.0;
+    const balanceCardTopSpacing = 24.0;
+    const balanceCardHeight = 236.0;
+    const contentSpacing = 16.0;
+    final balanceCardTop = topInset + headerTopSpacing + avatarSize + balanceCardTopSpacing;
+    final heroHeight = balanceCardTop + balanceCardHeight + contentSpacing;
     final userName = preferences.nickname.isNotEmpty
         ? preferences.nickname
         : (summary?.user.name.isNotEmpty == true
@@ -276,7 +283,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                     ? authUserName!
                     : 'OneKeep 用户'));
     return SizedBox(
-      height: 332,
+      height: heroHeight,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
@@ -331,14 +338,14 @@ class _HomePageState extends ConsumerState<HomePage> {
                   Align(
                     alignment: Alignment.topCenter,
                     child: Padding(
-                      padding: EdgeInsets.fromLTRB(20, topInset + 24, 20, 0),
+                      padding: EdgeInsets.fromLTRB(20, topInset + headerTopSpacing, 20, 0),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           OneKeepAvatar(
                             avatarIndex: preferences.avatarIndex,
                             avatarImageData: preferences.avatarImageData,
-                            size: 54,
+                            size: avatarSize,
                             iconSize: 24,
                           ),
                           const SizedBox(width: 16),
@@ -401,8 +408,11 @@ class _HomePageState extends ConsumerState<HomePage> {
             Positioned(
               left: 20,
               right: 20,
-              top: 110,
-              child: _buildHeroBalanceCard(summary),
+              top: balanceCardTop,
+              child: SizedBox(
+                height: balanceCardHeight,
+                child: _buildHeroBalanceCard(summary),
+              ),
             ),
         ],
       ),

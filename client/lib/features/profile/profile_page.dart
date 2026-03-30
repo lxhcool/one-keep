@@ -1258,6 +1258,7 @@ class _AvatarStudioSheet extends ConsumerWidget {
                           avatarIndex: index,
                           size: 56,
                           iconSize: 24,
+                          usePresetStyleWhenNoImage: true,
                         ),
                       ),
                     ),

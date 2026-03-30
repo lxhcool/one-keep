@@ -592,6 +592,7 @@ class OneKeepAvatar extends StatefulWidget {
   final double size;
   final double iconSize;
   final String? avatarImageData;
+  final bool usePresetStyleWhenNoImage;
 
   const OneKeepAvatar({
     super.key,
@@ -599,6 +600,7 @@ class OneKeepAvatar extends StatefulWidget {
     this.size = 48,
     this.iconSize = 24,
     this.avatarImageData,
+    this.usePresetStyleWhenNoImage = false,
   });
 
   @override
@@ -626,17 +628,26 @@ class _OneKeepAvatarState extends State<OneKeepAvatar> {
   Widget build(BuildContext context) {
     final preset =
         oneKeepAvatarPresets[widget.avatarIndex % oneKeepAvatarPresets.length];
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final showPresetStyle = widget.usePresetStyleWhenNoImage && _avatarProvider == null;
+    final decoration = BoxDecoration(
+      shape: BoxShape.circle,
+      color: showPresetStyle
+          ? null
+          : (isDark ? const Color(0xFF3F3F46) : const Color(0xFFE5E7EB)),
+      gradient: showPresetStyle
+          ? LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: preset.colors,
+            )
+          : null,
+    );
+
     return Container(
       width: widget.size,
       height: widget.size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: preset.colors,
-        ),
-      ),
+      decoration: decoration,
       child: ClipOval(
         child: _avatarProvider != null
             ? Image(
@@ -644,7 +655,13 @@ class _OneKeepAvatarState extends State<OneKeepAvatar> {
                 fit: BoxFit.cover,
                 gaplessPlayback: true,
               )
-            : Icon(preset.icon, size: widget.iconSize, color: Colors.white),
+            : Icon(
+                showPresetStyle
+                    ? preset.icon
+                    : Icons.person_outline_rounded,
+                size: widget.iconSize,
+                color: Colors.white,
+              ),
       ),
     );
   }
