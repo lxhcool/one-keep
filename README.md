@@ -106,6 +106,72 @@ npm install -g pm2
 cd /你的项目路径/server && npm run deploy
 ```
 
+### 宝塔配置建议
+
+#### 1. Node 项目启动命令
+
+如果你在宝塔里用 PM2 管理这个服务，推荐使用下面的启动命令：
+
+```bash
+cd /你的项目路径/server && npm run deploy
+```
+
+如果你更倾向于把“部署”和“启动”拆开，也可以这样配置：
+
+```bash
+cd /你的项目路径/server
+npm ci
+npm run db:generate
+npm run db:push
+npm run build
+pm2 startOrReload ecosystem.config.json --update-env
+```
+
+#### 2. 反向代理
+
+推荐让宝塔网站或 Nginx 反向代理到 Node 服务端口，例如 `3000`。
+
+示例：
+
+```nginx
+location / {
+    proxy_pass http://127.0.0.1:3000;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
+```
+
+如果你后续把服务改到别的端口，比如 `3001`，这里只需要同步改 `proxy_pass`。
+
+#### 3. 更新流程
+
+后续在宝塔上更新服务端，建议固定成下面这套流程：
+
+1. 在项目目录执行 `git pull`
+2. 进入 `server/`
+3. 执行 `npm run deploy`
+4. 用 `pm2 logs one-keep-server` 检查启动日志
+
+#### 4. 常用排查命令
+
+```bash
+# 查看 PM2 进程
+pm2 list
+
+# 查看服务日志
+pm2 logs one-keep-server
+
+# 查看端口监听
+lsof -i :3000
+
+# 健康检查
+curl http://127.0.0.1:3000/api/health
+```
+
+如果你的线上端口不是 `3000`，把上面的端口替换成实际值即可。
+
 ## Skills 作用
 
 `skills/` 目录是工作流技能库，用来把“页面分析 → 需求文档 → 开发实现”这条链路标准化。
