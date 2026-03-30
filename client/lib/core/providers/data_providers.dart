@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../network/api_client.dart';
 import '../../shared/models/models.dart';
 import 'api_provider.dart';
+import 'auth_provider.dart';
 
 // ============ Home ============
 
@@ -174,6 +175,11 @@ final billsProvider = StateNotifierProvider<BillsNotifier, BillsState>((ref) {
 // ============ Categories ============
 
 final categoriesProvider = FutureProvider<List<Category>>((ref) async {
+  final authState = ref.watch(authProvider);
+  if (authState.status != AuthStatus.authenticated) {
+    return const <Category>[];
+  }
+
   final api = ref.read(apiClientProvider);
   final res = await api.dio.get('/api/categories');
   return (res.data['categories'] as List)

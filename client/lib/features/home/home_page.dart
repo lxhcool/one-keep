@@ -126,11 +126,20 @@ class HomePage extends ConsumerStatefulWidget {
 class _HomePageState extends ConsumerState<HomePage> {
   // ignore: unused_field
   bool _balanceVisible = true;
+  bool _hasTriggeredInitialLoad = false;
 
   @override
   void initState() {
     super.initState();
-    Future.microtask(() => ref.read(homeProvider.notifier).load());
+    Future.microtask(_loadIfAuthenticated);
+  }
+
+  Future<void> _loadIfAuthenticated() async {
+    if (!mounted || _hasTriggeredInitialLoad) return;
+    if (ref.read(authProvider).status != AuthStatus.authenticated) return;
+
+    _hasTriggeredInitialLoad = true;
+    await ref.read(homeProvider.notifier).load();
   }
 
   // ignore: unused_element
@@ -146,6 +155,21 @@ class _HomePageState extends ConsumerState<HomePage> {
   Widget build(BuildContext context) {
     final state = ref.watch(homeProvider);
     final authState = ref.watch(authProvider);
+    ref.listen<AuthState>(authProvider, (previous, next) {
+      if (!mounted) return;
+
+      final becameAuthenticated =
+          previous?.status != AuthStatus.authenticated &&
+          next.status == AuthStatus.authenticated;
+      if (becameAuthenticated) {
+        _hasTriggeredInitialLoad = true;
+        ref.read(homeProvider.notifier).load();
+      }
+
+      if (next.status == AuthStatus.unauthenticated) {
+        _hasTriggeredInitialLoad = false;
+      }
+    });
     final preferences = ref.watch(preferencesProvider);
     final categories = ref.watch(categoriesProvider).valueOrNull ?? const <Category>[];
     final categoryColors = <String, String?>{
@@ -157,7 +181,9 @@ class _HomePageState extends ConsumerState<HomePage> {
       backgroundColor: palette.scaffoldBackground,
       body: AnnotatedRegion<SystemUiOverlayStyle>(
         value: palette.overlayStyle,
-        child: state.isLoading
+        child: authState.status == AuthStatus.unknown
+            ? const Center(child: CircularProgressIndicator())
+            : state.isLoading
             ? const Center(child: CircularProgressIndicator())
             : state.error != null
             ? Center(child: Text(state.error!))

@@ -73,10 +73,143 @@ curl http://127.0.0.1:3001/api/health
 
 ## 服务端部署
 
-如果你在宝塔上部署的是 Node 项目，推荐不要手动一条条执行安装、构建、重启命令，而是统一用项目自带的一键部署脚本：
+当前服务端是 `TypeScript + Node.js + Fastify + Prisma`，生产运行方式是：
+
+1. 用 `npm run build` 编译到 `server/dist/`
+2. 用 `node dist/server.js` 启动
+3. 用 `pm2` 托管进程
+4. 用宝塔网站/Nginx 做域名和 HTTPS
+
+当前数据库配置默认是 `SQLite`，数据库文件通常在：
+
+```text
+server/prisma/dev.db
+```
+
+如果你准备把旧版本整个删掉重新部署，但还想保留原来的数据，先备份这个文件。
+
+### 从零重新部署到宝塔
+
+下面这套流程适用于：
+
+- 你已经有服务器和宝塔面板
+- 你可以删掉旧版本重新部署
+- 你要重新绑定域名并走 HTTPS
+
+#### 1. 准备域名
+
+先在域名服务商控制台里添加解析，把接口域名指向你的服务器公网 IP。
+
+例如你想把接口部署到：
+
+```text
+api.example.com
+```
+
+就添加一条 `A` 记录：
+
+- 主机记录：`api`
+- 记录类型：`A`
+- 记录值：你的服务器公网 IP
+
+如果你已经有旧解析，确认它也指向当前这台服务器。
+
+#### 2. 备份旧版本
+
+如果旧服务已经跑过，并且你要保留历史数据，先备份：
 
 ```bash
-cd /你的项目路径/server
+cd /旧项目路径/server
+cp prisma/dev.db prisma/dev.db.backup
+```
+
+如果你不需要旧数据，这一步可以跳过。
+
+#### 3. 删除旧项目
+
+确认备份完成后，再删除旧版本目录。
+
+示例：
+
+```bash
+cd /www/wwwroot
+rm -rf one-keep
+```
+
+如果你打算保留旧目录作为回滚副本，不要删，直接改成别的目录名即可。
+
+#### 4. 安装运行环境
+
+在宝塔服务器里确认这些环境已经安装：
+
+- `Node.js`
+- `npm`
+- `pm2`
+- `Git`
+
+推荐检查：
+
+```bash
+node -v
+npm -v
+pm2 -v
+git --version
+```
+
+如果没有 `pm2`：
+
+```bash
+npm install -g pm2
+```
+
+#### 5. 拉取项目代码
+
+选择一个新的部署目录，例如：
+
+```bash
+cd /www/wwwroot
+git clone <你的仓库地址> one-keep
+cd one-keep
+```
+
+如果是私有仓库，先确保服务器已经配置好 Git 凭证或 SSH Key。
+
+#### 6. 配置服务端环境变量
+
+进入服务端目录，确认 `.env` 存在：
+
+```bash
+cd /www/wwwroot/one-keep/server
+ls -la
+```
+
+如果没有 `.env`，按下面方式创建：
+
+```bash
+cp .env.example .env
+```
+
+然后检查 `.env`，至少确认这些值：
+
+```env
+DATABASE_URL="file:./dev.db"
+JWT_SECRET="换成你自己的随机字符串"
+PORT=3000
+HOST="0.0.0.0"
+```
+
+说明：
+
+- `PORT=3000` 对应当前 `pm2 + Nginx` 配置最省事
+- `HOST=0.0.0.0` 才能让反向代理正常访问
+- `JWT_SECRET` 不要继续用默认测试值
+
+#### 7. 首次部署服务端
+
+执行：
+
+```bash
+cd /www/wwwroot/one-keep/server
 npm run deploy
 ```
 
@@ -88,50 +221,52 @@ npm run deploy
 - `npm run build`
 - `pm2 startOrReload ecosystem.config.json --update-env`
 
-如果服务器上还没有 `pm2`，先安装一次：
+如果成功，服务会以 `one-keep-server` 进程名跑起来。
+
+#### 8. 验证服务端是否正常
+
+先检查 PM2：
 
 ```bash
-npm install -g pm2
+pm2 list
+pm2 logs one-keep-server
 ```
 
-在宝塔里，后续更新服务端时只需要：
-
-1. 拉取最新代码
-2. 进入 `server/`
-3. 执行 `npm run deploy`
-
-如果你希望把这一步再简化，可以直接把宝塔的“项目启动命令”或“部署脚本”配置成：
+再做本机健康检查：
 
 ```bash
-cd /你的项目路径/server && npm run deploy
+curl http://127.0.0.1:3000/api/health
 ```
 
-### 宝塔配置建议
+正常返回：
 
-#### 1. Node 项目启动命令
-
-如果你在宝塔里用 PM2 管理这个服务，推荐使用下面的启动命令：
-
-```bash
-cd /你的项目路径/server && npm run deploy
+```json
+{"status":"ok"}
 ```
 
-如果你更倾向于把“部署”和“启动”拆开，也可以这样配置：
+如果这一步不通，不要先配域名，先把本机服务跑通。
 
-```bash
-cd /你的项目路径/server
-npm ci
-npm run db:generate
-npm run db:push
-npm run build
-pm2 startOrReload ecosystem.config.json --update-env
-```
+#### 9. 在宝塔创建站点
 
-#### 2. 反向代理
+打开宝塔面板：
 
-推荐让宝塔网站或 Nginx 反向代理到 Node 服务端口，例如 `3000`。
+1. 进入“网站”
+2. 添加站点
+3. 域名填你的接口域名，例如 `api.example.com`
+4. PHP 版本选“纯静态”或不启用 PHP
+5. 站点目录可以随便指定一个空目录，例如 `/www/wwwroot/api.example.com`
 
-示例：
+这个站点的作用不是跑 PHP，而是让宝塔帮你管域名、反向代理和 SSL。
+
+#### 10. 配置反向代理
+
+进入刚创建的网站设置，添加反向代理，把域名转发到本地 Node 服务：
+
+- 代理名称：`one-keep-api`
+- 目标 URL：`http://127.0.0.1:3000`
+- 发送域名：`$host`
+
+如果你手动写 Nginx，示例配置如下：
 
 ```nginx
 location / {
@@ -143,18 +278,52 @@ location / {
 }
 ```
 
-如果你后续把服务改到别的端口，比如 `3001`，这里只需要同步改 `proxy_pass`。
+#### 11. 配置 HTTPS
 
-#### 3. 更新流程
+进入宝塔站点的 SSL 页面：
 
-后续在宝塔上更新服务端，建议固定成下面这套流程：
+1. 申请 Let's Encrypt 证书
+2. 勾选强制 HTTPS
+3. 保存配置
 
-1. 在项目目录执行 `git pull`
-2. 进入 `server/`
-3. 执行 `npm run deploy`
-4. 用 `pm2 logs one-keep-server` 检查启动日志
+做完后，你的接口地址应该改成：
 
-#### 4. 常用排查命令
+```text
+https://api.example.com
+```
+
+#### 12. 客户端切换线上接口
+
+如果你的 Flutter 客户端要指向新的线上地址，把客户端默认线上地址改成你的真实域名，或在打包时通过 `--dart-define=API_BASE_URL=` 指定。
+
+当前项目支持这种方式：
+
+```bash
+flutter run --dart-define=API_BASE_URL=https://api.example.com
+```
+
+#### 13. 最终验收
+
+按下面顺序检查：
+
+1. 浏览器打开 `https://你的域名/api/health`
+2. 返回 `{"status":"ok"}`
+3. 客户端可以正常登录
+4. 首页、账单、分类接口都能正常返回
+
+### 后续更新服务端
+
+以后不需要重新部署整套环境，只需要更新代码：
+
+```bash
+cd /www/wwwroot/one-keep
+git pull
+
+cd server
+npm run deploy
+```
+
+### 常用排查命令
 
 ```bash
 # 查看 PM2 进程
@@ -166,11 +335,51 @@ pm2 logs one-keep-server
 # 查看端口监听
 lsof -i :3000
 
-# 健康检查
+# 本机健康检查
+curl http://127.0.0.1:3000/api/health
+
+# 域名健康检查
+curl https://你的域名/api/health
+```
+
+### 常见问题
+
+#### 1. 域名可以打开，但接口 502
+
+通常是下面几种情况：
+
+- Node 服务没启动
+- PM2 进程挂了
+- 反向代理目标端口写错了
+- 服务没监听在 `0.0.0.0`
+
+优先检查：
+
+```bash
+pm2 list
+pm2 logs one-keep-server
 curl http://127.0.0.1:3000/api/health
 ```
 
-如果你的线上端口不是 `3000`，把上面的端口替换成实际值即可。
+#### 2. 登录失败，但健康检查正常
+
+优先检查：
+
+- `.env` 是否正确
+- `JWT_SECRET` 是否改过
+- 数据库文件是否还在
+- `server/prisma/dev.db` 是否被删掉了
+
+#### 3. 更新后接口字段不一致
+
+执行一次完整部署：
+
+```bash
+cd /www/wwwroot/one-keep/server
+npm run deploy
+```
+
+不要只执行 `pm2 restart`，否则可能还是旧构建产物。
 
 ## Skills 作用
 

@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../network/api_client.dart';
 import '../../shared/models/models.dart';
 import 'api_provider.dart';
@@ -34,6 +37,8 @@ class AuthState {
 
 class AuthNotifier extends StateNotifier<AuthState> {
   final ApiClient _api;
+  static const _storage = FlutterSecureStorage();
+  static const _currentUserKey = 'auth_current_user';
 
   AuthNotifier(this._api) : super(const AuthState()) {
     _checkAuth();
@@ -41,11 +46,31 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   Future<void> _checkAuth() async {
     final token = await ApiClient.getToken();
-    state = state.copyWith(
-      status: token != null
-          ? AuthStatus.authenticated
-          : AuthStatus.unauthenticated,
-    );
+    if (token == null) {
+      await _storage.delete(key: _currentUserKey);
+      state = state.copyWith(status: AuthStatus.unauthenticated, user: null);
+      return;
+    }
+
+    try {
+      final res = await _api.dio.get('/api/auth/me');
+      final data = res.data as Map<String, dynamic>;
+      final user = UserInfo.fromJson(
+        Map<String, dynamic>.from(data['user'] as Map<String, dynamic>),
+      );
+      await _writeStoredUser(user);
+      state = state.copyWith(
+        status: AuthStatus.authenticated,
+        user: user,
+      );
+    } catch (_) {
+      await ApiClient.clearToken();
+      await _storage.delete(key: _currentUserKey);
+      state = state.copyWith(
+        status: AuthStatus.unauthenticated,
+        user: null,
+      );
+    }
   }
 
   Future<void> login(String identifier, String password) async {
@@ -60,10 +85,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
         data['user'] as Map<String, dynamic>,
       );
       user['name'] ??= user['displayName'];
+      final userInfo = UserInfo.fromJson(user);
       await ApiClient.saveToken(data['token'] as String);
+      await _writeStoredUser(userInfo);
       state = state.copyWith(
         status: AuthStatus.authenticated,
-        user: UserInfo.fromJson(user),
+        user: userInfo,
         isLoading: false,
       );
     } catch (e) {
@@ -96,10 +123,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
         data['user'] as Map<String, dynamic>,
       );
       user['name'] ??= user['displayName'];
+      final userInfo = UserInfo.fromJson(user);
       await ApiClient.saveToken(data['token'] as String);
+      await _writeStoredUser(userInfo);
       state = state.copyWith(
         status: AuthStatus.authenticated,
-        user: UserInfo.fromJson(user),
+        user: userInfo,
         isLoading: false,
       );
     } catch (e) {
@@ -112,13 +141,29 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   Future<void> logout() async {
     await ApiClient.clearToken();
+    await _storage.delete(key: _currentUserKey);
     state = const AuthState(status: AuthStatus.unauthenticated);
   }
 
   void updateLocalUser({String? name}) {
     if (state.user == null) return;
-    state = state.copyWith(user: state.user!.copyWith(name: name));
+    final user = state.user!.copyWith(name: name);
+    state = state.copyWith(user: user);
+    _writeStoredUser(user);
   }
+
+  Future<void> _writeStoredUser(UserInfo user) {
+    return _storage.write(
+      key: _currentUserKey,
+      value: jsonEncode({
+        'id': user.id,
+        'username': user.username,
+        'name': user.name,
+        'email': user.email,
+      }),
+    );
+  }
+
 }
 
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {

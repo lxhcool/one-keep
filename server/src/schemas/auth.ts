@@ -28,3 +28,5 @@ export const loginSchema = {
     },
   },
 } as const;
+
+export const meSchema = {} as const;

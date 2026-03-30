@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import bcrypt from "bcryptjs";
 import { getPrisma } from "../utils/prisma.js";
-import { registerSchema, loginSchema } from "../schemas/auth.js";
+import { registerSchema, loginSchema, meSchema } from "../schemas/auth.js";
 import { ensureUserCategories } from "../utils/default-categories.js";
 
 function serializeUser(user: {
@@ -21,6 +21,22 @@ function serializeUser(user: {
 
 export default async function authRoutes(app: FastifyInstance) {
   const prisma = getPrisma();
+
+  app.get("/api/auth/me", { schema: meSchema }, async (request) => {
+    const user = await prisma.user.findUniqueOrThrow({
+      where: { id: request.userId },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        name: true,
+      },
+    });
+
+    return {
+      user: serializeUser(user),
+    };
+  });
 
   app.post("/api/auth/register", { schema: registerSchema }, async (request, reply) => {
     const { username, email, displayName, password } = request.body as {
