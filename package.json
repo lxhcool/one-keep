@@ -11,6 +11,7 @@
     "test:client": "cd client && flutter test",
     "dev:server": "cd server && npm run dev",
     "dev:server:3001": "cd server && PORT=3001 HOST=0.0.0.0 npm run dev",
+    "deploy:server": "cd server && npm run deploy",
     "build:server": "cd server && npm run build",
     "start:server": "cd server && npm start"
   }
