@@ -1,11 +1,12 @@
 import 'dart:convert';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 
-import 'category_settings_page.dart';
+import 'category_settings_sheet.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/data_providers.dart';
 import '../../core/providers/preferences_provider.dart';
@@ -34,365 +35,288 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     final preferences = ref.watch(preferencesProvider);
     final statsState = ref.watch(statsProvider);
     final statsOverview = statsState.overview;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     final displayName = preferences.nickname.isNotEmpty
         ? preferences.nickname
         : (authState.user?.name.isNotEmpty == true
               ? authState.user!.name
               : 'OneKeep 用户');
-    final themeLabel = preferences.themeMode == ThemeMode.light
-        ? '白天模式'
-        : '夜间模式';
+    final username = authState.user?.username?.isNotEmpty == true
+        ? '@${authState.user!.username!}'
+        : '';
+    final totalExpense = statsOverview?.totalExpense ?? 0;
+    final totalIncome = statsOverview?.totalIncome ?? 0;
+    final balance = totalIncome - totalExpense;
+
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      extendBodyBehindAppBar: true,
-      body: AnnotatedRegion<SystemUiOverlayStyle>(
-        value: SystemUiOverlayStyle.light,
-        child: OneKeepPageBackground(
-          variant: OneKeepPageVariant.profile,
-          child: ListView(
-            padding: EdgeInsets.zero,
-            children: [
-              _ProfileSummaryCard(
-                displayName: displayName,
-                username: authState.user?.username?.isNotEmpty == true
-                    ? '@${authState.user!.username!}'
-                    : '',
-                avatarIndex: preferences.avatarIndex,
-                avatarImageData: preferences.avatarImageData,
-                backgroundImageData: preferences.profileBackgroundImageData,
-                onEditAvatar: _showAvatarStudio,
-                onEditBackground: _showBackgroundStudio,
+      backgroundColor: isDark ? const Color(0xFF0A0A0B) : const Color(0xFFF8F9FA),
+      body: SafeArea(
+        child: CustomScrollView(
+          slivers: [
+            // 顶部导航
+            SliverToBoxAdapter(
+              child: _buildHeader(context, isDark),
+            ),
+            
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate([
+                  const SizedBox(height: 24),
+                  
+                  // 用户信息卡片 - 采用Block-based设计
+                  _UserInfoCard(
+                    displayName: displayName,
+                    username: username,
+                    avatarIndex: preferences.avatarIndex,
+                    avatarImageData: preferences.avatarImageData,
+                    backgroundImageData: preferences.profileBackgroundImageData,
+                    onEditAvatar: _showAvatarStudio,
+                  ),
+                  
+                  const SizedBox(height: 24),
+                  
+                  // 财务概览 - 简洁三列布局
+                  _FinanceOverview(
+                    expense: totalExpense,
+                    income: totalIncome,
+                    balance: balance,
+                    isLoading: statsState.isLoading && statsOverview == null,
+                  ),
+                  
+                  const SizedBox(height: 32),
+                  
+                  // 设置分组
+                  _buildSectionTitle('个性化', isDark),
+                  const SizedBox(height: 12),
+                  
+                  // 个性化菜单
+                  _PersonalizationMenu(
+                    themeLabel: preferences.themeMode == ThemeMode.light
+                        ? '浅色模式'
+                        : '深色模式',
+                    onThemeTap: _showThemePicker,
+                    onBackgroundTap: _showBackgroundStudio,
+                    onAvatarTap: _showAvatarStudio,
+                    onNicknameTap: _showNicknameSheet,
+                  ),
+                  
+                  const SizedBox(height: 32),
+                  
+                  // 设置分组
+                  _buildSectionTitle('设置', isDark),
+                  const SizedBox(height: 12),
+                  
+                  // 设置菜单
+                  _SettingsMenu(
+                    onCategoryTap: _openCategorySettings,
+                  ),
+                  
+                  const SizedBox(height: 40),
+                  
+                  // 退出登录
+                  _LogoutButton(onTap: () => ref.read(authProvider.notifier).logout()),
+                  
+                  const SizedBox(height: 40),
+                ]),
               ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 24, 20, 120),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _ProfileStatsRow(
-                      totalExpense: statsOverview?.totalExpense,
-                      totalIncome: statsOverview?.totalIncome,
-                      isLoading: statsState.isLoading && statsOverview == null,
-                    ),
-                    const SizedBox(height: 20),
-                    _MenuGroup(
-                      children: [
-                        _MenuTile(
-                          icon: Icons.wallpaper_outlined,
-                          tone: AppColors.info,
-                          title: '背景图',
-                          subtitle:
-                              preferences.profileBackgroundImageData != null
-                              ? '已应用于个人中心和首页结余卡片'
-                              : '上传背景图，将显示在个人中心和首页',
-                          onTap: _showBackgroundStudio,
-                        ),
-                        _MenuTile(
-                          icon: Icons.add_a_photo_outlined,
-                          tone: AppColors.teal,
-                          title: '头像设置',
-                          subtitle: preferences.avatarImageData != null
-                              ? '已上传头像'
-                              : '使用预设头像',
-                          onTap: _showAvatarStudio,
-                        ),
-                        _MenuTile(
-                          icon: Icons.drive_file_rename_outline_rounded,
-                          tone: AppColors.purple,
-                          title: '昵称设置',
-                          subtitle: displayName,
-                          onTap: _showNicknameSheet,
-                        ),
-                        _MenuTile(
-                          icon: Icons.category_outlined,
-                          tone: AppColors.teal,
-                          title: '分类设置',
-                          subtitle: '管理快速记账使用的分类和图标',
-                          onTap: _openCategorySettings,
-                        ),
-                        _MenuTile(
-                          icon: Icons.light_mode_outlined,
-                          tone: AppColors.warning,
-                          title: '主题模式',
-                          subtitle: themeLabel,
-                          onTap: _showThemePicker,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 32),
-                    GestureDetector(
-                      onTap: () => ref.read(authProvider.notifier).logout(),
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(vertical: 18),
-                        decoration: BoxDecoration(
-                          color: AppColors.expense.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Center(
-                          child: Text(
-                            '退出登录',
-                            style: oneKeepManrope(
-                              color: AppColors.expense,
-                              size: 16,
-                              weight: FontWeight.w700,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  // ignore: unused_element
-  Future<void> _showNicknameDialog() async {
-    final preferences = ref.read(preferencesProvider);
-    final authState = ref.read(authProvider);
-    final initial = preferences.nickname.isNotEmpty
-        ? preferences.nickname
-        : (authState.user?.name ?? '');
-    final controller = TextEditingController(text: initial);
-    final saved = await showDialog<String>(
-      context: context,
-      builder: (dialogContext) {
-        final isDark = Theme.of(dialogContext).brightness == Brightness.dark;
-        return AlertDialog(
-          backgroundColor: oneKeepSurface(dialogContext),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
-            side: BorderSide(color: oneKeepBorder(dialogContext), width: 0.8),
-          ),
-          titlePadding: const EdgeInsets.fromLTRB(24, 22, 24, 10),
-          contentPadding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
-          actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-          title: Text(
-            '编辑昵称',
-            style: oneKeepGrotesk(
-              color: oneKeepTextPrimary(dialogContext),
-              size: 22,
-              weight: FontWeight.w700,
+  Widget _buildHeader(BuildContext context, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            '我的',
+            style: TextStyle(
+              color: isDark ? Colors.white : const Color(0xFF18181B),
+              fontSize: 28,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.5,
             ),
           ),
-          content: TextField(
-            controller: controller,
-            autofocus: true,
-            style: oneKeepInter(
-              color: oneKeepTextPrimary(dialogContext),
-              size: 14,
-              weight: FontWeight.w500,
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1C1C1F) : Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isDark ? const Color(0xFF2C2C2E) : const Color(0xFFE5E7EB),
+              ),
             ),
-            decoration: InputDecoration(
-              hintText: '输入新的昵称',
-              hintStyle: oneKeepInter(
-                color: oneKeepTextTertiary(dialogContext),
-                size: 14,
-                weight: FontWeight.w400,
-              ),
-              filled: true,
-              fillColor: isDark
-                  ? AppColors.darkInputBg
-                  : AppColors.lightInputBg,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide(
-                  color: oneKeepBorder(dialogContext),
-                  width: 0.8,
-                ),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide(
-                  color: oneKeepBorder(dialogContext),
-                  width: 0.8,
-                ),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide(
-                  color: oneKeepAccent(dialogContext),
-                  width: 1,
-                ),
-              ),
+            child: Icon(
+              Icons.notifications_none_rounded,
+              size: 20,
+              color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF6B7280),
             ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: Text(
-                '取消',
-                style: oneKeepInter(
-                  color: oneKeepTextSecondary(dialogContext),
-                  size: 14,
-                  weight: FontWeight.w500,
-                ),
-              ),
-            ),
-            FilledButton(
-              onPressed: () =>
-                  Navigator.of(dialogContext).pop(controller.text.trim()),
-              style: FilledButton.styleFrom(
-                backgroundColor: oneKeepAccent(dialogContext),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
-              child: Text(
-                '保存',
-                style: oneKeepManrope(
-                  color: Colors.white,
-                  size: 14,
-                  weight: FontWeight.w700,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
+        ],
+      ),
     );
-    controller.dispose();
+  }
 
-    if (!mounted || saved == null || saved.isEmpty) return;
+  Widget _buildSectionTitle(String title, bool isDark) {
+    return Text(
+      title,
+      style: TextStyle(
+        color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF6B7280),
+        fontSize: 13,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0.5,
+      ),
+    );
+  }
 
-    // Let the dialog route finish tearing down before triggering provider updates.
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (!mounted) return;
-      await ref.read(preferencesProvider.notifier).setNickname(saved);
-    });
+  Future<void> _showAvatarStudio() async {
+    final preferences = ref.read(preferencesProvider);
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.5),
+      builder: (_) => _AvatarStudioSheet(
+        avatarIndex: preferences.avatarIndex,
+        avatarImageData: preferences.avatarImageData,
+        onSelectPreset: (index) {
+          ref.read(preferencesProvider.notifier).setAvatarIndex(index);
+        },
+        onSelectImage: (bytes) {
+          final base64Str = base64Encode(bytes);
+          ref.read(preferencesProvider.notifier).setAvatarImageData(base64Str);
+        },
+      ),
+    );
+  }
+
+  Future<void> _showBackgroundStudio() async {
+    final preferences = ref.read(preferencesProvider);
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.5),
+      builder: (_) => _BackgroundStudioSheet(
+        imageData: preferences.profileBackgroundImageData,
+        onSelectImage: (bytes) {
+          final base64Str = base64Encode(bytes);
+          ref.read(preferencesProvider.notifier).setProfileBackgroundImageData(base64Str);
+        },
+        onClear: () {
+          ref.read(preferencesProvider.notifier).clearProfileBackgroundImageData();
+        },
+      ),
+    );
   }
 
   Future<void> _showNicknameSheet() async {
     final preferences = ref.read(preferencesProvider);
     final authState = ref.read(authProvider);
-    final initial = preferences.nickname.isNotEmpty
+    final current = preferences.nickname.isNotEmpty
         ? preferences.nickname
         : (authState.user?.name ?? '');
-    final controller = TextEditingController(text: initial);
-
-    final saved = await showModalBottomSheet<String>(
+    
+    final controller = TextEditingController(text: current);
+    
+    await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      barrierColor: oneKeepDimOverlay(context),
+      builder: (context) => _NicknameSheet(
+        controller: controller,
+        onSave: (nickname) {
+          if (nickname.isNotEmpty) {
+            ref.read(preferencesProvider.notifier).setNickname(nickname);
+          }
+        },
+      ),
+    );
+  }
+
+  void _openCategorySettings() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const CategorySettingsSheet(),
+    );
+  }
+
+  Future<void> _showThemePicker() async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
       builder: (sheetContext) {
-        final bottomInset = MediaQuery.of(sheetContext).viewInsets.bottom;
-        return OneKeepSheetSurface(
+        final preferences = ref.watch(preferencesProvider);
+
+        return Container(
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1C1C1F) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
           child: SafeArea(
             top: false,
             child: Padding(
-              padding: EdgeInsets.fromLTRB(24, 12, 24, 24 + bottomInset),
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Align(
-                    alignment: Alignment.center,
-                    child: Container(
-                      width: 42,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: oneKeepTextTertiary(
-                          sheetContext,
-                        ).withValues(alpha: 0.28),
-                        borderRadius: BorderRadius.circular(2),
-                      ),
+                  // 拖拽指示条
+                  Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF3C3C3E) : const Color(0xFFD1D5DB),
+                      borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 24),
+                  // 标题
                   Text(
-                    '编辑昵称',
-                    style: oneKeepGrotesk(
-                      color: oneKeepTextPrimary(sheetContext),
-                      size: 22,
-                      weight: FontWeight.w700,
+                    '外观设置',
+                    style: TextStyle(
+                      color: isDark ? Colors.white : const Color(0xFF18181B),
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '更新后会同步显示在首页和个人中心',
-                    style: oneKeepInter(
-                      color: oneKeepTextSecondary(sheetContext),
-                      size: 13,
-                      weight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: controller,
-                    autofocus: true,
-                    style: oneKeepInter(
-                      color: oneKeepTextPrimary(sheetContext),
-                      size: 14,
-                      weight: FontWeight.w600,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: '输入新的昵称',
-                      hintStyle: oneKeepInter(
-                        color: oneKeepTextTertiary(sheetContext),
-                        size: 14,
-                        weight: FontWeight.w400,
-                      ),
-                      filled: true,
-                      fillColor: oneKeepGlassStrong(sheetContext),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(
-                          color: oneKeepBorder(sheetContext),
-                          width: 0.8,
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(
-                          color: oneKeepBorder(sheetContext),
-                          width: 0.8,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(
-                          color: oneKeepAccent(sheetContext),
-                          width: 1,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 24),
+                  // 选项卡片
                   Row(
                     children: [
                       Expanded(
-                        child: OutlinedButton(
-                          onPressed: () => Navigator.of(sheetContext).pop(),
-                          child: Text(
-                            '取消',
-                            style: oneKeepInter(
-                              color: oneKeepTextSecondary(sheetContext),
-                              size: 14,
-                              weight: FontWeight.w600,
-                            ),
-                          ),
+                        child: _ThemeOptionCard(
+                          icon: Icons.wb_sunny_outlined,
+                          title: '浅色',
+                          subtitle: '明亮清晰',
+                          active: preferences.themeMode == ThemeMode.light,
+                          onTap: () async {
+                            await ref.read(preferencesProvider.notifier).setThemeMode(ThemeMode.light);
+                            if (sheetContext.mounted) Navigator.of(sheetContext).pop();
+                          },
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: FilledButton(
-                          onPressed: () => Navigator.of(
-                            sheetContext,
-                          ).pop(controller.text.trim()),
-                          child: Text(
-                            '保存',
-                            style: oneKeepManrope(
-                              color: Colors.white,
-                              size: 14,
-                              weight: FontWeight.w700,
-                            ),
-                          ),
+                        child: _ThemeOptionCard(
+                          icon: Icons.nightlight_round,
+                          title: '深色',
+                          subtitle: '护眼省电',
+                          active: preferences.themeMode == ThemeMode.dark,
+                          onTap: () async {
+                            await ref.read(preferencesProvider.notifier).setThemeMode(ThemeMode.dark);
+                            if (sheetContext.mounted) Navigator.of(sheetContext).pop();
+                          },
                         ),
                       ),
                     ],
@@ -404,571 +328,404 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         );
       },
     );
-    controller.dispose();
-
-    if (!mounted || saved == null || saved.isEmpty) return;
-    await ref.read(preferencesProvider.notifier).setNickname(saved);
-  }
-
-  Future<void> _showThemePicker() async {
-    await showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      barrierColor: oneKeepDimOverlay(context),
-      builder: (sheetContext) {
-        final preferences = ref.watch(preferencesProvider);
-        return OneKeepSheetSurface(
-          child: SafeArea(
-            top: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 12, 24, 28),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Align(
-                    alignment: Alignment.center,
-                    child: Container(
-                      width: 42,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: oneKeepTextTertiary(
-                          sheetContext,
-                        ).withValues(alpha: 0.28),
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    '主题模式',
-                    style: oneKeepGrotesk(
-                      color: oneKeepTextPrimary(sheetContext),
-                      size: 22,
-                      weight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  _ThemeSheetOption(
-                    icon: Icons.wb_sunny_outlined,
-                    title: '白天模式',
-                    active: preferences.themeMode == ThemeMode.light,
-                    onTap: () async {
-                      await ref
-                          .read(preferencesProvider.notifier)
-                          .setThemeMode(ThemeMode.light);
-                      if (sheetContext.mounted) {
-                        Navigator.of(sheetContext).pop();
-                      }
-                    },
-                  ),
-                  const SizedBox(height: 10),
-                  _ThemeSheetOption(
-                    icon: Icons.nightlight_round,
-                    title: '夜间模式',
-                    active: preferences.themeMode == ThemeMode.dark,
-                    onTap: () async {
-                      await ref
-                          .read(preferencesProvider.notifier)
-                          .setThemeMode(ThemeMode.dark);
-                      if (sheetContext.mounted) {
-                        Navigator.of(sheetContext).pop();
-                      }
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Future<void> _openCategorySettings() async {
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => const CategorySettingsPage()),
-    );
-  }
-
-  Future<void> _showAvatarStudio() async {
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      barrierColor: oneKeepDimOverlay(context),
-      builder: (_) => _AvatarStudioSheet(onUpload: _pickAvatarFromGallery),
-    );
-  }
-
-  Future<void> _pickAvatarFromGallery() async {
-    final picked = await _imagePicker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 82,
-      maxWidth: 1200,
-      maxHeight: 1200,
-    );
-    if (picked == null) return;
-    final bytes = await picked.readAsBytes();
-    if (!mounted) return;
-    await ref
-        .read(preferencesProvider.notifier)
-        .setAvatarImageData(base64Encode(bytes));
-  }
-
-  Future<void> _showBackgroundStudio() async {
-    await showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      barrierColor: oneKeepDimOverlay(context),
-      builder: (_) =>
-          _BackgroundStudioSheet(onUpload: _pickProfileBackgroundFromGallery),
-    );
-  }
-
-  Future<void> _pickProfileBackgroundFromGallery() async {
-    final picked = await _imagePicker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 74,
-      maxWidth: 1280,
-      maxHeight: 1280,
-    );
-    if (picked == null) return;
-    final bytes = await picked.readAsBytes();
-    if (!mounted) return;
-    await ref
-        .read(preferencesProvider.notifier)
-        .setProfileBackgroundImageData(base64Encode(bytes));
   }
 }
 
-class _ProfileSummaryCard extends StatefulWidget {
+// 用户信息卡片 - Block-based 设计
+class _UserInfoCard extends StatelessWidget {
   final String displayName;
   final String username;
   final int avatarIndex;
   final String? avatarImageData;
   final String? backgroundImageData;
   final VoidCallback onEditAvatar;
-  final VoidCallback onEditBackground;
 
-  const _ProfileSummaryCard({
+  const _UserInfoCard({
     required this.displayName,
     required this.username,
     required this.avatarIndex,
-    required this.avatarImageData,
-    required this.backgroundImageData,
+    this.avatarImageData,
+    this.backgroundImageData,
     required this.onEditAvatar,
-    required this.onEditBackground,
   });
-
-  @override
-  State<_ProfileSummaryCard> createState() => _ProfileSummaryCardState();
-}
-
-class _ProfileSummaryCardState extends State<_ProfileSummaryCard> {
-  MemoryImage? _coverImageProvider;
-
-  @override
-  void initState() {
-    super.initState();
-    _syncCoverProvider();
-  }
-
-  @override
-  void didUpdateWidget(covariant _ProfileSummaryCard oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.backgroundImageData != widget.backgroundImageData) {
-      _syncCoverProvider();
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final statusBarHeight = MediaQuery.of(context).padding.top;
-    const heroHeight = 400.0;
-    const avatarSize = 92.0;
-
-    return SizedBox(
-      height: heroHeight + statusBarHeight + 56,
-      width: double.infinity,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          SizedBox(
-            height: heroHeight + statusBarHeight,
-            child: ClipPath(
-              clipper: _ProfileHeroFanClipper(),
-              child: Stack(
-                fit: StackFit.expand,
+    final hasBackground = backgroundImageData != null && backgroundImageData!.isNotEmpty;
+    
+    return Container(
+      height: 140,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: isDark
+                ? Colors.black.withValues(alpha: 0.4)
+                : const Color(0x1A18181B),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Stack(
+          children: [
+            // 背景层
+            if (hasBackground)
+              Positioned.fill(
+                child: Image.memory(
+                  base64Decode(backgroundImageData!.contains(',') 
+                      ? backgroundImageData!.substring(backgroundImageData!.indexOf(',') + 1)
+                      : backgroundImageData!),
+                  fit: BoxFit.cover,
+                ),
+              ),
+            // 渐变遮罩层
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: hasBackground
+                      ? LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Colors.black.withValues(alpha: 0.3),
+                            Colors.black.withValues(alpha: 0.5),
+                          ],
+                        )
+                      : LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: isDark
+                              ? [const Color(0xFF2563EB), const Color(0xFF1D4ED8)]
+                              : [const Color(0xFF2563EB), const Color(0xFF3B82F6)],
+                        ),
+                ),
+              ),
+            ),
+            // 内容层
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Row(
                 children: [
-                  if (_coverImageProvider != null)
-                    Image(
-                      image: _coverImageProvider!,
-                      fit: BoxFit.cover,
-                      gaplessPlayback: true,
-                    )
-                  else
-                    const _ProfileCoverFallback(),
-                  DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.black.withValues(alpha: isDark ? 0.12 : 0.06),
-                          Colors.black.withValues(alpha: isDark ? 0.26 : 0.14),
-                          Colors.black.withValues(alpha: isDark ? 0.48 : 0.24),
-                        ],
-                        stops: const [0.0, 0.55, 1.0],
+                  // 头像
+                  GestureDetector(
+                    onTap: onEditAvatar,
+                    child: Container(
+                      width: 72,
+                      height: 72,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.3),
+                          width: 2,
+                        ),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(14),
+                        child: avatarImageData != null && avatarImageData!.isNotEmpty
+                            ? Image.memory(
+                                base64Decode(avatarImageData!.contains(',')
+                                    ? avatarImageData!.substring(avatarImageData!.indexOf(',') + 1)
+                                    : avatarImageData!),
+                                fit: BoxFit.cover,
+                              )
+                            : Center(
+                                child: Icon(
+                                  oneKeepAvatarPresets[avatarIndex.clamp(0, oneKeepAvatarPresets.length - 1)].icon,
+                                  size: 32,
+                                  color: Colors.white,
+                                ),
+                              ),
                       ),
                     ),
                   ),
-                  Positioned(
-                    top: 16 + statusBarHeight,
-                    right: 16,
-                    child: _HeroActionButton(
-                      icon: Icons.wallpaper_outlined,
-                      onTap: widget.onEditBackground,
+                  const SizedBox(width: 16),
+                  // 用户信息
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          displayName,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -0.3,
+                          ),
+                        ),
+                        if (username.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            username,
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.8),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// 财务概览 - 简洁三列
+class _FinanceOverview extends StatelessWidget {
+  final double expense;
+  final double income;
+  final double balance;
+  final bool isLoading;
+
+  const _FinanceOverview({
+    required this.expense,
+    required this.income,
+    required this.balance,
+    required this.isLoading,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1C1C1F) : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isDark ? const Color(0xFF2C2C2E) : const Color(0xFFE5E7EB),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _FinanceItem(
+              label: '支出',
+              amount: expense,
+              color: AppColors.expense,
+              isLoading: isLoading,
+            ),
           ),
-          Positioned(
-            left: 0,
-            right: 0,
-             top: heroHeight + statusBarHeight - 70,
-            child: Column(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(2),
-                  decoration: BoxDecoration(
-                    color: isDark ? AppColors.darkSurface : Colors.white,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.12),
-                        blurRadius: 22,
-                        offset: const Offset(0, 10),
-                      ),
-                    ],
-                  ),
-                  child: OneKeepAvatar(
-                    avatarIndex: widget.avatarIndex,
-                    avatarImageData: widget.avatarImageData,
-                    size: avatarSize - 4,
-                    iconSize: 34,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 18),
-                  child: Text(
-                    widget.displayName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
-                    style: oneKeepGrotesk(
-                      color: Colors.white,
-                      size: 18,
-                      weight: FontWeight.w800,
-                      letterSpacing: 0.3,
-                    ),
-                  ),
-                ),
-                if (widget.username.isNotEmpty) ...[
-                  const SizedBox(height: 6),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Text(
-                      widget.username,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                      style: oneKeepInter(
-                        color: Colors.white.withValues(alpha: 0.85),
-                        size: 13,
-                        weight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ],
+          Container(
+            width: 1,
+            height: 40,
+            color: isDark ? const Color(0xFF2C2C2E) : const Color(0xFFE5E7EB),
+          ),
+          Expanded(
+            child: _FinanceItem(
+              label: '收入',
+              amount: income,
+              color: AppColors.income,
+              isLoading: isLoading,
+            ),
+          ),
+          Container(
+            width: 1,
+            height: 40,
+            color: isDark ? const Color(0xFF2C2C2E) : const Color(0xFFE5E7EB),
+          ),
+          Expanded(
+            child: _FinanceItem(
+              label: '结余',
+              amount: balance,
+              color: const Color(0xFF2563EB),
+              isLoading: isLoading,
             ),
           ),
         ],
       ),
     );
   }
-
-  void _syncCoverProvider() {
-    final bytes = _decodeImageBytes(widget.backgroundImageData);
-    _coverImageProvider = bytes == null ? null : MemoryImage(bytes);
-  }
-
-  Uint8List? _decodeImageBytes(String? data) {
-    if (data == null || data.isEmpty) return null;
-    final normalized = data.contains(',')
-        ? data.substring(data.indexOf(',') + 1)
-        : data;
-    try {
-      return base64Decode(normalized);
-    } catch (_) {
-      return null;
-    }
-  }
 }
 
-class _HeroActionButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-
-  const _HeroActionButton({required this.icon, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 38,
-        height: 38,
-        decoration: BoxDecoration(
-          color: oneKeepGlass(context),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: oneKeepBorderStrong(context), width: 0.8),
-        ),
-        child: Icon(icon, size: 18, color: Colors.white),
-      ),
-    );
-  }
-}
-
-class _ProfileStatsRow extends StatelessWidget {
-  final double? totalExpense;
-  final double? totalIncome;
-  final bool isLoading;
-
-  const _ProfileStatsRow({
-    required this.totalExpense,
-    required this.totalIncome,
-    required this.isLoading,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: _ProfileStatTile(
-            label: '总支出',
-            amount: totalExpense,
-            isLoading: isLoading,
-            tone: AppColors.expense,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _ProfileStatTile(
-            label: '总收入',
-            amount: totalIncome,
-            isLoading: isLoading,
-            tone: AppColors.tealDark,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _ProfileStatTile extends StatelessWidget {
+class _FinanceItem extends StatelessWidget {
   final String label;
-  final double? amount;
+  final double amount;
+  final Color color;
   final bool isLoading;
-  final Color tone;
 
-  const _ProfileStatTile({
+  const _FinanceItem({
     required this.label,
     required this.amount,
+    required this.color,
     required this.isLoading,
-    required this.tone,
   });
 
   @override
   Widget build(BuildContext context) {
-    return OneKeepGlassCard(
-      radius: 18,
-      blurSigma: 12,
-      fillColor: oneKeepGlass(context),
-      borderColor: oneKeepBorder(context),
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: oneKeepInter(
-              color: oneKeepTextSecondary(context),
-              size: 12,
-              weight: FontWeight.w400,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            isLoading && amount == null ? '--' : '¥${oneKeepCurrency(amount ?? 0)}',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: oneKeepGrotesk(
-              color: tone,
-              size: 20,
-              weight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ProfileCoverFallback extends StatelessWidget {
-  const _ProfileCoverFallback();
-
-  @override
-  Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: isDark
-              ? [
-                  const Color(0xFF1e5f5a),
-                  const Color(0xFF246b66),
-                  const Color(0xFF2D7A5E),
-                ]
-              : [
-                  const Color(0xFF287f79),
-                  const Color(0xFF2d8f7a),
-                  const Color(0xFF3AA17E),
-                ],
-          stops: const [0.0, 0.55, 1.0],
-        ),
-      ),
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          Positioned(
-            left: -80,
-            top: -30,
-            child: Container(
-              width: 220,
-              height: 220,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    isDark ? const Color(0x302D7A5E) : const Color(0x303AA17E),
-                    Colors.transparent,
-                  ],
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            right: -60,
-            top: -10,
-            child: Container(
-              width: 180,
-              height: 180,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    isDark ? const Color(0x18175C5C) : const Color(0x181F7A7A),
-                    Colors.transparent,
-                  ],
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            right: -40,
-            bottom: -50,
-            child: Container(
-              width: 240,
-              height: 200,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    isDark ? const Color(0x102D7A5E) : const Color(0x103AA17E),
-                    Colors.transparent,
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ProfileHeroFanClipper extends CustomClipper<Path> {
-  @override
-  Path getClip(Size size) {
-    final path = Path()..moveTo(0, 0);
-    path.lineTo(0, size.height - 72);
-    path.cubicTo(
-      size.width * 0.22,
-      size.height - 6,
-      size.width * 0.78,
-      size.height - 6,
-      size.width,
-      size.height - 72,
-    );
-    path.lineTo(size.width, 0);
-    path.close();
-    return path;
-  }
-
-  @override
-  bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
-}
-
-class _MenuGroup extends StatelessWidget {
-  final List<Widget> children;
-
-  const _MenuGroup({required this.children});
-
-  @override
-  Widget build(BuildContext context) {
+    
     return Column(
       children: [
-        for (var i = 0; i < children.length; i++) ...[
-          children[i],
-          if (i != children.length - 1) const SizedBox(height: 12),
-        ],
+        Text(
+          label,
+          style: TextStyle(
+            color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF6B7280),
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          isLoading ? '--' : '¥${oneKeepCurrency(amount)}',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            color: color,
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
       ],
     );
   }
 }
 
-class _MenuTile extends StatelessWidget {
+// 个性化菜单
+class _PersonalizationMenu extends StatelessWidget {
+  final String themeLabel;
+  final VoidCallback onThemeTap;
+  final VoidCallback onBackgroundTap;
+  final VoidCallback onAvatarTap;
+  final VoidCallback onNicknameTap;
+
+  const _PersonalizationMenu({
+    required this.themeLabel,
+    required this.onThemeTap,
+    required this.onBackgroundTap,
+    required this.onAvatarTap,
+    required this.onNicknameTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1C1C1F) : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isDark ? const Color(0xFF2C2C2E) : const Color(0xFFE5E7EB),
+        ),
+      ),
+      child: Column(
+        children: [
+          _MenuItem(
+            icon: Icons.palette_outlined,
+            title: '主题外观',
+            subtitle: themeLabel,
+            color: const Color(0xFF2563EB),
+            onTap: onThemeTap,
+          ),
+          Divider(height: 1, color: isDark ? const Color(0xFF2C2C2E) : const Color(0xFFE5E7EB)),
+          _MenuItem(
+            icon: Icons.wallpaper_outlined,
+            title: '卡片背景',
+            subtitle: '自定义背景图片',
+            color: const Color(0xFF8B5CF6),
+            onTap: onBackgroundTap,
+          ),
+          Divider(height: 1, color: isDark ? const Color(0xFF2C2C2E) : const Color(0xFFE5E7EB)),
+          _MenuItem(
+            icon: Icons.person_outline,
+            title: '头像',
+            subtitle: '更换头像',
+            color: const Color(0xFF10B981),
+            onTap: onAvatarTap,
+          ),
+          Divider(height: 1, color: isDark ? const Color(0xFF2C2C2E) : const Color(0xFFE5E7EB)),
+          _MenuItem(
+            icon: Icons.edit_outlined,
+            title: '昵称',
+            subtitle: '修改显示名称',
+            color: const Color(0xFFF59E0B),
+            onTap: onNicknameTap,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// 设置菜单
+class _SettingsMenu extends StatelessWidget {
+  final VoidCallback onCategoryTap;
+
+  const _SettingsMenu({
+    required this.onCategoryTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1C1C1F) : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isDark ? const Color(0xFF2C2C2E) : const Color(0xFFE5E7EB),
+        ),
+      ),
+      child: Column(
+        children: [
+          _MenuItem(
+            icon: Icons.category_outlined,
+            title: '分类管理',
+            subtitle: '管理收支分类',
+            color: const Color(0xFFEF4444),
+            onTap: onCategoryTap,
+          ),
+          Divider(height: 1, color: isDark ? const Color(0xFF2C2C2E) : const Color(0xFFE5E7EB)),
+          _MenuItem(
+            icon: Icons.help_outline_rounded,
+            title: '帮助与反馈',
+            subtitle: '常见问题、联系我们',
+            color: const Color(0xFF6B7280),
+            onTap: () {},
+          ),
+          Divider(height: 1, color: isDark ? const Color(0xFF2C2C2E) : const Color(0xFFE5E7EB)),
+          _MenuItem(
+            icon: Icons.info_outline_rounded,
+            title: '关于',
+            subtitle: '版本信息',
+            color: const Color(0xFF6B7280),
+            onTap: () {},
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MenuItem extends StatelessWidget {
   final IconData icon;
-  final Color tone;
   final String title;
   final String subtitle;
-  final VoidCallback? onTap;
+  final Color color;
+  final VoidCallback onTap;
 
-  const _MenuTile({
+  const _MenuItem({
     required this.icon,
-    required this.tone,
     required this.title,
     required this.subtitle,
-    this.onTap,
+    required this.color,
+    required this.onTap,
   });
 
   @override
@@ -978,72 +735,52 @@ class _MenuTile extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF18181B) : Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
           children: [
             Container(
-              width: 44,
-              height: 44,
+              width: 40,
+              height: 40,
               decoration: BoxDecoration(
-                color: tone.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(14),
+                color: color.withValues(alpha: isDark ? 0.15 : 0.1),
+                borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(icon, size: 22, color: tone),
+              child: Icon(
+                icon,
+                size: 20,
+                color: color,
+              ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     title,
-                    style: oneKeepManrope(
-                      color: oneKeepTextPrimary(context),
-                      size: 16,
-                      weight: FontWeight.w600,
+                    style: TextStyle(
+                      color: isDark ? Colors.white : const Color(0xFF18181B),
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: oneKeepInter(
-                      color: oneKeepTextSecondary(context),
-                      size: 13,
-                      weight: FontWeight.w400,
+                    style: TextStyle(
+                      color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF9CA3AF),
+                      fontSize: 12,
                     ),
                   ),
                 ],
               ),
             ),
-            if (onTap != null)
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.05)
-                      : Colors.black.withValues(alpha: 0.04),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.chevron_right_rounded,
-                  size: 16,
-                  color: oneKeepTextSecondary(context),
-                ),
-              ),
+            Icon(
+              Icons.chevron_right_rounded,
+              size: 20,
+              color: isDark ? const Color(0xFF3C3C3E) : const Color(0xFFD1D5DB),
+            ),
           ],
         ),
       ),
@@ -1051,65 +788,224 @@ class _MenuTile extends StatelessWidget {
   }
 }
 
-class _ThemeSheetOption extends StatelessWidget {
+// 退出登录按钮
+class _LogoutButton extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _LogoutButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0x1AEF4444) : const Color(0x08EF4444),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isDark ? const Color(0x30EF4444) : const Color(0x20EF4444),
+          ),
+        ),
+        child: Center(
+          child: Text(
+            '退出登录',
+            style: TextStyle(
+              color: AppColors.expense,
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// 昵称编辑弹窗
+class _NicknameSheet extends StatefulWidget {
+  final TextEditingController controller;
+  final ValueChanged<String> onSave;
+
+  const _NicknameSheet({
+    required this.controller,
+    required this.onSave,
+  });
+
+  @override
+  State<_NicknameSheet> createState() => _NicknameSheetState();
+}
+
+class _NicknameSheetState extends State<_NicknameSheet> {
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1C1C1F) : Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(20, 16, 20, 20 + bottomInset),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 头部
+              Row(
+                children: [
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF2C2C2E) : const Color(0xFFF3F4F6),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        Icons.close,
+                        size: 18,
+                        color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF6B7280),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      '修改昵称',
+                      style: TextStyle(
+                        color: isDark ? Colors.white : const Color(0xFF18181B),
+                        fontSize: 17,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      widget.onSave(widget.controller.text.trim());
+                      Navigator.pop(context);
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF2563EB),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text(
+                        '保存',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              // 输入框
+              TextField(
+                controller: widget.controller,
+                autofocus: true,
+                style: TextStyle(
+                  color: isDark ? Colors.white : const Color(0xFF18181B),
+                  fontSize: 16,
+                ),
+                decoration: InputDecoration(
+                  hintText: '输入昵称',
+                  hintStyle: TextStyle(
+                    color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF9CA3AF),
+                  ),
+                  filled: true,
+                  fillColor: isDark ? const Color(0xFF2C2C2E) : const Color(0xFFF3F4F6),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ThemeOptionCard extends StatelessWidget {
   final IconData icon;
   final String title;
+  final String subtitle;
   final bool active;
   final VoidCallback onTap;
 
-  const _ThemeSheetOption({
+  const _ThemeOptionCard({
     required this.icon,
     required this.title,
+    required this.subtitle,
     required this.active,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final accent = oneKeepAccent(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(14),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: active
-              ? accent.withValues(alpha: 0.12)
-              : oneKeepGlassStrong(context),
-          borderRadius: BorderRadius.circular(18),
+          color: isDark ? const Color(0xFF2C2C2E) : const Color(0xFFF3F4F6),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: active ? accent : oneKeepBorder(context),
-            width: 0.9,
+            color: active ? const Color(0xFF2563EB) : Colors.transparent,
+            width: 2,
           ),
         ),
-        child: Row(
+        child: Column(
           children: [
             Container(
-              width: 38,
-              height: 38,
+              width: 48,
+              height: 48,
               decoration: BoxDecoration(
-                color: active
-                    ? accent.withValues(alpha: 0.12)
-                    : oneKeepGlass(context),
-                borderRadius: BorderRadius.circular(14),
+                color: active ? const Color(0xFF2563EB).withValues(alpha: 0.15) : (isDark ? const Color(0xFF1C1C1F) : Colors.white),
+                borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
                 icon,
-                size: 18,
-                color: active ? accent : oneKeepTextSecondary(context),
+                size: 24,
+                color: active ? const Color(0xFF2563EB) : (isDark ? const Color(0xFF8E8E93) : const Color(0xFF9CA3AF)),
               ),
             ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Text(
-                title,
-                style: oneKeepManrope(
-                  color: active ? accent : oneKeepTextPrimary(context),
-                  size: 14,
-                  weight: FontWeight.w700,
-                ),
+            const SizedBox(height: 12),
+            Text(
+              title,
+              style: TextStyle(
+                color: isDark ? Colors.white : const Color(0xFF18181B),
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
               ),
             ),
-            if (active) Icon(Icons.check_rounded, size: 18, color: accent),
+            const SizedBox(height: 4),
+            Text(
+              subtitle,
+              style: TextStyle(
+                color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF9CA3AF),
+                fontSize: 12,
+              ),
+            ),
           ],
         ),
       ),
@@ -1118,159 +1014,154 @@ class _ThemeSheetOption extends StatelessWidget {
 }
 
 class _AvatarStudioSheet extends ConsumerWidget {
-  final Future<void> Function() onUpload;
+  final int avatarIndex;
+  final String? avatarImageData;
+  final ValueChanged<int> onSelectPreset;
+  final ValueChanged<Uint8List> onSelectImage;
 
-  const _AvatarStudioSheet({required this.onUpload});
+  const _AvatarStudioSheet({
+    required this.avatarIndex,
+    required this.avatarImageData,
+    required this.onSelectPreset,
+    required this.onSelectImage,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final preferences = ref.watch(preferencesProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return OneKeepSheetSurface(
+
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1C1C1F) : Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Align(
-                alignment: Alignment.center,
+              // 拖拽指示条
+              Center(
                 child: Container(
-                  width: 42,
+                  width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: isDark
-                        ? Colors.white.withValues(alpha: 0.18)
-                        : Colors.black.withValues(alpha: 0.12),
+                    color: isDark ? const Color(0xFF3C3C3E) : const Color(0xFFD1D5DB),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
+              // 标题
               Text(
-                '头像设置',
-                style: oneKeepGrotesk(
-                  color: oneKeepTextPrimary(context),
-                  size: 22,
-                  weight: FontWeight.w700,
+                '更换头像',
+                style: TextStyle(
+                  color: isDark ? Colors.white : const Color(0xFF18181B),
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
+              // 操作按钮
               Row(
                 children: [
                   Expanded(
-                    child: _StudioActionButton(
-                      icon: Icons.upload_rounded,
-                      label: '上传图片',
-                      tone: AppColors.teal,
+                    child: _ActionCard(
+                      icon: Icons.photo_library_outlined,
+                      label: '从相册选择',
+                      color: const Color(0xFF2563EB),
                       onTap: () async {
-                        final navigator = Navigator.of(context);
-                        await onUpload();
-                        navigator.pop();
+                        final picker = ImagePicker();
+                        final picked = await picker.pickImage(
+                          source: ImageSource.gallery,
+                          imageQuality: 82,
+                          maxWidth: 1200,
+                          maxHeight: 1200,
+                        );
+                        if (picked != null) {
+                          final bytes = await picked.readAsBytes();
+                          onSelectImage(bytes);
+                        }
+                        if (context.mounted) Navigator.of(context).pop();
                       },
                     ),
                   ),
                   const SizedBox(width: 12),
-                  Expanded(
-                    child: _StudioActionButton(
-                      icon: Icons.auto_awesome_outlined,
-                      label: '使用预设',
-                      tone: AppColors.purple,
-                      onTap: () async {
-                        await ref
-                            .read(preferencesProvider.notifier)
-                            .clearAvatarImageData();
-                      },
+                  if (preferences.avatarImageData != null)
+                    Expanded(
+                      child: _ActionCard(
+                        icon: Icons.delete_outline,
+                        label: '移除图片',
+                        color: AppColors.expense,
+                        onTap: () async {
+                          await ref.read(preferencesProvider.notifier).clearAvatarImageData();
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('已移除上传头像')),
+                            );
+                            Navigator.of(context).pop();
+                          }
+                        },
+                      ),
                     ),
-                  ),
                 ],
               ),
-              if (preferences.avatarImageData != null) ...[
-                const SizedBox(height: 12),
-                GestureDetector(
-                  onTap: () async {
-                    await ref
-                        .read(preferencesProvider.notifier)
-                        .clearAvatarImageData();
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(
-                        context,
-                      ).showSnackBar(const SnackBar(content: Text('已移除上传头像')));
-                    }
-                  },
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.expense.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: AppColors.expense.withValues(alpha: 0.22),
-                        width: 0.8,
-                      ),
-                    ),
-                    child: Text(
-                      '移除上传头像',
-                      textAlign: TextAlign.center,
-                      style: oneKeepManrope(
-                        color: AppColors.expense,
-                        size: 13,
-                        weight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
+              const SizedBox(height: 24),
+              // 预设头像标题
+              Text(
+                '预设头像',
+                style: TextStyle(
+                  color: isDark ? Colors.white : const Color(0xFF18181B),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
                 ),
-              ],
+              ),
               const SizedBox(height: 16),
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: oneKeepAvatarPresets.length,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  crossAxisSpacing: 14,
-                  mainAxisSpacing: 14,
-                  mainAxisExtent: 92,
+              // 预设头像网格
+              SizedBox(
+                height: 220,
+                child: GridView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: oneKeepAvatarPresets.length,
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    mainAxisExtent: 80,
+                  ),
+                  itemBuilder: (context, index) {
+                    final selected = preferences.avatarImageData == null &&
+                        preferences.avatarIndex == index;
+                    return GestureDetector(
+                      onTap: () async {
+                        onSelectPreset(index);
+                        if (context.mounted) Navigator.of(context).pop();
+                      },
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF2C2C2E) : const Color(0xFFF3F4F6),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: selected ? const Color(0xFF2563EB) : Colors.transparent,
+                            width: 2,
+                          ),
+                        ),
+                        child: Center(
+                          child: Icon(
+                            oneKeepAvatarPresets[index].icon,
+                            size: 32,
+                            color: selected ? const Color(0xFF2563EB) : (isDark ? const Color(0xFF8E8E93) : const Color(0xFF6B7280)),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
                 ),
-                itemBuilder: (context, index) {
-                  final selected =
-                      preferences.avatarImageData == null &&
-                      preferences.avatarIndex == index;
-                  return GestureDetector(
-                    onTap: () async {
-                      await ref
-                          .read(preferencesProvider.notifier)
-                          .setAvatarIndex(index);
-                      if (context.mounted) Navigator.of(context).pop();
-                    },
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 180),
-                      decoration: BoxDecoration(
-                        color: oneKeepGlass(context),
-                        borderRadius: BorderRadius.circular(18),
-                        border: Border.all(
-                          color: selected
-                              ? oneKeepAccent(context)
-                              : oneKeepBorder(context),
-                          width: selected ? 1 : 0.8,
-                        ),
-                      ),
-                      child: Center(
-                        child: OneKeepAvatar(
-                          avatarIndex: index,
-                          size: 56,
-                          iconSize: 24,
-                          usePresetStyleWhenNoImage: true,
-                        ),
-                      ),
-                    ),
-                  );
-                },
               ),
             ],
           ),
@@ -1281,90 +1172,138 @@ class _AvatarStudioSheet extends ConsumerWidget {
 }
 
 class _BackgroundStudioSheet extends ConsumerWidget {
-  final Future<void> Function() onUpload;
+  final String? imageData;
+  final ValueChanged<Uint8List> onSelectImage;
+  final VoidCallback onClear;
 
-  const _BackgroundStudioSheet({required this.onUpload});
+  const _BackgroundStudioSheet({
+    required this.imageData,
+    required this.onSelectImage,
+    required this.onClear,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final preferences = ref.watch(preferencesProvider);
-    final previewBytes = preferences.profileBackgroundImageData == null
-        ? null
-        : base64Decode(preferences.profileBackgroundImageData!);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return OneKeepSheetSurface(
+    Uint8List? previewBytes;
+    if (preferences.profileBackgroundImageData != null) {
+      final data = preferences.profileBackgroundImageData!;
+      final normalized = data.contains(',') ? data.substring(data.indexOf(',') + 1) : data;
+      try {
+        previewBytes = base64Decode(normalized);
+      } catch (_) {
+        previewBytes = null;
+      }
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1C1C1F) : Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Align(
-                alignment: Alignment.center,
+              // 拖拽指示条
+              Center(
                 child: Container(
-                  width: 42,
+                  width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: oneKeepTextTertiary(context).withValues(alpha: 0.28),
+                    color: isDark ? const Color(0xFF3C3C3E) : const Color(0xFFD1D5DB),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
+              // 标题
               Text(
-                '背景图设置',
-                style: oneKeepGrotesk(
-                  color: oneKeepTextPrimary(context),
-                  size: 22,
-                  weight: FontWeight.w700,
+                '更换背景',
+                style: TextStyle(
+                  color: isDark ? Colors.white : const Color(0xFF18181B),
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
-              const SizedBox(height: 16),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(22),
-                child: SizedBox(
-                  height: 144,
-                  width: double.infinity,
-                  child: previewBytes != null
-                      ? Image.memory(previewBytes, fit: BoxFit.cover)
-                      : const _ProfileCoverFallback(),
+              const SizedBox(height: 20),
+              // 预览区域
+              Container(
+                height: 160,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  gradient: previewBytes == null
+                      ? const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Color(0xFF2563EB),
+                            Color(0xFF1D4ED8),
+                          ],
+                        )
+                      : null,
+                  image: previewBytes != null
+                      ? DecorationImage(
+                          image: MemoryImage(previewBytes),
+                          fit: BoxFit.cover,
+                        )
+                      : null,
                 ),
+                child: previewBytes == null
+                    ? const Center(
+                        child: Icon(
+                          Icons.image_outlined,
+                          size: 48,
+                          color: Colors.white54,
+                        ),
+                      )
+                    : null,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
+              // 操作按钮
               Row(
                 children: [
                   Expanded(
-                    child: _StudioActionButton(
-                      icon: Icons.upload_rounded,
-                      label: '上传背景',
-                      tone: AppColors.info,
+                    child: _ActionCard(
+                      icon: Icons.photo_library_outlined,
+                      label: '从相册选择',
+                      color: const Color(0xFF2563EB),
                       onTap: () async {
-                        final navigator = Navigator.of(context);
-                        await onUpload();
-                        navigator.pop();
+                        final picker = ImagePicker();
+                        final picked = await picker.pickImage(
+                          source: ImageSource.gallery,
+                          imageQuality: 74,
+                          maxWidth: 1280,
+                          maxHeight: 1280,
+                        );
+                        if (picked != null) {
+                          final bytes = await picked.readAsBytes();
+                          onSelectImage(bytes);
+                        }
+                        if (context.mounted) Navigator.of(context).pop();
                       },
                     ),
                   ),
                   const SizedBox(width: 12),
-                  Expanded(
-                    child: _StudioActionButton(
-                      icon: Icons.delete_outline_rounded,
-                      label: '移除背景',
-                      tone: AppColors.expense,
-                      onTap: preferences.profileBackgroundImageData == null
-                          ? () {}
-                          : () async {
-                              await ref
-                                  .read(preferencesProvider.notifier)
-                                  .clearProfileBackgroundImageData();
-                              if (context.mounted) {
-                                Navigator.of(context).pop();
-                              }
-                            },
+                  if (preferences.profileBackgroundImageData != null)
+                    Expanded(
+                      child: _ActionCard(
+                        icon: Icons.delete_outline,
+                        label: '移除背景',
+                        color: AppColors.expense,
+                        onTap: () async {
+                          await ref.read(preferencesProvider.notifier).clearProfileBackgroundImageData();
+                          if (context.mounted) Navigator.of(context).pop();
+                        },
+                      ),
                     ),
-                  ),
                 ],
               ),
             ],
@@ -1375,41 +1314,46 @@ class _BackgroundStudioSheet extends ConsumerWidget {
   }
 }
 
-class _StudioActionButton extends StatelessWidget {
+class _ActionCard extends StatelessWidget {
   final IconData icon;
   final String label;
-  final Color tone;
+  final Color color;
   final VoidCallback onTap;
 
-  const _StudioActionButton({
+  const _ActionCard({
     required this.icon,
     required this.label,
-    required this.tone,
+    required this.color,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 52,
+        height: 80,
         decoration: BoxDecoration(
-          color: tone.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: tone.withValues(alpha: 0.24), width: 0.8),
+          color: isDark ? const Color(0xFF2C2C2E) : const Color(0xFFF3F4F6),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: color.withValues(alpha: 0.2),
+            width: 1,
+          ),
         ),
-        child: Row(
+        child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 18, color: tone),
-            const SizedBox(width: 8),
+            Icon(icon, size: 28, color: color),
+            const SizedBox(height: 8),
             Text(
               label,
-              style: oneKeepManrope(
-                color: tone,
-                size: 13,
-                weight: FontWeight.w700,
+              style: TextStyle(
+                color: isDark ? Colors.white : const Color(0xFF18181B),
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ],

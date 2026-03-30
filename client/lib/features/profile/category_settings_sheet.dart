@@ -10,16 +10,16 @@ import '../../core/theme/onekeep_iconfont.dart';
 import '../../shared/models/models.dart';
 import '../../shared/widgets/onekeep_ui.dart';
 
-class CategorySettingsPage extends ConsumerStatefulWidget {
-  const CategorySettingsPage({super.key});
+class CategorySettingsSheet extends ConsumerStatefulWidget {
+  const CategorySettingsSheet({super.key});
 
   @override
-  ConsumerState<CategorySettingsPage> createState() {
-    return _CategorySettingsPageState();
+  ConsumerState<CategorySettingsSheet> createState() {
+    return _CategorySettingsSheetState();
   }
 }
 
-class _CategorySettingsPageState extends ConsumerState<CategorySettingsPage> {
+class _CategorySettingsSheetState extends ConsumerState<CategorySettingsSheet> {
   String _activeType = 'expense';
   bool _isSaving = false;
   List<Category>? _draftCategories;
@@ -29,9 +29,14 @@ class _CategorySettingsPageState extends ConsumerState<CategorySettingsPage> {
     final categoriesAsync = ref.watch(categoriesProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0A0A0B) : const Color(0xFFF2F3F5),
-      body: SafeArea(
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.85,
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF0A0A0B) : const Color(0xFFF8F9FA),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         child: categoriesAsync.when(
           data: (items) {
             _hydrateCategories(items);
@@ -40,41 +45,40 @@ class _CategorySettingsPageState extends ConsumerState<CategorySettingsPage> {
                 .where((item) => item.type == _activeType)
                 .toList();
 
-            return CustomScrollView(
-              slivers: [
+            return Column(
+              children: [
                 // 头部
-                SliverToBoxAdapter(
-                  child: _buildHeader(isDark),
-                ),
+                _buildHeader(isDark),
                 // 切换标签
-                SliverToBoxAdapter(
-                  child: _buildTypeTabs(isDark),
-                ),
-                // 列表或空状态
-                filtered.isEmpty
-                    ? SliverFillRemaining(
-                        child: _EmptyCategoryState(
+                _buildTypeTabs(isDark),
+                const SizedBox(height: 8),
+                // 列表
+                Expanded(
+                  child: filtered.isEmpty
+                      ? _EmptyCategoryState(
                           type: _activeType,
-                          onAdd: _handleCreate,
+                          onAdd: () => _handleCreate(),
+                        )
+                      : ReorderableListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          itemCount: filtered.length,
+                          buildDefaultDragHandles: false,
+                          onReorder: (oldIndex, newIndex) =>
+                              _handleReorder(filtered, oldIndex, newIndex),
+                          itemBuilder: (context, index) {
+                            final category = filtered[index];
+                            return _CategoryItem(
+                              key: ValueKey(category.id),
+                              index: index,
+                              category: category,
+                              onEdit: () => _handleEdit(category),
+                              onDelete: () => _handleDelete(category),
+                            );
+                          },
                         ),
-                      )
-                    : SliverPadding(
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-                        sliver: SliverList(
-                          delegate: SliverChildBuilderDelegate(
-                            (context, index) {
-                              final category = filtered[index];
-                              return _CategoryItem(
-                                index: index,
-                                category: category,
-                                onEdit: () => _handleEdit(category),
-                                onDelete: () => _handleDelete(category),
-                              );
-                            },
-                            childCount: filtered.length,
-                          ),
-                        ),
-                      ),
+                ),
+                // 底部添加按钮
+                _buildBottomButton(isDark),
               ],
             );
           },
@@ -85,58 +89,68 @@ class _CategorySettingsPageState extends ConsumerState<CategorySettingsPage> {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _isSaving ? null : _handleCreate,
-        backgroundColor: _activeType == 'expense' ? AppColors.expense : AppColors.income,
-        elevation: 4,
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
     );
   }
 
   Widget _buildHeader(bool isDark) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: isDark ? const Color(0xFF2C2C2E) : const Color(0xFFE5E7EB),
+          ),
+        ),
+      ),
       child: Row(
         children: [
+          // 关闭按钮
           GestureDetector(
-            onTap: () => Navigator.of(context).maybePop(),
+            onTap: () => Navigator.of(context).pop(),
             child: Container(
-              width: 36,
-              height: 36,
+              width: 32,
+              height: 32,
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1C1C1F) : Colors.white,
-                borderRadius: BorderRadius.circular(10),
+                color: isDark ? const Color(0xFF2C2C2E) : const Color(0xFFF3F4F6),
+                borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
-                Icons.arrow_back_ios_new,
-                size: 16,
-                color: isDark ? Colors.white : const Color(0xFF1F2937),
+                Icons.close,
+                size: 18,
+                color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF6B7280),
               ),
             ),
           ),
-          const SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '分类管理',
+          const SizedBox(width: 12),
+          // 标题
+          Expanded(
+            child: Text(
+              '分类管理',
+              style: TextStyle(
+                color: isDark ? Colors.white : const Color(0xFF1F2937),
+                fontSize: 17,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          // 保存按钮（这里主要是完成，因为没有需要保存的）
+          GestureDetector(
+            onTap: () => Navigator.of(context).pop(),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppColors.teal,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Text(
+                '完成',
                 style: TextStyle(
-                  color: isDark ? Colors.white : const Color(0xFF1F2937),
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -0.5,
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-              const SizedBox(height: 2),
-              Text(
-                '长按拖动排序',
-                style: TextStyle(
-                  color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF6B7280),
-                  fontSize: 13,
-                ),
-              ),
-            ],
+            ),
           ),
         ],
       ),
@@ -145,12 +159,12 @@ class _CategorySettingsPageState extends ConsumerState<CategorySettingsPage> {
 
   Widget _buildTypeTabs(bool isDark) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
       child: Container(
-        height: 40,
+        height: 36,
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1C1C1F) : const Color(0xFFE5E7EB),
-          borderRadius: BorderRadius.circular(10),
+          color: isDark ? const Color(0xFF2C2C2E) : const Color(0xFFF3F4F6),
+          borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
           children: [
@@ -159,17 +173,19 @@ class _CategorySettingsPageState extends ConsumerState<CategorySettingsPage> {
                 onTap: () => setState(() => _activeType = 'expense'),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
-                  margin: const EdgeInsets.all(4),
+                  margin: const EdgeInsets.all(3),
                   decoration: BoxDecoration(
                     color: _activeType == 'expense' ? AppColors.expense : Colors.transparent,
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(6),
                   ),
                   alignment: Alignment.center,
                   child: Text(
                     '支出',
                     style: TextStyle(
-                      color: _activeType == 'expense' ? Colors.white : (isDark ? const Color(0xFF8E8E93) : const Color(0xFF6B7280)),
-                      fontSize: 14,
+                      color: _activeType == 'expense' 
+                          ? Colors.white 
+                          : (isDark ? const Color(0xFF8E8E93) : const Color(0xFF6B7280)),
+                      fontSize: 13,
                       fontWeight: _activeType == 'expense' ? FontWeight.w600 : FontWeight.w500,
                     ),
                   ),
@@ -181,17 +197,19 @@ class _CategorySettingsPageState extends ConsumerState<CategorySettingsPage> {
                 onTap: () => setState(() => _activeType = 'income'),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
-                  margin: const EdgeInsets.all(4),
+                  margin: const EdgeInsets.all(3),
                   decoration: BoxDecoration(
                     color: _activeType == 'income' ? AppColors.income : Colors.transparent,
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(6),
                   ),
                   alignment: Alignment.center,
                   child: Text(
                     '收入',
                     style: TextStyle(
-                      color: _activeType == 'income' ? Colors.white : (isDark ? const Color(0xFF8E8E93) : const Color(0xFF6B7280)),
-                      fontSize: 14,
+                      color: _activeType == 'income' 
+                          ? Colors.white 
+                          : (isDark ? const Color(0xFF8E8E93) : const Color(0xFF6B7280)),
+                      fontSize: 13,
                       fontWeight: _activeType == 'income' ? FontWeight.w600 : FontWeight.w500,
                     ),
                   ),
@@ -199,6 +217,48 @@ class _CategorySettingsPageState extends ConsumerState<CategorySettingsPage> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBottomButton(bool isDark) {
+    final color = _activeType == 'expense' ? AppColors.expense : AppColors.income;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1C1C1F) : Colors.white,
+        border: Border(
+          top: BorderSide(
+            color: isDark ? const Color(0xFF2C2C2E) : const Color(0xFFE5E7EB),
+          ),
+        ),
+      ),
+      child: GestureDetector(
+        onTap: _isSaving ? null : () => _handleCreate(),
+        child: Container(
+          height: 44,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          alignment: Alignment.center,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.add, size: 18, color: Colors.white),
+              const SizedBox(width: 6),
+              Text(
+                _activeType == 'expense' ? '新增支出分类' : '新增收入分类',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -273,18 +333,18 @@ class _CategorySettingsPageState extends ConsumerState<CategorySettingsPage> {
         return AlertDialog(
           backgroundColor: isDark ? const Color(0xFF1C1C1F) : Colors.white,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(20),
           ),
           title: Text(
             '删除分类',
             style: TextStyle(
-              color: isDark ? Colors.white : const Color(0xFF1F2937),
+              color: isDark ? Colors.white : const Color(0xFF18181B),
               fontSize: 18,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w700,
             ),
           ),
           content: Text(
-            '确定删除"${category.name}"?',
+            '确定要删除"${category.name}"吗？此操作不可撤销。',
             style: TextStyle(
               color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF6B7280),
               fontSize: 14,
@@ -297,6 +357,7 @@ class _CategorySettingsPageState extends ConsumerState<CategorySettingsPage> {
                 '取消',
                 style: TextStyle(
                   color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF6B7280),
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ),
@@ -412,6 +473,7 @@ class _CategoryItem extends StatelessWidget {
   final VoidCallback onDelete;
 
   const _CategoryItem({
+    super.key,
     required this.index,
     required this.category,
     required this.onEdit,
@@ -429,32 +491,33 @@ class _CategoryItem extends StatelessWidget {
     );
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: 6),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1C1C1F) : Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        color: isDark ? const Color(0xFF2C2C2E) : const Color(0xFFF9FAFB),
+        borderRadius: BorderRadius.circular(10),
       ),
       child: ListTile(
-        contentPadding: const EdgeInsets.only(left: 16, right: 8),
+        contentPadding: const EdgeInsets.only(left: 12, right: 4),
+        dense: true,
         leading: Container(
-          width: 40,
-          height: 40,
+          width: 36,
+          height: 36,
           decoration: BoxDecoration(
             color: tone.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(
             oneKeepIconFont(category.icon) ?? Icons.category_outlined,
             color: tone,
-            size: 20,
+            size: 18,
           ),
         ),
         title: Text(
           category.name,
           style: TextStyle(
             color: isDark ? Colors.white : const Color(0xFF1F2937),
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
           ),
         ),
         trailing: Row(
@@ -467,7 +530,9 @@ class _CategoryItem extends StatelessWidget {
                 size: 18,
                 color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF9CA3AF),
               ),
-              splashRadius: 20,
+              splashRadius: 18,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
             ),
             IconButton(
               onPressed: onDelete,
@@ -476,7 +541,9 @@ class _CategoryItem extends StatelessWidget {
                 size: 18,
                 color: AppColors.expense,
               ),
-              splashRadius: 20,
+              splashRadius: 18,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
             ),
             ReorderableDragStartListener(
               index: index,
@@ -484,7 +551,7 @@ class _CategoryItem extends StatelessWidget {
                 padding: const EdgeInsets.only(left: 4, right: 8),
                 child: Icon(
                   Icons.drag_handle,
-                  size: 20,
+                  size: 18,
                   color: isDark ? const Color(0xFF8E8E93) : const Color(0xFFD1D5DB),
                 ),
               ),
@@ -512,29 +579,29 @@ class _EmptyCategoryState extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 64,
-            height: 64,
+            width: 56,
+            height: 56,
             decoration: BoxDecoration(
               color: tone.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(14),
             ),
-            child: Icon(Icons.category_outlined, size: 28, color: tone),
+            child: Icon(Icons.category_outlined, size: 24, color: tone),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Text(
             type == 'expense' ? '暂无支出分类' : '暂无收入分类',
             style: TextStyle(
               color: isDark ? Colors.white : const Color(0xFF1F2937),
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
           Text(
-            '点击右下角按钮添加',
+            '点击下方按钮添加',
             style: TextStyle(
               color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF9CA3AF),
-              fontSize: 13,
+              fontSize: 12,
             ),
           ),
         ],
@@ -559,10 +626,10 @@ class _CategoryErrorState extends StatelessWidget {
         children: [
           Icon(
             Icons.error_outline,
-            size: 48,
+            size: 40,
             color: AppColors.expense,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Text(
             message,
             textAlign: TextAlign.center,
@@ -571,13 +638,13 @@ class _CategoryErrorState extends StatelessWidget {
               fontSize: 14,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           ElevatedButton(
             onPressed: onRetry,
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.teal,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(8),
               ),
             ),
             child: const Text('重试'),
@@ -663,42 +730,54 @@ class _CategoryEditorSheetState extends State<_CategoryEditorSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 拖拽条
-              Center(
-                child: Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF3A3A3C) : const Color(0xFFD1D5DB),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              // 标题行
+              // 头部
               Row(
                 children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: _color.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(
-                      oneKeepIconFont(_icon) ?? Icons.category_outlined,
-                      color: _color,
-                      size: 22,
+                  // 关闭
+                  GestureDetector(
+                    onTap: () => Navigator.of(context).pop(),
+                    child: Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF2C2C2E) : const Color(0xFFF3F4F6),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        Icons.close,
+                        size: 18,
+                        color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF6B7280),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
+                  // 标题
                   Expanded(
                     child: Text(
                       widget.initialName.isEmpty ? '新增分类' : '编辑分类',
                       style: TextStyle(
                         color: isDark ? Colors.white : const Color(0xFF1F2937),
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  // 保存按钮（右上角）
+                  GestureDetector(
+                    onTap: _submit,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: _color,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text(
+                        '保存',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ),
@@ -858,28 +937,6 @@ class _CategoryEditorSheetState extends State<_CategoryEditorSheet> {
                       ),
                     );
                   },
-                ),
-              ),
-              const SizedBox(height: 20),
-              // 保存按钮
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: FilledButton(
-                  onPressed: _submit,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: _color,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  child: Text(
-                    widget.initialName.isEmpty ? '创建' : '保存',
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
                 ),
               ),
             ],

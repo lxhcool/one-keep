@@ -526,22 +526,27 @@ List<BoxShadow> oneKeepCardShadows(
   if (isDark) {
     return [
       BoxShadow(
-        color: Colors.black.withValues(alpha: prominent ? 0.6 : 0.4),
-        blurRadius: prominent ? 32 : 16,
-        offset: Offset(0, prominent ? 16 : 8),
+        color: Colors.black.withValues(alpha: prominent ? 0.7 : 0.5),
+        blurRadius: prominent ? 36 : 20,
+        offset: Offset(0, prominent ? 18 : 10),
+      ),
+      BoxShadow(
+        color: AppColors.teal.withValues(alpha: prominent ? 0.15 : 0.08),
+        blurRadius: prominent ? 24 : 12,
+        offset: Offset(0, prominent ? 8 : 4),
       ),
     ];
   }
 
   return [
     BoxShadow(
-      color: Colors.black.withValues(alpha: prominent ? 0.08 : 0.04),
-      blurRadius: prominent ? 24 : 12,
-      offset: Offset(0, prominent ? 12 : 4),
+      color: AppColors.teal.withValues(alpha: prominent ? 0.12 : 0.06),
+      blurRadius: prominent ? 28 : 16,
+      offset: Offset(0, prominent ? 10 : 6),
       spreadRadius: 0,
     ),
     BoxShadow(
-      color: Colors.black.withValues(alpha: 0.02),
+      color: Colors.black.withValues(alpha: prominent ? 0.04 : 0.02),
       blurRadius: 4,
       offset: const Offset(0, 2),
     ),
