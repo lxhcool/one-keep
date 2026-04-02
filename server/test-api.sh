@@ -1,6 +1,6 @@
 #!/bin/bash
 # 本地 API 测试脚本
-BASE="http://localhost:3000"
+BASE="http://localhost:3002"
 
 echo "=== 1. 登录 ==="
 LOGIN=$(curl -s -X POST "$BASE/api/auth/login" \

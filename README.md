@@ -123,7 +123,7 @@ cp .env.docker.example .env.docker
 ```env
 DATABASE_URL="file:/app/data/dev.db"
 JWT_SECRET="换成你自己的随机字符串"
-PORT=3000
+PORT=3002
 HOST="0.0.0.0"
 ```
 
@@ -160,7 +160,7 @@ docker compose up -d --build
 #### 5. 验证服务
 
 ```bash
-curl http://127.0.0.1:3000/api/health
+curl http://127.0.0.1:3002/api/health
 ```
 
 正常返回：
@@ -174,7 +174,7 @@ curl http://127.0.0.1:3000/api/health
 再按下面“反向代理”和“HTTPS”步骤，把域名转发到：
 
 ```text
-http://127.0.0.1:3000
+http://127.0.0.1:3002
 ```
 
 #### 7. 后续更新
@@ -295,13 +295,13 @@ cp .env.example .env
 ```env
 DATABASE_URL="file:./dev.db"
 JWT_SECRET="换成你自己的随机字符串"
-PORT=3000
+PORT=3002
 HOST="0.0.0.0"
 ```
 
 说明：
 
-- `PORT=3000` 对应当前 `pm2 + Nginx` 配置最省事
+- `PORT=3002` 对应当前 `pm2 + Nginx` 配置最省事
 - `HOST=0.0.0.0` 才能让反向代理正常访问
 - `JWT_SECRET` 不要继续用默认测试值
 
@@ -336,7 +336,7 @@ pm2 logs one-keep-server
 再做本机健康检查：
 
 ```bash
-curl http://127.0.0.1:3000/api/health
+curl http://127.0.0.1:3002/api/health
 ```
 
 正常返回：
@@ -364,14 +364,14 @@ curl http://127.0.0.1:3000/api/health
 进入刚创建的网站设置，添加反向代理，把域名转发到本地 Node 服务：
 
 - 代理名称：`one-keep-api`
-- 目标 URL：`http://127.0.0.1:3000`
+- 目标 URL：`http://127.0.0.1:3002`
 - 发送域名：`$host`
 
 如果你手动写 Nginx，示例配置如下：
 
 ```nginx
 location / {
-    proxy_pass http://127.0.0.1:3000;
+    proxy_pass http://127.0.0.1:3002;
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -434,10 +434,10 @@ pm2 list
 pm2 logs one-keep-server
 
 # 查看端口监听
-lsof -i :3000
+lsof -i :3002
 
 # 本机健康检查
-curl http://127.0.0.1:3000/api/health
+curl http://127.0.0.1:3002/api/health
 
 # 域名健康检查
 curl https://你的域名/api/health
@@ -459,7 +459,7 @@ curl https://你的域名/api/health
 ```bash
 pm2 list
 pm2 logs one-keep-server
-curl http://127.0.0.1:3000/api/health
+curl http://127.0.0.1:3002/api/health
 ```
 
 #### 2. 登录失败，但健康检查正常

@@ -15,6 +15,6 @@ RUN npm run db:generate
 RUN npm run build
 RUN chmod +x /app/docker-entrypoint.sh
 
-EXPOSE 3000
+EXPOSE 3002
 
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
