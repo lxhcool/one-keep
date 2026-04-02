@@ -1,7 +1,9 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../core/providers/data_providers.dart';
 import '../../core/theme/app_colors.dart';
@@ -80,246 +82,205 @@ class _OneKeepTransactionEditorSheetState
     super.dispose();
   }
 
+  InputDecoration _buildPremiumDecoration({
+    required BuildContext context,
+    String? hintText,
+    Widget? prefixIcon,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.04);
+    
+    return InputDecoration(
+      hintText: hintText,
+      hintStyle: const TextStyle(fontSize: 14, color: Colors.grey),
+      prefixIcon: prefixIcon,
+      prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
+      filled: true,
+      fillColor: bgColor,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.05), width: 0.5),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.05), width: 0.5),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: AppColors.emerald.withValues(alpha: 0.4), width: 1.2),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final viewInsets = MediaQuery.of(context).viewInsets;
     final categories = ref.watch(categoriesProvider);
-    final tone = widget.transaction.isExpense
-        ? AppColors.expense
-        : AppColors.income;
-    final amount = double.tryParse(_amountController.text.trim());
-    final canSave =
-        amount != null &&
-        amount > 0 &&
-        (_selectedCategoryId?.isNotEmpty ?? false);
+    final tone = widget.transaction.isExpense ? AppColors.rose : AppColors.emerald;
+    final canSave = double.tryParse(_amountController.text.trim()) != null && 
+                   double.parse(_amountController.text.trim()) > 0 && 
+                   (_selectedCategoryId?.isNotEmpty ?? false);
 
-    return OneKeepSheetSurface(
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(20, 12, 20, 20 + viewInsets.bottom),
-          child: SingleChildScrollView(
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Align(
-                    alignment: Alignment.center,
-                    child: Container(
-                      width: 42,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: oneKeepTextTertiary(
-                          context,
-                        ).withValues(alpha: 0.3),
-                        borderRadius: BorderRadius.circular(3),
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 32, sigmaY: 32),
+        child: Container(
+          decoration: BoxDecoration(
+            color: isDark 
+                ? const Color(0xFF1C1C1E).withValues(alpha: 0.8) 
+                : Colors.white.withValues(alpha: 0.85),
+            border: Border(top: BorderSide(color: Colors.white.withValues(alpha: isDark ? 0.08 : 0.6), width: 0.5)),
+          ),
+          child: SafeArea(
+            top: false,
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(24, 12, 24, 20 + viewInsets.bottom),
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Align(
+                        alignment: Alignment.center,
+                        child: Container(
+                          width: 32, height: 4,
+                          decoration: BoxDecoration(color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(2)),
+                        ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  _HeaderCard(
-                    transaction: widget.transaction,
-                    amountText: _amountController.text.trim().isEmpty
-                        ? '0.00'
-                        : _amountController.text.trim(),
-                    tone: tone,
-                  ),
-                  const SizedBox(height: 16),
-                  OneKeepGlassCard(
-                    radius: 22,
-                    blurSigma: 18,
-                    fillColor: oneKeepGlass(context),
-                    borderColor: oneKeepBorder(context),
-                    padding: const EdgeInsets.all(18),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _SectionTitle(label: '交易信息'),
-                        const SizedBox(height: 14),
-                        _EditorField(
-                          label: '金额',
-                          child: TextFormField(
-                            controller: _amountController,
-                            keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true,
-                            ),
-                            inputFormatters: [
-                              FilteringTextInputFormatter.allow(
-                                RegExp(r'[0-9.]'),
-                              ),
-                            ],
-                            onChanged: (_) => setState(() {}),
-                            validator: (value) {
-                              final parsed = double.tryParse(
-                                value?.trim() ?? '',
-                              );
-                              if (parsed == null || parsed <= 0) {
-                                return '请输入有效金额';
-                              }
-                              return null;
-                            },
-                            style: oneKeepGrotesk(
-                              color: oneKeepTextPrimary(context),
-                              size: 22,
-                              weight: FontWeight.w700,
-                            ),
-                            decoration: _inputDecoration(
-                              context,
-                              prefixText: '¥ ',
-                              prefixStyle: oneKeepGrotesk(
-                                color: tone,
-                                size: 22,
-                                weight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        _EditorField(
-                          label: '分类',
-                          child: categories.when(
-                            data: (items) {
-                              final filtered = items
-                                  .where(
-                                    (item) =>
-                                        item.type ==
-                                        widget.transaction.direction,
-                                  )
-                                  .toList();
-                              _selectedCategoryId ??=
-                                  _resolveFallbackCategoryId(filtered);
-                              return _CategorySelector(
-                                categories: filtered,
-                                selectedCategoryId: _selectedCategoryId,
-                                tone: tone,
-                                onSelect: (id) {
-                                  setState(() => _selectedCategoryId = id);
-                                },
-                              );
-                            },
-                            loading: () => const Padding(
-                              padding: EdgeInsets.symmetric(vertical: 12),
-                              child: Center(child: CircularProgressIndicator()),
-                            ),
-                            error: (error, stackTrace) => Text(
-                              '分类加载失败',
-                              style: oneKeepInter(
-                                color: AppColors.expense,
-                                size: 12,
-                                weight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _PickerTile(
-                                icon: Icons.calendar_month_rounded,
-                                label: '日期',
-                                value: DateFormat(
-                                  'yyyy/MM/dd',
-                                ).format(_occurredAt),
-                                tone: tone,
-                                onTap: _pickDate,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _PickerTile(
-                                icon: Icons.schedule_rounded,
-                                label: '时间',
-                                value: DateFormat('HH:mm').format(_occurredAt),
-                                tone: tone,
-                                onTap: _pickTime,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  OneKeepGlassCard(
-                    radius: 22,
-                    blurSigma: 16,
-                    fillColor: oneKeepGlass(context),
-                    borderColor: oneKeepBorder(context),
-                    padding: const EdgeInsets.all(18),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _SectionTitle(label: '补充信息'),
-                        const SizedBox(height: 14),
-                        _EditorField(
-                          label: '商家',
-                          child: TextFormField(
-                            controller: _merchantController,
-                            style: oneKeepInter(
-                              color: oneKeepTextPrimary(context),
-                              size: 14,
-                              weight: FontWeight.w500,
-                            ),
-                            decoration: _inputDecoration(
-                              context,
-                              hintText: '填写商家名称',
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        _EditorField(
-                          label: '备注',
-                          child: TextFormField(
-                            controller: _noteController,
-                            minLines: 3,
-                            maxLines: 4,
-                            style: oneKeepInter(
-                              color: oneKeepTextPrimary(context),
-                              size: 14,
-                              weight: FontWeight.w500,
-                            ),
-                            decoration: _inputDecoration(
-                              context,
-                              hintText: '记录这笔交易的背景信息',
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  GestureDetector(
-                    onTap: canSave ? _submit : null,
-                    child: Opacity(
-                      opacity: canSave ? 1 : 0.5,
-                      child: Container(
-                        width: double.infinity,
-                        height: 54,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [tone, tone.withValues(alpha: 0.78)],
-                          ),
-                          borderRadius: BorderRadius.circular(18),
-                        ),
-                        child: Center(
-                          child: Text(
-                            '保存修改',
-                            style: oneKeepManrope(
-                              color: Colors.white,
-                              size: 15,
-                              weight: FontWeight.w800,
-                              letterSpacing: 0.3,
-                            ),
+                      const SizedBox(height: 24),
+                      
+                      Row(
+                        children: [
+                          Text('编辑记录', style: oneKeepManrope(color: oneKeepTextPrimary(context), size: 22, weight: FontWeight.w800)),
+                          const Spacer(),
+                          OneKeepBouncingCard(onTap: () => Navigator.pop(context), child: Icon(Icons.close_rounded, color: oneKeepTextSecondary(context))),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Amount Field
+                      _EditorLabel(label: '账单金额'),
+                      TextFormField(
+                        controller: _amountController,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
+                        onChanged: (_) => setState(() {}),
+                        style: oneKeepGrotesk(color: oneKeepTextPrimary(context), size: 24, weight: FontWeight.w700),
+                        cursorColor: tone,
+                        decoration: _buildPremiumDecoration(
+                          context: context,
+                          prefixIcon: Padding(
+                            padding: const EdgeInsets.only(left: 16, right: 8, bottom: 2),
+                            child: Text('¥', style: oneKeepGrotesk(color: tone, size: 24, weight: FontWeight.w700)),
                           ),
                         ),
                       ),
-                    ),
+                      const SizedBox(height: 16),
+                      
+                      // Category Field
+                      _EditorLabel(label: '选择分类'),
+                      categories.when(
+                        data: (items) {
+                          final filtered = items.where((item) => item.type == widget.transaction.direction).toList();
+                          _selectedCategoryId ??= _resolveFallbackCategoryId(filtered);
+                          return _CategoryGrid(
+                            categories: filtered,
+                            selectedCategoryId: _selectedCategoryId,
+                            tone: tone,
+                            onSelect: (id) => setState(() => _selectedCategoryId = id),
+                          );
+                        },
+                        loading: () => const Center(child: CircularProgressIndicator()),
+                        error: (_, __) => const Text('分类加载失败'),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Date and Time Field
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _EditorLabel(label: '日期'),
+                                _PremiumPickerTile(
+                                  icon: LucideIcons.calendar,
+                                  value: DateFormat('yyyy/MM/dd').format(_occurredAt),
+                                  tone: tone,
+                                  isDark: isDark,
+                                  onTap: _pickDate,
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _EditorLabel(label: '时间'),
+                                _PremiumPickerTile(
+                                  icon: LucideIcons.clock,
+                                  value: DateFormat('HH:mm').format(_occurredAt),
+                                  tone: tone,
+                                  isDark: isDark,
+                                  onTap: _pickTime,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Merchant Field
+                      _EditorLabel(label: '商家名称'),
+                      TextFormField(
+                        controller: _merchantController,
+                        style: oneKeepInter(color: oneKeepTextPrimary(context), size: 15, weight: FontWeight.w600),
+                        cursorColor: tone,
+                        decoration: _buildPremiumDecoration(context: context, hintText: '填写商家或地点'),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Note Field
+                      _EditorLabel(label: '备注说明'),
+                      TextFormField(
+                        controller: _noteController,
+                        minLines: 2,
+                        maxLines: 4,
+                        style: oneKeepInter(color: oneKeepTextPrimary(context), size: 15, weight: FontWeight.w600),
+                        cursorColor: tone,
+                        decoration: _buildPremiumDecoration(context: context, hintText: '记录这笔交易的背景...'),
+                      ),
+                      const SizedBox(height: 32),
+
+                      // Action Button
+                      OneKeepBouncingCard(
+                        onTap: canSave ? _submit : null,
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 300),
+                          width: double.infinity,
+                          height: 56,
+                          decoration: BoxDecoration(
+                            color: canSave ? tone : tone.withValues(alpha: 0.3),
+                            borderRadius: BorderRadius.circular(18),
+                            boxShadow: canSave ? [BoxShadow(color: tone.withValues(alpha: 0.3), blurRadius: 15, offset: const Offset(0, 6))] : null,
+                          ),
+                          child: Center(
+                            child: Text('保存修改', style: oneKeepManrope(color: Colors.white, size: 16, weight: FontWeight.w800)),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
           ),
@@ -329,385 +290,122 @@ class _OneKeepTransactionEditorSheetState
   }
 
   String? _resolveFallbackCategoryId(List<Category> categories) {
-    final byName = categories.where(
-      (item) => item.name == widget.transaction.categoryName,
-    );
-    if (byName.isNotEmpty) {
-      return byName.first.id;
-    }
+    final byName = categories.where((item) => item.name == widget.transaction.categoryName);
+    if (byName.isNotEmpty) return byName.first.id;
     return categories.isNotEmpty ? categories.first.id : null;
   }
 
-  InputDecoration _inputDecoration(
-    BuildContext context, {
-    String? hintText,
-    String? prefixText,
-    TextStyle? prefixStyle,
-  }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return InputDecoration(
-      hintText: hintText,
-      hintStyle: oneKeepInter(
-        color: oneKeepTextTertiary(context),
-        size: 13,
-        weight: FontWeight.w400,
-      ),
-      prefixText: prefixText,
-      prefixStyle: prefixStyle,
-      filled: true,
-      fillColor: isDark ? AppColors.darkInputBg : AppColors.lightInputBg,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(18),
-        borderSide: BorderSide(color: oneKeepBorder(context), width: 0.8),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(18),
-        borderSide: BorderSide(color: oneKeepBorder(context), width: 0.8),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(18),
-        borderSide: BorderSide(color: oneKeepAccent(context), width: 1),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(18),
-        borderSide: const BorderSide(color: AppColors.error, width: 1),
-      ),
-      focusedErrorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(18),
-        borderSide: const BorderSide(color: AppColors.error, width: 1),
-      ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-    );
-  }
-
   Future<void> _pickDate() async {
+    HapticFeedback.lightImpact();
     final picked = await showDatePicker(
-      context: context,
-      initialDate: _occurredAt,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+      context: context, initialDate: _occurredAt, firstDate: DateTime(2020), lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (context, child) => Theme(data: Theme.of(context).copyWith(colorScheme: ColorScheme.fromSeed(seedColor: AppColors.emerald, primary: AppColors.emerald, surface: oneKeepSurface(context))), child: child!),
     );
     if (picked == null || !mounted) return;
-    setState(() {
-      _occurredAt = DateTime(
-        picked.year,
-        picked.month,
-        picked.day,
-        _occurredAt.hour,
-        _occurredAt.minute,
-      );
-    });
+    setState(() { _occurredAt = DateTime(picked.year, picked.month, picked.day, _occurredAt.hour, _occurredAt.minute); });
   }
 
   Future<void> _pickTime() async {
+    HapticFeedback.lightImpact();
     final picked = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.fromDateTime(_occurredAt),
+      context: context, initialTime: TimeOfDay.fromDateTime(_occurredAt),
+      builder: (context, child) => Theme(data: Theme.of(context).copyWith(colorScheme: ColorScheme.fromSeed(seedColor: AppColors.emerald, primary: AppColors.emerald, surface: oneKeepSurface(context))), child: child!),
     );
     if (picked == null || !mounted) return;
-    setState(() {
-      _occurredAt = DateTime(
-        _occurredAt.year,
-        _occurredAt.month,
-        _occurredAt.day,
-        picked.hour,
-        picked.minute,
-      );
-    });
+    setState(() { _occurredAt = DateTime(_occurredAt.year, _occurredAt.month, _occurredAt.day, picked.hour, picked.minute); });
   }
 
   void _submit() {
-    if (!(_formKey.currentState?.validate() ?? false)) {
-      return;
-    }
+    HapticFeedback.heavyImpact();
+    if (!(_formKey.currentState?.validate() ?? false)) return;
     final amount = double.tryParse(_amountController.text.trim());
     final categoryId = _selectedCategoryId;
-    if (amount == null ||
-        amount <= 0 ||
-        categoryId == null ||
-        categoryId.isEmpty) {
-      return;
-    }
-
-    Navigator.of(context).pop(
-      TransactionEditDraft(
-        amount: amount,
-        categoryId: categoryId,
-        occurredAt: _occurredAt,
-        merchant: _merchantController.text.trim().isEmpty
-            ? null
-            : _merchantController.text.trim(),
-        note: _noteController.text.trim().isEmpty
-            ? null
-            : _noteController.text.trim(),
-      ),
-    );
+    if (amount == null || amount <= 0 || categoryId == null) return;
+    Navigator.of(context).pop(TransactionEditDraft(amount: amount, categoryId: categoryId, occurredAt: _occurredAt, merchant: _merchantController.text.trim().isEmpty ? null : _merchantController.text.trim(), note: _noteController.text.trim().isEmpty ? null : _noteController.text.trim()));
   }
 }
 
-class _HeaderCard extends StatelessWidget {
-  final Transaction transaction;
-  final String amountText;
-  final Color tone;
-
-  const _HeaderCard({
-    required this.transaction,
-    required this.amountText,
-    required this.tone,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final icon = oneKeepResolvedCategoryIcon(
-      transaction.title,
-      transaction.categoryName,
-      transaction.categoryIcon,
-    );
-    return OneKeepGlassCard(
-      radius: 24,
-      blurSigma: 24,
-      fillColor: oneKeepGlassStrong(context),
-      borderColor: oneKeepBorderStrong(context),
-      padding: const EdgeInsets.all(18),
-      shadows: [
-        BoxShadow(
-          color: tone.withValues(alpha: 0.12),
-          blurRadius: 28,
-          offset: const Offset(0, 12),
-        ),
-      ],
-      child: Row(
-        children: [
-          Container(
-            width: 54,
-            height: 54,
-            decoration: BoxDecoration(
-              color: tone.withValues(alpha: 0.14),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                color: tone.withValues(alpha: 0.22),
-                width: 0.8,
-              ),
-            ),
-            child: Icon(icon, color: tone, size: 24),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '编辑记账',
-                  style: oneKeepGrotesk(
-                    color: oneKeepTextPrimary(context),
-                    size: 20,
-                    weight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  '${transaction.categoryName} · ${oneKeepDayTime(transaction.occurredAt)}',
-                  style: oneKeepInter(
-                    color: oneKeepTextSecondary(context),
-                    size: 12,
-                    weight: FontWeight.w400,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Text(
-            '${transaction.isExpense ? '-' : '+'}¥$amountText',
-            style: oneKeepGrotesk(
-              color: tone,
-              size: 22,
-              weight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SectionTitle extends StatelessWidget {
+class _EditorLabel extends StatelessWidget {
   final String label;
-
-  const _SectionTitle({required this.label});
-
+  const _EditorLabel({required this.label});
   @override
   Widget build(BuildContext context) {
-    return Text(
-      label,
-      style: oneKeepManrope(
-        color: oneKeepTextPrimary(context),
-        size: 14,
-        weight: FontWeight.w700,
-        letterSpacing: 0.2,
-      ),
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, bottom: 8),
+      child: Text(label, style: oneKeepInter(color: oneKeepTextTertiary(context), size: 12, weight: FontWeight.w700, letterSpacing: 0.5)),
     );
   }
 }
 
-class _EditorField extends StatelessWidget {
-  final String label;
-  final Widget child;
-
-  const _EditorField({required this.label, required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: oneKeepManrope(
-            color: oneKeepTextSecondary(context),
-            size: 12,
-            weight: FontWeight.w700,
-            letterSpacing: 0.5,
-          ),
-        ),
-        const SizedBox(height: 8),
-        child,
-      ],
-    );
-  }
-}
-
-class _CategorySelector extends StatelessWidget {
+class _CategoryGrid extends StatelessWidget {
   final List<Category> categories;
   final String? selectedCategoryId;
   final Color tone;
   final ValueChanged<String> onSelect;
-
-  const _CategorySelector({
-    required this.categories,
-    required this.selectedCategoryId,
-    required this.tone,
-    required this.onSelect,
-  });
+  const _CategoryGrid({required this.categories, required this.selectedCategoryId, required this.tone, required this.onSelect});
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 10,
-      runSpacing: 10,
-      children: categories.map((category) {
-        final selected = category.id == selectedCategoryId;
-        return GestureDetector(
-          onTap: () => onSelect(category.id),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 180),
-            curve: Curves.easeOut,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: BoxDecoration(
-              color: selected
-                  ? tone.withValues(alpha: 0.14)
-                  : oneKeepGlassStrong(context),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: selected
-                    ? tone.withValues(alpha: 0.36)
-                    : oneKeepBorder(context),
-                width: 0.9,
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
+    return Container(
+      height: 100,
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: categories.length,
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        separatorBuilder: (_, __) => const SizedBox(width: 16),
+        itemBuilder: (context, index) {
+          final item = categories[index];
+          final selected = item.id == selectedCategoryId;
+          return GestureDetector(
+            onTap: () { HapticFeedback.lightImpact(); onSelect(item.id); },
+            child: Column(
               children: [
-                Icon(
-                  oneKeepResolvedCategoryIcon(
-                    category.name,
-                    category.name,
-                    category.icon,
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 250),
+                  width: 48, height: 48,
+                  decoration: BoxDecoration(
+                    color: selected ? tone.withValues(alpha: 0.15) : (Theme.of(context).brightness == Brightness.dark ? Colors.white10 : Colors.black.withValues(alpha: 0.03)),
+                    borderRadius: BorderRadius.circular(16),
+                    border: selected ? Border.all(color: tone.withValues(alpha: 0.4), width: 1.5) : null,
                   ),
-                  size: 16,
-                  color: selected ? tone : oneKeepTextSecondary(context),
+                  child: Icon(oneKeepResolvedCategoryIcon(item.name, item.name, item.icon), size: 22, color: selected ? tone : oneKeepTextSecondary(context)),
                 ),
-                const SizedBox(width: 6),
-                Text(
-                  category.name,
-                  style: oneKeepInter(
-                    color: selected ? tone : oneKeepTextPrimary(context),
-                    size: 12,
-                    weight: selected ? FontWeight.w700 : FontWeight.w500,
-                  ),
-                ),
+                const SizedBox(height: 6),
+                Text(item.name, style: oneKeepInter(color: selected ? tone : oneKeepTextSecondary(context), size: 11, weight: selected ? FontWeight.w700 : FontWeight.w500)),
               ],
             ),
-          ),
-        );
-      }).toList(),
+          );
+        },
+      ),
     );
   }
 }
 
-class _PickerTile extends StatelessWidget {
+class _PremiumPickerTile extends StatelessWidget {
   final IconData icon;
-  final String label;
   final String value;
   final Color tone;
+  final bool isDark;
   final VoidCallback onTap;
-
-  const _PickerTile({
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.tone,
-    required this.onTap,
-  });
+  const _PremiumPickerTile({required this.icon, required this.value, required this.tone, required this.isDark, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return OneKeepBouncingCard(
       onTap: onTap,
       child: Container(
-        height: 62,
-        padding: const EdgeInsets.symmetric(horizontal: 14),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: oneKeepGlassStrong(context),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: oneKeepBorder(context), width: 0.8),
+          color: isDark ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.04),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.05), width: 0.5),
         ),
         child: Row(
           children: [
-            Container(
-              width: 34,
-              height: 34,
-              decoration: BoxDecoration(
-                color: tone.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, size: 16, color: tone),
-            ),
+            Icon(icon, size: 16, color: tone.withValues(alpha: 0.6)),
             const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: oneKeepInter(
-                      color: oneKeepTextTertiary(context),
-                      size: 11,
-                      weight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    value,
-                    style: oneKeepInter(
-                      color: oneKeepTextPrimary(context),
-                      size: 13,
-                      weight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            Text(value, style: oneKeepInter(color: oneKeepTextPrimary(context), size: 13, weight: FontWeight.w700)),
           ],
         ),
       ),

@@ -15,7 +15,7 @@ class PreferencesState {
   final bool isLoaded;
 
   const PreferencesState({
-    this.themeMode = ThemeMode.dark,
+    this.themeMode = ThemeMode.light, // 修改默认值为 light
     this.nickname = '',
     this.avatarIndex = 0,
     this.avatarImageData,
@@ -257,11 +257,11 @@ class PreferencesNotifier extends StateNotifier<PreferencesState> {
     switch (value) {
       case 'light':
         return ThemeMode.light;
-      case 'system':
-        return ThemeMode.system;
       case 'dark':
-      default:
         return ThemeMode.dark;
+      case 'system':
+      default:
+        return ThemeMode.system; // 默认跟随系统
     }
   }
 }

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../core/network/api_client.dart';
 import '../../core/providers/api_provider.dart';
@@ -182,17 +183,17 @@ class _HomePageState extends ConsumerState<HomePage> {
                   physics: const AlwaysScrollableScrollPhysics(),
                   padding: EdgeInsets.zero,
                   children: [
-	                    _buildHeroSection(
-	                      state.summary,
-	                      authState.user?.name,
-	                      preferences,
-	                    ),
-	                    if (state.summary != null)
-	                      _buildContentSection(
-	                        state.summary!.recentTransactions,
-	                        categoryColors,
-	                      ),
-	                  ],
+                    _buildHeroSection(
+                      state.summary,
+                      authState.user?.name,
+                      preferences,
+                    ),
+                    if (state.summary != null)
+                      _buildContentSection(
+                        state.summary!.recentTransactions,
+                        categoryColors,
+                      ),
+                  ],
                 ),
               ),
       ),
@@ -590,7 +591,8 @@ class _HomePageState extends ConsumerState<HomePage> {
     final action = await showModalBottomSheet<_TransactionDetailAction>(
       context: context,
       backgroundColor: Colors.transparent,
-      barrierColor: oneKeepDimOverlay(context),
+      isScrollControlled: true, // IMPORTANT for glass effect
+      barrierColor: Colors.black.withValues(alpha: 0.3),
       builder: (_) => _HomeTransactionDetailSheet(
         transaction: tx,
         categoryColor: categoryColor,
@@ -610,7 +612,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      barrierColor: oneKeepDimOverlay(context),
+      barrierColor: Colors.black.withValues(alpha: 0.3),
       builder: (_) => OneKeepTransactionEditorSheet(transaction: tx),
     );
     if (!mounted || draft == null) return;
@@ -676,7 +678,7 @@ class _HomePageState extends ConsumerState<HomePage> {
             child: Text(
               '删除',
               style: oneKeepInter(
-                color: AppColors.expense,
+                color: AppColors.rose,
                 size: 14,
                 weight: FontWeight.w700,
               ),
@@ -885,117 +887,158 @@ class _HomeTransactionDetailSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tone = transaction.isExpense ? AppColors.expense : AppColors.income;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final tone = transaction.isExpense ? AppColors.rose : AppColors.emerald;
 
-    return OneKeepSheetSurface(
-      child: SafeArea(
-        top: false,
-        child: SizedBox(
-          height: 400,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 12, 24, 36),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Align(
-                  alignment: Alignment.center,
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: oneKeepTextTertiary(
-                        context,
-                      ).withValues(alpha: 0.32),
-                      borderRadius: BorderRadius.circular(2),
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 32, sigmaY: 32),
+        child: Container(
+          decoration: BoxDecoration(
+            color: isDark 
+                ? const Color(0xFF1C1C1E).withValues(alpha: 0.75) 
+                : Colors.white.withValues(alpha: 0.8),
+            border: Border(
+              top: BorderSide(
+                color: Colors.white.withValues(alpha: isDark ? 0.08 : 0.6),
+                width: 0.5,
+              ),
+            ),
+          ),
+          child: SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 12, 24, 36),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Align(
+                    alignment: Alignment.center,
+                    child: Container(
+                      width: 32,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 18),
-                Row(
-                  children: [
-                    OneKeepCategoryBadge(
-                      title: transaction.title,
-                      categoryName: transaction.categoryName,
-                      categoryIcon: transaction.categoryIcon,
-                      categoryId: transaction.categoryId,
-                      colorHex: categoryColor,
-                      size: 40,
-                      iconSize: 20,
-                      radius: 12,
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            transaction.title,
-                            style: oneKeepManrope(
-                              color: oneKeepTextPrimary(context),
-                              size: 18,
-                              weight: FontWeight.w700,
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      OneKeepCategoryBadge(
+                        title: transaction.title,
+                        categoryName: transaction.categoryName,
+                        categoryIcon: transaction.categoryIcon,
+                        categoryId: transaction.categoryId,
+                        colorHex: categoryColor,
+                        size: 48,
+                        iconSize: 24,
+                        radius: 14,
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              transaction.title,
+                              style: oneKeepManrope(
+                                color: oneKeepTextPrimary(context),
+                                size: 20,
+                                weight: FontWeight.w800,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            transaction.categoryName,
-                            style: oneKeepInter(
-                              color: oneKeepTextTertiary(context),
-                              size: 12,
-                              weight: FontWeight.w400,
+                            const SizedBox(height: 2),
+                            Text(
+                              transaction.categoryName,
+                              style: oneKeepInter(
+                                color: oneKeepTextSecondary(context),
+                                size: 13,
+                                weight: FontWeight.w500,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
+                      ),
+                      Text(
+                        '${transaction.isExpense ? '-' : '+'}¥${oneKeepCurrency(transaction.amount)}',
+                        style: oneKeepGrotesk(
+                          color: tone,
+                          size: 26,
+                          weight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 28),
+                  
+                  // Detail Info Block
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.04),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.05),
+                        width: 0.5,
                       ),
                     ),
-                    Text(
-                      '${transaction.isExpense ? '-' : '+'}¥${oneKeepCurrency(transaction.amount)}',
-                      style: oneKeepGrotesk(
-                        color: tone,
-                        size: 22,
-                        weight: FontWeight.w700,
-                      ),
+                    child: Column(
+                      children: [
+                        _DetailRow(
+                          label: '交易日期',
+                          value: oneKeepDayTime(transaction.occurredAt),
+                          isDark: isDark,
+                        ),
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 14),
+                          child: Divider(height: 1, thickness: 0.5),
+                        ),
+                        _DetailRow(
+                          label: '商家名称',
+                          value: transaction.merchant ?? '暂无商家',
+                          isDark: isDark,
+                        ),
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 14),
+                          child: Divider(height: 1, thickness: 0.5),
+                        ),
+                        _DetailRow(
+                          label: '交易备注',
+                          value: transaction.note ?? '暂无备注',
+                          isDark: isDark,
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Divider(color: oneKeepBorder(context), height: 1),
-                const SizedBox(height: 16),
-                _DetailRow(
-                  label: '日期',
-                  value: oneKeepDayTime(transaction.occurredAt),
-                ),
-                const SizedBox(height: 14),
-                _DetailRow(label: '商家', value: transaction.merchant ?? '暂无商家'),
-                const SizedBox(height: 14),
-                _DetailRow(label: '备注', value: transaction.note ?? '暂无备注'),
-                const Spacer(),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _SheetActionButton(
-                        label: '编辑',
-                        icon: Icons.edit_outlined,
-                        tone: AppColors.emerald,
-                        onTap: () => Navigator.of(
-                          context,
-                        ).pop(_TransactionDetailAction.edit),
+                  ),
+                  const SizedBox(height: 32),
+                  
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _SheetActionButton(
+                          label: '编辑',
+                          icon: LucideIcons.edit3,
+                          tone: AppColors.emerald,
+                          onTap: () => Navigator.of(context).pop(_TransactionDetailAction.edit),
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _SheetActionButton(
-                        label: '删除',
-                        icon: Icons.delete_outline_rounded,
-                        tone: AppColors.expense,
-                        onTap: () => Navigator.of(
-                          context,
-                        ).pop(_TransactionDetailAction.delete),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _SheetActionButton(
+                          label: '删除',
+                          icon: LucideIcons.trash2,
+                          tone: AppColors.rose,
+                          onTap: () => Navigator.of(context).pop(_TransactionDetailAction.delete),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -1007,8 +1050,9 @@ class _HomeTransactionDetailSheet extends StatelessWidget {
 class _DetailRow extends StatelessWidget {
   final String label;
   final String value;
+  final bool isDark;
 
-  const _DetailRow({required this.label, required this.value});
+  const _DetailRow({required this.label, required this.value, required this.isDark});
 
   @override
   Widget build(BuildContext context) {
@@ -1019,7 +1063,7 @@ class _DetailRow extends StatelessWidget {
           style: oneKeepInter(
             color: oneKeepTextSecondary(context),
             size: 13,
-            weight: FontWeight.w400,
+            weight: FontWeight.w500,
           ),
         ),
         const Spacer(),
@@ -1027,8 +1071,8 @@ class _DetailRow extends StatelessWidget {
           value,
           style: oneKeepInter(
             color: oneKeepTextPrimary(context),
-            size: 13,
-            weight: FontWeight.w500,
+            size: 14,
+            weight: FontWeight.w700,
           ),
         ),
       ],
@@ -1051,26 +1095,32 @@ class _SheetActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return OneKeepBouncingCard(
       onTap: onTap,
       child: Container(
-        height: 48,
+        height: 52,
         decoration: BoxDecoration(
-          color: tone.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: tone.withValues(alpha: 0.24), width: 0.8),
+          color: tone,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: tone.withValues(alpha: 0.3),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 16, color: tone),
-            const SizedBox(width: 8),
+            Icon(icon, size: 18, color: Colors.white),
+            const SizedBox(width: 10),
             Text(
               label,
               style: oneKeepManrope(
-                color: tone,
-                size: 14,
-                weight: FontWeight.w700,
+                color: Colors.white,
+                size: 15,
+                weight: FontWeight.w800,
               ),
             ),
           ],

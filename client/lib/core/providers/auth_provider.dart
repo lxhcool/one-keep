@@ -152,6 +152,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
     _writeStoredUser(user);
   }
 
+  void clearError() {
+    state = state.copyWith(error: null);
+  }
+
   Future<void> _writeStoredUser(UserInfo user) {
     return _storage.write(
       key: _currentUserKey,
