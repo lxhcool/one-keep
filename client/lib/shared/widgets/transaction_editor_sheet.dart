@@ -88,11 +88,12 @@ class _OneKeepTransactionEditorSheetState
     Widget? prefixIcon,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor = isDark ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.04);
+    // 使用更通透的背景色
+    final bgColor = isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.04);
     
     return InputDecoration(
       hintText: hintText,
-      hintStyle: const TextStyle(fontSize: 14, color: Colors.grey),
+      hintStyle: TextStyle(fontSize: 14, color: isDark ? Colors.white30 : Colors.grey),
       prefixIcon: prefixIcon,
       prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
       filled: true,
@@ -123,6 +124,7 @@ class _OneKeepTransactionEditorSheetState
                    double.parse(_amountController.text.trim()) > 0 && 
                    (_selectedCategoryId?.isNotEmpty ?? false);
 
+    // 彻底应用高斯模糊容器
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
       child: BackdropFilter(
@@ -130,8 +132,8 @@ class _OneKeepTransactionEditorSheetState
         child: Container(
           decoration: BoxDecoration(
             color: isDark 
-                ? const Color(0xFF1C1C1E).withValues(alpha: 0.8) 
-                : Colors.white.withValues(alpha: 0.85),
+                ? const Color(0xFF1C1C1E).withValues(alpha: 0.75) 
+                : Colors.white.withValues(alpha: 0.8),
             border: Border(top: BorderSide(color: Colors.white.withValues(alpha: isDark ? 0.08 : 0.6), width: 0.5)),
           ),
           child: SafeArea(
@@ -164,7 +166,6 @@ class _OneKeepTransactionEditorSheetState
                       ),
                       const SizedBox(height: 24),
 
-                      // Amount Field
                       _EditorLabel(label: '账单金额'),
                       TextFormField(
                         controller: _amountController,
@@ -183,7 +184,6 @@ class _OneKeepTransactionEditorSheetState
                       ),
                       const SizedBox(height: 16),
                       
-                      // Category Field
                       _EditorLabel(label: '选择分类'),
                       categories.when(
                         data: (items) {
@@ -201,7 +201,6 @@ class _OneKeepTransactionEditorSheetState
                       ),
                       const SizedBox(height: 16),
 
-                      // Date and Time Field
                       Row(
                         children: [
                           Expanded(
@@ -239,7 +238,6 @@ class _OneKeepTransactionEditorSheetState
                       ),
                       const SizedBox(height: 16),
 
-                      // Merchant Field
                       _EditorLabel(label: '商家名称'),
                       TextFormField(
                         controller: _merchantController,
@@ -249,7 +247,6 @@ class _OneKeepTransactionEditorSheetState
                       ),
                       const SizedBox(height: 16),
 
-                      // Note Field
                       _EditorLabel(label: '备注说明'),
                       TextFormField(
                         controller: _noteController,
@@ -261,7 +258,6 @@ class _OneKeepTransactionEditorSheetState
                       ),
                       const SizedBox(height: 32),
 
-                      // Action Button
                       OneKeepBouncingCard(
                         onTap: canSave ? _submit : null,
                         child: AnimatedContainer(
@@ -346,6 +342,11 @@ class _CategoryGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    // 改进未选中态颜色：更有质感的石板灰/半透白
+    final unselectedColor = isDark ? Colors.white.withValues(alpha: 0.4) : const Color(0xFF64748B);
+    final unselectedBg = isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.04);
+
     return Container(
       height: 100,
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -365,14 +366,25 @@ class _CategoryGrid extends StatelessWidget {
                   duration: const Duration(milliseconds: 250),
                   width: 48, height: 48,
                   decoration: BoxDecoration(
-                    color: selected ? tone.withValues(alpha: 0.15) : (Theme.of(context).brightness == Brightness.dark ? Colors.white10 : Colors.black.withValues(alpha: 0.03)),
+                    color: selected ? tone.withValues(alpha: 0.15) : unselectedBg,
                     borderRadius: BorderRadius.circular(16),
                     border: selected ? Border.all(color: tone.withValues(alpha: 0.4), width: 1.5) : null,
                   ),
-                  child: Icon(oneKeepResolvedCategoryIcon(item.name, item.name, item.icon), size: 22, color: selected ? tone : oneKeepTextSecondary(context)),
+                  child: Icon(
+                    oneKeepResolvedCategoryIcon(item.name, item.name, item.icon), 
+                    size: 22, 
+                    color: selected ? tone : unselectedColor,
+                  ),
                 ),
                 const SizedBox(height: 6),
-                Text(item.name, style: oneKeepInter(color: selected ? tone : oneKeepTextSecondary(context), size: 11, weight: selected ? FontWeight.w700 : FontWeight.w500)),
+                Text(
+                  item.name, 
+                  style: oneKeepInter(
+                    color: selected ? tone : unselectedColor, 
+                    size: 11, 
+                    weight: selected ? FontWeight.w700 : FontWeight.w500,
+                  ),
+                ),
               ],
             ),
           );
@@ -397,7 +409,7 @@ class _PremiumPickerTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: isDark ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.04),
+          color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.04),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.05), width: 0.5),
         ),
