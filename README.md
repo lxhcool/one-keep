@@ -88,6 +88,107 @@ server/prisma/dev.db
 
 如果你准备把旧版本整个删掉重新部署，但还想保留原来的数据，先备份这个文件。
 
+### 最方便的部署方式：宝塔 Docker 管理器
+
+如果你要尽量少手工敲命令，当前项目最省事的方式不是 `pm2`，而是直接用宝塔的 Docker/Compose。
+
+项目里已经补好了这些文件：
+
+- `server/Dockerfile`
+- `server/docker-compose.yml`
+- `server/.env.docker.example`
+
+操作顺序如下：
+
+#### 1. 安装宝塔 Docker 管理器
+
+在宝塔软件商店里安装 Docker 相关组件，确保服务器已经能运行容器。
+
+#### 2. 拉代码
+
+```bash
+cd /www/wwwroot
+git clone <你的仓库地址> one-keep
+cd /www/wwwroot/one-keep/server
+```
+
+#### 3. 创建 Docker 环境变量
+
+```bash
+cp .env.docker.example .env.docker
+```
+
+然后改成你自己的值：
+
+```env
+DATABASE_URL="file:/app/data/dev.db"
+JWT_SECRET="换成你自己的随机字符串"
+PORT=3000
+HOST="0.0.0.0"
+```
+
+说明：
+
+- `./data` 会映射到容器内 `/app/data`
+- SQLite 数据会保存在宿主机 `server/data/` 目录
+- 以后重建容器，数据不会丢
+
+#### 4. 用 Docker Compose 启动
+
+如果你在命令行操作：
+
+```bash
+cd /www/wwwroot/one-keep/server
+docker compose up -d --build
+```
+
+如果你在宝塔 Docker 管理器操作：
+
+1. 进入 Docker/Compose
+2. 导入 `server/docker-compose.yml`
+3. 确认工作目录是 `/www/wwwroot/one-keep/server`
+4. 启动编排
+
+首次启动时容器会自动：
+
+- 安装依赖
+- 生成 Prisma Client
+- 构建 TypeScript
+- 执行 `prisma db push`
+- 启动服务
+
+#### 5. 验证服务
+
+```bash
+curl http://127.0.0.1:3000/api/health
+```
+
+正常返回：
+
+```json
+{"status":"ok"}
+```
+
+#### 6. 宝塔里配反向代理和 HTTPS
+
+再按下面“反向代理”和“HTTPS”步骤，把域名转发到：
+
+```text
+http://127.0.0.1:3000
+```
+
+#### 7. 后续更新
+
+以后更新只要两步：
+
+```bash
+cd /www/wwwroot/one-keep
+git pull
+
+cd server
+docker compose up -d --build
+```
+
 ### 从零重新部署到宝塔
 
 下面这套流程适用于：
