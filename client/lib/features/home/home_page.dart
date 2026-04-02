@@ -16,20 +16,14 @@ import '../../shared/models/models.dart';
 import '../../shared/widgets/onekeep_ui.dart';
 import '../../shared/widgets/transaction_editor_sheet.dart';
 
-const _homeHeroSurfaceTop = Color(0xFF287f79);
-const _homeHeroSurfaceMid = Color(0xFF2d8f7a);
-const _homeHeroSurfaceBottom = Color(0xFF3AA17E);
-const _homeHeroCardTop = Color(0xFF308781);
-const _homeHeroCardBottom = Color(0xFF287f79);
-const _homeListPrimaryText = Color(0xFF333333);
-const _homeListSecondaryText = Color(0xFFBFBFBF);
-const _homeDarkHeroTop = Color(0xFF1e5f5a);
-const _homeDarkHeroMid = Color(0xFF246b66);
-const _homeDarkHeroBottom = Color(0xFF2D7A5E);
-const _homeDarkCardTop = Color(0xFF246b66);
-const _homeDarkCardBottom = Color(0xFF1a4a46);
-const _homeDarkListPrimaryText = Color(0xFFF3F4F6);
-const _homeDarkListSecondaryText = Color(0xFF8E8E93);
+// Nordic Emerald Theme Constants
+const _nordicHeroTop = Color(0xFF065F46); // Emerald 800
+const _nordicHeroMid = Color(0xFF047857); // Emerald 700
+const _nordicHeroBottom = Color(0xFF059669); // Emerald 600
+
+const _nordicDarkHeroTop = Color(0xFF064E3B);
+const _nordicDarkHeroMid = Color(0xFF0D1111);
+const _nordicDarkHeroBottom = Color(0xFF0D1111);
 
 class _HomePalette {
   final Color scaffoldBackground;
@@ -71,47 +65,43 @@ class _HomePalette {
   static _HomePalette of(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     if (isDark) {
-      return const _HomePalette(
+      return _HomePalette(
         scaffoldBackground: AppColors.darkBg,
         overlayStyle: SystemUiOverlayStyle.light,
-        heroGradient: [_homeDarkHeroTop, _homeDarkHeroMid, _homeDarkHeroBottom],
-        heroGlowPrimary: Color(0x60308781),
-        heroGlowSecondary: Color(0x40287f79),
-        heroGreetingText: Color(0xCCFFFFFF),
-        heroNameText: Color(0xFFFFFFFF),
-        heroActionBackground: Color(0x25308781),
-        heroActionBorder: Color(0x30287f79),
-        heroActionIcon: Color(0xFFd4e5e3),
-        cardGradient: [_homeDarkCardTop, _homeDarkCardBottom],
-        cardGlow: Color(0x40308781),
-        cardShadow: Color(0xA0000000),
-        listPrimaryText: _homeDarkListPrimaryText,
-        listSecondaryText: _homeDarkListSecondaryText,
-        listAccent: Color(0xFF287f79),
+        heroGradient: [_nordicDarkHeroTop, _nordicDarkHeroMid, _nordicDarkHeroBottom],
+        heroGlowPrimary: AppColors.emerald.withValues(alpha: 0.15),
+        heroGlowSecondary: AppColors.emerald.withValues(alpha: 0.1),
+        heroGreetingText: AppColors.darkTextSecondary,
+        heroNameText: AppColors.darkTextPrimary,
+        heroActionBackground: Colors.white.withValues(alpha: 0.05),
+        heroActionBorder: Colors.white.withValues(alpha: 0.1),
+        heroActionIcon: AppColors.darkTextPrimary,
+        cardGradient: [AppColors.darkBgSecondary, AppColors.darkSurface],
+        cardGlow: AppColors.emerald.withValues(alpha: 0.1),
+        cardShadow: Colors.black.withValues(alpha: 0.4),
+        listPrimaryText: AppColors.darkTextPrimary,
+        listSecondaryText: AppColors.darkTextSecondary,
+        listAccent: AppColors.emerald,
       );
     }
 
-    return const _HomePalette(
-      scaffoldBackground: Colors.white,
-      overlayStyle: SystemUiOverlayStyle.dark,
-      heroGradient: [
-        _homeHeroSurfaceTop,
-        _homeHeroSurfaceMid,
-        _homeHeroSurfaceBottom,
-      ],
-        heroGlowPrimary: Color(0x55308781),
-        heroGlowSecondary: Color(0x35287f79),
-      heroGreetingText: Color(0xCCFFFFFF),
-      heroNameText: Color(0xFFFFFFFF),
-      heroActionBackground: Color(0x40FFFFFF),
-      heroActionBorder: Color(0x35FFFFFF),
-      heroActionIcon: Color(0xFF1a4f4b),
-      cardGradient: [_homeHeroCardTop, _homeHeroCardBottom],
-      cardGlow: Color(0x35FFFFFF),
-      cardShadow: Color(0x30287f79),
-      listPrimaryText: _homeListPrimaryText,
-      listSecondaryText: _homeListSecondaryText,
-      listAccent: _homeHeroCardBottom,
+    return _HomePalette(
+      scaffoldBackground: AppColors.lightBg,
+      overlayStyle: SystemUiOverlayStyle.light, // Keep status bar light on dark header
+      heroGradient: [_nordicHeroTop, _nordicHeroMid, _nordicHeroBottom],
+      heroGlowPrimary: Colors.white.withValues(alpha: 0.1),
+      heroGlowSecondary: Colors.white.withValues(alpha: 0.05),
+      heroGreetingText: Colors.white.withValues(alpha: 0.7),
+      heroNameText: Colors.white,
+      heroActionBackground: Colors.white.withValues(alpha: 0.15),
+      heroActionBorder: Colors.white.withValues(alpha: 0.2),
+      heroActionIcon: Colors.white,
+      cardGradient: [AppColors.emerald, Color(0xFF047857)],
+      cardGlow: Colors.white.withValues(alpha: 0.15),
+      cardShadow: AppColors.emerald.withValues(alpha: 0.25),
+      listPrimaryText: AppColors.lightTextPrimary,
+      listSecondaryText: AppColors.lightTextSecondary,
+      listAccent: AppColors.emerald,
     );
   }
 }
@@ -124,7 +114,6 @@ class HomePage extends ConsumerStatefulWidget {
 }
 
 class _HomePageState extends ConsumerState<HomePage> {
-  // ignore: unused_field
   bool _balanceVisible = true;
   bool _hasTriggeredInitialLoad = false;
 
@@ -142,7 +131,6 @@ class _HomePageState extends ConsumerState<HomePage> {
     await ref.read(homeProvider.notifier).load();
   }
 
-  // ignore: unused_element
   String _greeting() {
     final hour = DateTime.now().hour;
     if (hour < 6) return '凌晨好';
@@ -211,82 +199,6 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-  // ignore: unused_element
-  Widget _buildHeader(
-    HomeSummary? summary,
-    String? authUserName,
-    PreferencesState preferences,
-  ) {
-    final userName = preferences.nickname.isNotEmpty
-        ? preferences.nickname
-        : (summary?.user.name.isNotEmpty == true
-              ? summary!.user.name
-              : (authUserName?.isNotEmpty == true
-                    ? authUserName!
-                    : 'OneKeep 用户'));
-    return Row(
-      children: [
-        OneKeepAvatar(
-          avatarIndex: preferences.avatarIndex,
-          avatarImageData: preferences.avatarImageData,
-          size: 48,
-          iconSize: 22,
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                _greeting(),
-                style: oneKeepManrope(
-                  color: oneKeepTextSecondary(context),
-                  size: 13,
-                  weight: FontWeight.w400,
-                  letterSpacing: 0.5,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                userName,
-                style: oneKeepGrotesk(
-                  color: oneKeepTextPrimary(context),
-                  size: 18,
-                  weight: FontWeight.w600,
-                  letterSpacing: 0.8,
-                ),
-              ),
-            ],
-          ),
-        ),
-        OneKeepGlassCard(
-          radius: 14,
-          blurSigma: 10,
-          fillColor: oneKeepGlassStrong(context),
-          borderColor: oneKeepBorderStrong(context),
-          padding: EdgeInsets.zero,
-          child: SizedBox(
-            width: 42,
-            height: 42,
-            child: Icon(
-              Icons.notifications_none_rounded,
-              size: 20,
-              color: oneKeepTextSecondary(context),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  String _heroGreeting() {
-    final hour = DateTime.now().hour;
-    if (hour < 6) return '凌晨好';
-    if (hour < 12) return '早上好';
-    if (hour < 18) return '下午好';
-    return '晚上好';
-  }
-
   Widget _buildHeroSection(
     HomeSummary? summary,
     String? authUserName,
@@ -326,7 +238,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: palette.heroGradient,
-                        stops: [0.0, 0.55, 1.0],
+                        stops: const [0.0, 0.55, 1.0],
                       ),
                     ),
                   ),
@@ -376,34 +288,31 @@ class _HomePageState extends ConsumerState<HomePage> {
                           ),
                           const SizedBox(width: 16),
                           Expanded(
-                            child: SizedBox(
-                              height: 54,
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    _heroGreeting(),
-                                    style: oneKeepManrope(
-                                      color: palette.heroGreetingText,
-                                      size: 14,
-                                      weight: FontWeight.w600,
-                                      height: 1,
-                                    ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  _greeting(),
+                                  style: oneKeepManrope(
+                                    color: palette.heroGreetingText,
+                                    size: 14,
+                                    weight: FontWeight.w600,
+                                    height: 1,
                                   ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    userName,
-                                    style: oneKeepGrotesk(
-                                      color: palette.heroNameText,
-                                      size: 22,
-                                      weight: FontWeight.w700,
-                                      height: 1,
-                                      letterSpacing: 0.1,
-                                    ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  userName,
+                                  style: oneKeepGrotesk(
+                                    color: palette.heroNameText,
+                                    size: 22,
+                                    weight: FontWeight.w700,
+                                    height: 1,
+                                    letterSpacing: 0.1,
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
                           ),
                           Container(
@@ -414,6 +323,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                               shape: BoxShape.circle,
                               border: Border.all(
                                 color: palette.heroActionBorder,
+                                width: 0.5,
                               ),
                             ),
                             child: Icon(
@@ -447,13 +357,15 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   Widget _buildHeroBalanceCard(HomeSummary summary) {
     final palette = _HomePalette.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
             color: palette.cardShadow,
-            blurRadius: 18,
+            blurRadius: 20,
             offset: const Offset(0, 10),
           ),
         ],
@@ -492,7 +404,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.14),
+                  color: Colors.white.withValues(alpha: isDark ? 0.05 : 0.12),
                   width: 1,
                 ),
               ),
@@ -537,12 +449,12 @@ class _HomePageState extends ConsumerState<HomePage> {
                         : '¥ ********',
                     style: oneKeepGrotesk(
                       color: Colors.white,
-                      size: 32,
+                      size: 34,
                       weight: FontWeight.w700,
                       letterSpacing: _balanceVisible ? 0.6 : 1.6,
                     ),
                   ),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 20),
                   Row(
                     children: [
                       Expanded(
@@ -571,223 +483,6 @@ class _HomePageState extends ConsumerState<HomePage> {
           ],
         ),
       ),
-    );
-  }
-
-  // ignore: unused_element
-  Widget _buildBalanceCard(HomeSummary summary, String? backgroundImageData) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final hasBackgroundImage =
-        backgroundImageData != null && backgroundImageData.isNotEmpty;
-
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: oneKeepCardShadows(context, prominent: true),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
-        child: Stack(
-          children: [
-            // 背景层：图片或深色高级渐变
-            if (hasBackgroundImage)
-              Positioned.fill(
-                child: _buildBlurredBackground(backgroundImageData),
-              )
-            else
-              Positioned.fill(
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: isDark
-                          ? AppColors.balanceGradientDark
-                          : AppColors.balanceGradientLight,
-                    ),
-                  ),
-                ),
-              ),
-
-            // 光晕点缀 (只在无背景图时显示)
-            if (!hasBackgroundImage)
-              Positioned(
-                right: -40,
-                top: -40,
-                child: Container(
-                  width: 150,
-                  height: 150,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: RadialGradient(
-                      colors: [
-                        AppColors.teal.withValues(alpha: 0.2),
-                        Colors.transparent,
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-
-            // 内容层
-            Container(
-              padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.1)
-                      : Colors.white.withValues(alpha: 0.2),
-                  width: 1,
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        '本月结余',
-                        style: oneKeepManrope(
-                          color: Colors.white.withValues(alpha: 0.7),
-                          size: 14,
-                          weight: FontWeight.w500,
-                          letterSpacing: 1,
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: () =>
-                            setState(() => _balanceVisible = !_balanceVisible),
-                        child: Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            _balanceVisible
-                                ? Icons.visibility_outlined
-                                : Icons.visibility_off_outlined,
-                            size: 16,
-                            color: Colors.white.withValues(alpha: 0.9),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  if (_balanceVisible)
-                    Text(
-                      '¥ ${oneKeepCurrency(summary.balance)}',
-                      style: oneKeepGrotesk(
-                        color: Colors.white,
-                        size: 40,
-                        weight: FontWeight.w700,
-                        letterSpacing: 1.0,
-                      ),
-                    )
-                  else
-                    Text(
-                      '¥ ********',
-                      style: oneKeepGrotesk(
-                        color: Colors.white,
-                        size: 40,
-                        weight: FontWeight.w700,
-                        letterSpacing: 2.0,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBlurredBackground(String imageData) {
-    final bytes = _decodeImageBytes(imageData);
-    if (bytes == null) {
-      return _buildGradientBackground(
-        Theme.of(context).brightness == Brightness.dark,
-      );
-    }
-
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        // 背景图片
-        Image.memory(
-          bytes,
-          fit: BoxFit.cover,
-          opacity: const AlwaysStoppedAnimation(0.4),
-        ),
-        // 高斯模糊层
-        BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-          child: Container(color: Colors.black.withValues(alpha: 0.35)),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildGradientBackground(bool isDark) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: isDark
-              ? [
-                  const Color(0xFF5B6B7C), // 深灰蓝
-                  const Color(0xFF6B7B8C), // 灰蓝
-                ]
-              : [
-                  const Color(0xFF7B8B9C), // 浅灰蓝
-                  const Color(0xFF9BABB9), // 淡灰蓝
-                ],
-        ),
-      ),
-    );
-  }
-
-  Uint8List? _decodeImageBytes(String? data) {
-    if (data == null || data.isEmpty) return null;
-    final normalized = data.contains(',')
-        ? data.substring(data.indexOf(',') + 1)
-        : data;
-    try {
-      return base64Decode(normalized);
-    } catch (_) {
-      return null;
-    }
-  }
-
-  // ignore: unused_element
-  Widget _buildIncomeExpenseRow(HomeSummary summary) {
-    return Row(
-      children: [
-        Expanded(
-          child: _MetricTile(
-            label: '本月支出',
-            amount: summary.expense,
-            icon: Icons.arrow_upward_rounded,
-            tone: AppColors.expense,
-            visible: _balanceVisible,
-          ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: _MetricTile(
-            label: '本月收入',
-            amount: summary.income,
-            icon: Icons.arrow_downward_rounded,
-            tone: oneKeepIncomeTone(context),
-            visible: _balanceVisible,
-          ),
-        ),
-      ],
     );
   }
 
@@ -821,21 +516,14 @@ class _HomePageState extends ConsumerState<HomePage> {
               height: 16,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(2),
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    palette.listAccent.withValues(alpha: 0.82),
-                    palette.listAccent,
-                  ],
-                ),
+                color: palette.listAccent,
               ),
             ),
             const SizedBox(width: 8),
             Text(
               '最近记账',
               style: oneKeepGrotesk(
-                color: oneKeepTextPrimary(context),
+                color: palette.listPrimaryText,
                 size: 16,
                 weight: FontWeight.w600,
                 letterSpacing: 0.5,
@@ -849,7 +537,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                   Text(
                     '查看全部',
                     style: oneKeepManrope(
-                      color: oneKeepTextTertiary(context),
+                      color: palette.listSecondaryText,
                       size: 13,
                       weight: FontWeight.w500,
                     ),
@@ -858,7 +546,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                   Icon(
                     Icons.chevron_right_rounded,
                     size: 16,
-                    color: oneKeepTextTertiary(context),
+                    color: palette.listSecondaryText,
                   ),
                 ],
               ),
@@ -873,7 +561,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               child: Text(
                 '暂无交易记录',
                 style: oneKeepManrope(
-                  color: oneKeepTextSecondary(context),
+                  color: palette.listSecondaryText,
                   size: 13,
                   weight: FontWeight.w400,
                 ),
@@ -1047,7 +735,6 @@ class _HeroFanClipper extends CustomClipper<Path> {
   bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
 }
 
-// ignore: unused_element
 class _BalanceInlineMetric extends StatelessWidget {
   final String label;
   final double amount;
@@ -1114,76 +801,6 @@ class _BalanceInlineMetric extends StatelessWidget {
   }
 }
 
-// ignore: unused_element
-class _MetricTile extends StatelessWidget {
-  final String label;
-  final double amount;
-  final IconData icon;
-  final Color tone;
-  final bool visible;
-
-  const _MetricTile({
-    required this.label,
-    required this.amount,
-    required this.icon,
-    required this.tone,
-    required this.visible,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.darkCard : Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.04),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: tone.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, size: 18, color: tone),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            label,
-            style: oneKeepManrope(
-              color: oneKeepTextSecondary(context),
-              size: 13,
-              weight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            visible ? '¥ ${oneKeepCurrency(amount)}' : '¥ ****',
-            style: oneKeepGrotesk(
-              color: oneKeepTextPrimary(context),
-              size: 20,
-              weight: FontWeight.w700,
-              letterSpacing: 0.5,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _HomeTransactionRow extends StatelessWidget {
   final Transaction transaction;
   final String? categoryColor;
@@ -1199,7 +816,6 @@ class _HomeTransactionRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final isExpense = transaction.isExpense;
     final palette = _HomePalette.of(context);
-    final tone = palette.listAccent;
 
     return GestureDetector(
       onTap: onTap,
@@ -1360,7 +976,7 @@ class _HomeTransactionDetailSheet extends StatelessWidget {
                       child: _SheetActionButton(
                         label: '编辑',
                         icon: Icons.edit_outlined,
-                        tone: AppColors.teal,
+                        tone: AppColors.emerald,
                         onTap: () => Navigator.of(
                           context,
                         ).pop(_TransactionDetailAction.edit),
