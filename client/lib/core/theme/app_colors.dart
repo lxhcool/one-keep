@@ -3,158 +3,108 @@ import 'package:flutter/material.dart';
 class AppColors {
   AppColors._();
 
-  // Primary Colors - Teal Brand System
-  static const teal = Color(0xFF287f79); // Main brand color
-  static const tealLight = Color(0xFF308781);
-  static const tealDark = Color(0xFF1e5f5a);
-  static const tealMuted = Color(0xFF4a9993);
+  // --- 北欧森林 (Nordic Emerald) 核心系统 ---
+  static const emerald = Color(0xFF059669); 
+  static const emeraldLight = Color(0xFF10B981);
+  static const emeraldDark = Color(0xFF047857);
+  static const emeraldSoft = Color(0xFFD1FAE5);
 
-  static const purple = Color(0xFF6366F1); // Indigo 500 - Accent color
-  static const purpleLight = Color(0xFFA5B4FC); // Indigo 300
-  static const coral = Color(0xFFFB7185);
-  static const amber = Color(0xFFF59E0B); // Amber 500 - Secondary color
-  static const amberLight = Color(0xFF308781); // Teal light
+  // 辅助色
+  static const amber = Color(0xFFD97706);
+  static const amberLight = Color(0xFFF59E0B);
+  static const indigo = Color(0xFF4F46E5); // 对应旧版的 purple
+  static const rose = Color(0xFFE11D48);   // 对应旧版的 expense/error
 
-  static const expense = Color(0xFFEF4444); // Red 500 - Softer red
-  static const expenseLight = Color(0xFFFCA5A5); // Red 300
-  static const income = Color(0xFF22C55E); // Green 500 - Brighter green
-  static const incomeLight = Color(0xFF86EFAC); // Green 300
+  // 功能色别名 (兼容旧代码)
+  static const teal = emerald;
+  static const tealLight = emeraldLight;
+  static const tealDark = emeraldDark;
+  static const purple = indigo; 
+  static const error = rose;
+  static const expense = rose;
+  static const income = emerald;
+  static const info = Color(0xFF0EA5E9);
+  static const warning = amberLight;
+  static const success = emeraldLight;
 
-  // Minimalist Premium Dark Mode
-  static const darkBg = Color(0xFF0A0A0B); // True black for OLED
-  static const darkBgSecondary = Color(0xFF121214); // Secondary background
-  static const darkSurface = Color(0xFF1C1C1F); // Surface color
-  static const darkElevated = Color(0xFF2C2C30); // Elevated surface
-  static const darkCard = Color(0xFF1C1C1F); // Card color - deeper for OLED
-  static const darkCardHover = Color(0xFF252528);
-  static const darkCardBorder = Color(0x35308781); // Teal tinted border
-  static const darkCardBorderStrong = Color(0x504a9993); // Stronger teal border
-  static const darkGlass = Color(0x801C1C1F);
-  static const darkGlassStrong = Color(0xCC151518);
-  static const darkGlassSoft = Color(0x401C1C1F);
-  static const darkNav = Color(0xE60A0A0B);
-  static const darkInputBg = Color(0xFF151518);
-  static const darkInputBorder = Color(0x25287f79); // Teal input border
-  static const darkHairline = Color(0x1AFFFFFF);
-  static const darkShadow = Color(0x99000000);
-  static const darkDimOverlay = Color(0xB3000000);
+  // --- 深色模式 (Deep Forest) ---
+  static const darkBg = Color(0xFF0D1111);
+  static const darkBgSecondary = Color(0xFF151B1B);
+  static const darkSurface = Color(0xFF1C2424);
+  static const darkElevated = Color(0xFF242C2C);
+  static const darkCard = Color(0xFF1C2424);
+  static const darkBorder = Color(0xFF2A3333);
+  static const darkCardBorder = Color(0xFF2A3333);
+  static const darkCardBorderStrong = Color(0xFF364040);
+  static const darkInputBg = Color(0xFF151B1B);
+  static const darkInputBorder = Color(0xFF2A3333);
+  static const darkShadow = Colors.black;
+  static const darkDimOverlay = Color(0x99000000);
+  static const darkGlass = Color(0x1AFFFFFF);
+  static const darkGlassStrong = Color(0x33FFFFFF);
 
-  static const darkTextPrimary = Color(0xFFFAFAFA);
-  static const darkTextSecondary = Color(0xFFB4B4B8); // Improved contrast
-  static const darkTextTertiary = Color(0xFF85858A); // Improved contrast
-  static const darkTextMuted = Color(0xFF52525B);
+  static const darkTextPrimary = Color(0xFFECECEC);
+  static const darkTextSecondary = Color(0xFFA1A8A1);
+  static const darkTextTertiary = Color(0xFF6B726B);
 
-  // Minimalist Premium Light Mode
-  static const lightBg = Color(0xFFFAFAFA); // Softer gray-white
-  static const lightBgSecondary = Color(0xFFF5F5F5); // Secondary background
+  // --- 浅色模式 (Soft Mist) ---
+  static const lightBg = Color(0xFFF8FAF9);
+  static const lightBgSecondary = Color(0xFFF0F4F2);
   static const lightSurface = Color(0xFFFFFFFF);
-  static const lightElevated = Color(0xFFFAFAFA);
-  static const lightCard = Color(0xFFFFFFFF); // Solid white cards
-  static const lightCardHover = Color(0xFFF8FAFA);
-  static const lightCardBorder = Color(0x12D4E5E3); // Teal tinted border
-  static const lightCardBorderStrong = Color(0x25308781); // Stronger teal border
-  static const lightGlass = Color(0xCCFFFFFF);
-  static const lightGlassStrong = Color(0xE6FFFFFF);
-  static const lightGlassSoft = Color(0x80FFFFFF);
-  static const lightNav = Color(0xE6FFFFFF);
-  static const lightInputBg = Color(0xFFFFFFFF);
-  static const lightInputBorder = Color(0x18287f79); // Teal input border
-  static const lightHairline = Color(0x0D000000);
-  static const lightShadow = Color(0x15287f79); // Teal tinted shadows
+  static const lightElevated = Color(0xFFFFFFFF);
+  static const lightCard = Color(0xFFFFFFFF);
+  static const lightBorder = Color(0xFFE2E8E5);
+  static const lightCardBorder = Color(0xFFE2E8E5);
+  static const lightCardBorderStrong = Color(0xFFD1D9D5);
+  static const lightInputBg = Color(0xFFF0F4F2);
+  static const lightInputBorder = Color(0xFFE2E8E5);
+  static const lightShadow = Color(0x0D000000);
   static const lightDimOverlay = Color(0x66000000);
+  static const lightGlass = Color(0x1A000000);
+  static const lightGlassStrong = Color(0x33000000);
+  static const lightHairline = Color(0xFFE2E8E5);
 
-  static const lightTextPrimary = Color(0xFF18181B); // Improved contrast
-  static const lightTextSecondary = Color(0xFF52525B);
-  static const lightTextTertiary = Color(0xFF71717A);
-  static const lightTextMuted = Color(0xFFA1A1AA);
+  static const lightTextPrimary = Color(0xFF1A201E);
+  static const lightTextSecondary = Color(0xFF5F6B68);
+  static const lightTextTertiary = Color(0xFF94A3A0);
 
-  static const expenseGradient = [Color(0xFFEF4444), Color(0xFFDC2626)];
-  static const incomeGradient = [Color(0xFF22C55E), Color(0xFF16A34A)];
-  static const fabGradient = [Color(0xFF308781), Color(0xFF287f79)];
-  
-  // Balance card gradients
-  static const balanceGradientDark = [Color(0xFF1E293B), Color(0xFF0F172A)]; // Slate
-  static const balanceGradientLight = [Color(0xFF308781), Color(0xFF287f79)];
-  static const cardGradientDark = [Color(0xFF1C1C1F), Color(0xFF0A0A0B)];
-  static const cardGradientLight = [Color(0xFFFFFFFF), Color(0xFFFAFAFA)];
+  // 渐变色
+  static const List<Color> balanceGradientDark = [Color(0xFF151B1B), Color(0xFF0D1111)];
+  static const List<Color> balanceGradientLight = [Color(0xFF059669), Color(0xFF10B981)];
 
-  static const error = Color(0xFFEF4444);
-  static const errorLight = Color(0xFFFEE2E2);
-  static const success = Color(0xFF22C55E);
-  static const successLight = Color(0xFFDCFCE7);
-  static const warning = Color(0xFFF59E0B);
-  static const warningLight = Color(0xFFFEF3C7);
-  static const info = Color(0xFF3B82F6);
-  static const infoLight = Color(0xFFDBEAFE);
+  // 通用
+  static const white = Colors.white;
+  static const black = Colors.black;
+  static const transparent = Colors.transparent;
 }
 
 class AppSpacing {
-  AppSpacing._();
-
-  // 8pt Grid System
-  static const unit = 8.0;
-  
-  static const xxs = 4.0;   // 0.5x
-  static const xs = 8.0;    // 1x
-  static const sm = 12.0;   // 1.5x
-  static const md = 16.0;   // 2x
-  static const lg = 24.0;   // 3x
-  static const xl = 32.0;   // 4x
-  static const xxl = 40.0;  // 5x
-  static const xxxl = 48.0; // 6x
-  
-  // Page spacing
-  static const pagePadding = 20.0;
-  static const pageTop = 16.0;
-  static const pageBottom = 110.0;
-  
-  // Card spacing
-  static const cardGap = 16.0;
-  static const cardPadding = 20.0;
-  
-  // List spacing
-  static const listItemGap = 12.0;
-  static const listSectionGap = 24.0;
-}
-
-class AppSize {
-  AppSize._();
-  
-  // Touch targets
-  static const minTouchTarget = 44.0;
-  
-  // Icons
-  static const iconXs = 16.0;
-  static const iconSm = 20.0;
-  static const iconMd = 24.0;
-  static const iconLg = 28.0;
-  static const iconXl = 32.0;
-  
-  // Avatars
-  static const avatarSm = 32.0;
-  static const avatarMd = 48.0;
-  static const avatarLg = 64.0;
-  
-  // Buttons
-  static const buttonSm = 36.0;
-  static const buttonMd = 44.0;
-  static const buttonLg = 52.0;
+  static const double xs = 4.0;
+  static const double sm = 8.0;
+  static const double md = 16.0;
+  static const double lg = 24.0;
+  static const double xl = 32.0;
+  static const double xxl = 40.0;
 }
 
 class AppRadius {
-  AppRadius._();
-
-  static const xs = 8.0;    // Small components
-  static const sm = 12.0;   // Buttons, inputs
-  static const md = 16.0;   // Small cards, list items
-  static const lg = 20.0;   // Standard cards
-  static const xl = 24.0;   // Large cards, balance card
-  static const xxl = 28.0;  // Bottom sheets
+  static const double xs = 8.0;
+  static const double sm = 12.0;
+  static const double md = 16.0;
+  static const double lg = 24.0;
+  static const double xl = 32.0;
   
-  static const sheet = 24.0;
-  static const card = 16.0;
-  static const chip = 20.0;
-  static const button = 12.0;
-  static const round = 999.0;
-  static const pill = 100.0;
+  // 语义化映射 (兼容旧代码)
+  static const double card = 16.0;
+  static const double sheet = 24.0;
+  static const double chip = 20.0;
+  static const double button = 12.0;
+  static const double xxl = 28.0;
+  static const double round = 999.0;
+  static const double pill = 100.0;
+}
+
+class AppSize {
+  static const double navBarHeight = 64.0;
+  static const double fabSize = 64.0;
 }

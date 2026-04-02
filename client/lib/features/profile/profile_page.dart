@@ -126,8 +126,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildSectionTitle('个性化与设置', isDark),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 18),
                   _BentoGridMenu(
                     preferences: preferences,
                     onThemeTap: _showThemePicker,
