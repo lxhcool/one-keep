@@ -4,8 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../network/api_client.dart';
 
 const _defaultApiBaseUrl = 'https://onekeep.lxhcoool.cn';
-const _androidEmulatorApiBaseUrl = 'http://10.0.2.2:3001';
-const _localApiBaseUrl = 'http://127.0.0.1:3001';
+const _androidEmulatorApiBaseUrl = 'http://10.0.2.2:3002';
+const _localApiBaseUrl = 'http://127.0.0.1:3002';
 
 final apiClientProvider = Provider<ApiClient>((ref) {
   return ApiClient(baseUrl: _resolveApiBaseUrl());

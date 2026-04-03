@@ -29,7 +29,7 @@ npm run test:client
 
 # 服务端
 npm run dev:server
-npm run dev:server:3001
+npm run dev:server:3002
 npm run build:server
 npm run start:server
 npm run deploy:server
@@ -39,17 +39,17 @@ npm run deploy:server
 
 当前服务端是 `TypeScript + Node.js + Fastify + Prisma`，生产运行方式是先编译到 `dist/`，再用 Node 启动。
 
-本地联调统一使用 `3001` 端口：
+本地联调统一使用 `3002` 端口：
 
-- Android 模拟器默认访问宿主机 `http://10.0.2.2:3001`
-- Web/Chrome 默认访问 `http://127.0.0.1:3001`
+- Android 模拟器默认访问宿主机 `http://10.0.2.2:3002`
+- Web/Chrome 默认访问 `http://127.0.0.1:3002`
 
 推荐启动方式：
 
 ```bash
 # 1. 启动本地服务端
 cd server
-PORT=3001 HOST=0.0.0.0 npm start
+PORT=3002 HOST=0.0.0.0 npm start
 
 # 2. Android 模拟器运行客户端
 cd ..
@@ -62,7 +62,7 @@ npm run dev:client:web-local
 健康检查：
 
 ```bash
-curl http://127.0.0.1:3001/api/health
+curl http://127.0.0.1:3002/api/health
 ```
 
 正常返回：
