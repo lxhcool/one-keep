@@ -10,8 +10,10 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../core/network/api_client.dart';
 import '../../core/providers/api_provider.dart';
 import '../../core/providers/data_providers.dart';
+import '../../core/providers/preferences_provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/onekeep_iconfont.dart';
+import '../../features/chat/chat_page.dart';
 import '../models/models.dart';
 import 'onekeep_ui.dart';
 
@@ -165,7 +167,7 @@ class _MainShellState extends ConsumerState<MainShell> {
 
   Widget _buildFabItem(bool isDark) {
     return GestureDetector(
-      onTap: () => _showQuickAddSheet(context),
+      onTap: () => _showAddMethodSheet(context),
       child: Container(
         width: 64,
         height: 64,
@@ -190,13 +192,215 @@ class _MainShellState extends ConsumerState<MainShell> {
     );
   }
 
-  void _showQuickAddSheet(BuildContext context) {
+  void _showAddMethodSheet(BuildContext context) {
     showModalBottomSheet<void>(
       context: context,
-      isScrollControlled: true,
       backgroundColor: Colors.transparent,
       barrierColor: Colors.black.withValues(alpha: 0.3),
-      builder: (_) => const _QuickAddSheet(),
+      builder: (_) => const _AddMethodSheet(),
+    );
+  }
+}
+
+/// 记账方式选择弹窗
+class _AddMethodSheet extends ConsumerWidget {
+  const _AddMethodSheet();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final prefs = ref.watch(preferencesProvider);
+
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 32, sigmaY: 32),
+        child: Container(
+          decoration: BoxDecoration(
+            color: isDark
+                ? const Color(0xFF1C1C1E).withValues(alpha: 0.75)
+                : Colors.white.withValues(alpha: 0.8),
+            border: Border(
+              top: BorderSide(
+                color: Colors.white.withValues(alpha: isDark ? 0.08 : 0.6),
+                width: 0.5,
+              ),
+            ),
+          ),
+          child: SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 16, 24, 36),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // 拖拽指示条
+                  Container(
+                    width: 32,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  // 标题
+                  Text(
+                    '选择记账方式',
+                    style: oneKeepManrope(
+                      color: oneKeepTextPrimary(context),
+                      size: 20,
+                      weight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  // 选项
+                  Row(
+                    children: [
+                      // 人工记账
+                      Expanded(
+                        child: OneKeepBouncingCard(
+                          onTap: () {
+                            Navigator.pop(context);
+                            showModalBottomSheet<void>(
+                              context: context,
+                              isScrollControlled: true,
+                              backgroundColor: Colors.transparent,
+                              barrierColor: Colors.black.withValues(alpha: 0.3),
+                              builder: (_) => const _QuickAddSheet(),
+                            );
+                          },
+                          child: Container(
+                            height: 160,
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? const Color(0xFF2C2C2E)
+                                  : const Color(0xFFF8FAFC),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.05),
+                                width: 0.5,
+                              ),
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  width: 52,
+                                  height: 52,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.emerald.withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: const Icon(
+                                    LucideIcons.pencil,
+                                    color: AppColors.emerald,
+                                    size: 24,
+                                  ),
+                                ),
+                                const SizedBox(height: 14),
+                                Text(
+                                  '手动记账',
+                                  style: oneKeepManrope(
+                                    color: oneKeepTextPrimary(context),
+                                    size: 16,
+                                    weight: FontWeight.w700,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '快速输入金额',
+                                  style: oneKeepInter(
+                                    color: oneKeepTextSecondary(context),
+                                    size: 12,
+                                    weight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      // 聊天记账
+                      Expanded(
+                        child: OneKeepBouncingCard(
+                          onTap: () {
+                            Navigator.pop(context);
+                            Navigator.of(context, rootNavigator: true).push(
+                              MaterialPageRoute(builder: (_) => const ChatPage()),
+                            );
+                          },
+                          child: Container(
+                            height: 160,
+                            decoration: BoxDecoration(
+                              gradient: prefs.hasAiConfigured
+                                  ? const LinearGradient(
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                      colors: [AppColors.emeraldLight, AppColors.emerald],
+                                    )
+                                  : null,
+                              color: prefs.hasAiConfigured
+                                  ? null
+                                  : (isDark ? const Color(0xFF2C2C2E) : const Color(0xFFF8FAFC)),
+                              borderRadius: BorderRadius.circular(20),
+                              border: prefs.hasAiConfigured
+                                  ? null
+                                  : Border.all(
+                                      color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.05),
+                                      width: 0.5,
+                                    ),
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  width: 52,
+                                  height: 52,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: prefs.hasAiConfigured ? 0.2 : 0.12),
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: Icon(
+                                    LucideIcons.messageCircle,
+                                    color: prefs.hasAiConfigured ? Colors.white : AppColors.emerald,
+                                    size: 24,
+                                  ),
+                                ),
+                                const SizedBox(height: 14),
+                                Text(
+                                  '聊天记账',
+                                  style: oneKeepManrope(
+                                    color: prefs.hasAiConfigured ? Colors.white : oneKeepTextPrimary(context),
+                                    size: 16,
+                                    weight: FontWeight.w700,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  prefs.hasAiConfigured ? 'AI 智能识别' : '需先配置 AI',
+                                  style: oneKeepInter(
+                                    color: prefs.hasAiConfigured
+                                        ? Colors.white.withValues(alpha: 0.8)
+                                        : oneKeepTextSecondary(context),
+                                    size: 12,
+                                    weight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -228,13 +432,13 @@ class _NavSlot extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 24, color: color),
+          Icon(icon, size: 26, color: color),
           const SizedBox(height: 4),
           Text(
             label,
             style: oneKeepInter(
               color: color,
-              size: 10,
+              size: 12,
               weight: active ? FontWeight.w700 : FontWeight.w500,
             ),
           ),

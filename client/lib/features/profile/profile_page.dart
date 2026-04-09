@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'category_settings_page.dart';
+import 'ai_settings_page.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/data_providers.dart';
 import '../../core/providers/preferences_provider.dart';
@@ -134,6 +135,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     onAvatarTap: _showAvatarStudio,
                     onNicknameTap: _showNicknameSheet,
                     onCategoryTap: _openCategorySettings,
+                    onAiTap: _openAiSettings,
                   ),
                   const SizedBox(height: 48),
                   OneKeepBouncingCard(
@@ -467,6 +469,12 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     );
   }
 
+  void _openAiSettings() {
+    Navigator.of(context, rootNavigator: true).push(
+      MaterialPageRoute(builder: (context) => const AiSettingsPage()),
+    );
+  }
+
   Future<void> _showThemePicker() async {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -772,6 +780,7 @@ class _BentoGridMenu extends StatelessWidget {
   final VoidCallback onAvatarTap;
   final VoidCallback onNicknameTap;
   final VoidCallback onCategoryTap;
+  final VoidCallback onAiTap;
 
   const _BentoGridMenu({
     required this.preferences,
@@ -780,6 +789,7 @@ class _BentoGridMenu extends StatelessWidget {
     required this.onAvatarTap,
     required this.onNicknameTap,
     required this.onCategoryTap,
+    required this.onAiTap,
   });
 
   @override
@@ -934,7 +944,7 @@ class _BentoGridMenu extends StatelessWidget {
             children: [
               Expanded(
                 child: OneKeepBouncingCard(
-                  onTap: () {},
+                  onTap: onAiTap,
                   child: _BentoBlock(
                     height: 68,
                     color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
@@ -943,13 +953,13 @@ class _BentoGridMenu extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF3B82F6).withValues(alpha: 0.08),
+                            color: AppColors.emerald.withValues(alpha: 0.08),
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(Icons.help_outline_rounded, color: Color(0xFF3B82F6), size: 18),
+                          child: const Icon(Icons.smart_toy_rounded, color: AppColors.emerald, size: 18),
                         ),
                         const SizedBox(width: 12),
-                        Text('帮助反馈', style: _bentoTitleStyle(isDark)),
+                        Text('AI 设置', style: _bentoTitleStyle(isDark)),
                       ],
                     )
                   ),

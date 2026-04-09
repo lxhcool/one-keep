@@ -12,6 +12,9 @@ class PreferencesState {
   final int avatarIndex;
   final String? avatarImageData;
   final String? profileBackgroundImageData;
+  final String aiApiBaseUrl;
+  final String aiApiKey;
+  final String aiModelName;
   final bool isLoaded;
 
   const PreferencesState({
@@ -20,8 +23,13 @@ class PreferencesState {
     this.avatarIndex = 0,
     this.avatarImageData,
     this.profileBackgroundImageData,
+    this.aiApiBaseUrl = '',
+    this.aiApiKey = '',
+    this.aiModelName = '',
     this.isLoaded = false,
   });
+
+  bool get hasAiConfigured => aiApiBaseUrl.isNotEmpty && aiApiKey.isNotEmpty;
 
   PreferencesState copyWith({
     ThemeMode? themeMode,
@@ -29,6 +37,9 @@ class PreferencesState {
     int? avatarIndex,
     Object? avatarImageData = _noPreferenceChange,
     Object? profileBackgroundImageData = _noPreferenceChange,
+    String? aiApiBaseUrl,
+    String? aiApiKey,
+    String? aiModelName,
     bool? isLoaded,
   }) {
     return PreferencesState(
@@ -42,6 +53,9 @@ class PreferencesState {
           profileBackgroundImageData == _noPreferenceChange
           ? this.profileBackgroundImageData
           : profileBackgroundImageData as String?,
+      aiApiBaseUrl: aiApiBaseUrl ?? this.aiApiBaseUrl,
+      aiApiKey: aiApiKey ?? this.aiApiKey,
+      aiModelName: aiModelName ?? this.aiModelName,
       isLoaded: isLoaded ?? this.isLoaded,
     );
   }
@@ -59,6 +73,9 @@ class PreferencesNotifier extends StateNotifier<PreferencesState> {
   static const _avatarIndexKey = 'pref_avatar_index';
   static const _avatarImageKey = 'pref_avatar_image';
   static const _profileBackgroundImageKey = 'pref_profile_background_image';
+  static const _aiApiBaseUrlKey = 'pref_ai_api_base_url';
+  static const _aiApiKeyKey = 'pref_ai_api_key';
+  static const _aiModelNameKey = 'pref_ai_model_name';
   static const _legacyUserPrefsMigratedKey = 'pref_user_scoped_migrated';
 
   Future<void> _load() async {
@@ -96,6 +113,15 @@ class PreferencesNotifier extends StateNotifier<PreferencesState> {
     final profileBackgroundImageValue = await _storage.read(
       key: _scopedKey(userId, _profileBackgroundImageKey),
     );
+    final aiApiBaseUrlValue = await _storage.read(
+      key: _scopedKey(userId, _aiApiBaseUrlKey),
+    );
+    final aiApiKeyValue = await _storage.read(
+      key: _scopedKey(userId, _aiApiKeyKey),
+    );
+    final aiModelNameValue = await _storage.read(
+      key: _scopedKey(userId, _aiModelNameKey),
+    );
 
     state = PreferencesState(
       themeMode: _decodeThemeMode(themeModeValue),
@@ -103,6 +129,9 @@ class PreferencesNotifier extends StateNotifier<PreferencesState> {
       avatarIndex: int.tryParse(avatarValue ?? '') ?? 0,
       avatarImageData: avatarImageValue,
       profileBackgroundImageData: profileBackgroundImageValue,
+      aiApiBaseUrl: aiApiBaseUrlValue ?? '',
+      aiApiKey: aiApiKeyValue ?? '',
+      aiModelName: aiModelNameValue ?? '',
       isLoaded: true,
     );
   }
@@ -149,6 +178,31 @@ class PreferencesNotifier extends StateNotifier<PreferencesState> {
   Future<void> clearProfileBackgroundImageData() async {
     state = state.copyWith(profileBackgroundImageData: null);
     await _deleteScopedValue(_profileBackgroundImageKey);
+  }
+
+  Future<void> setAiApiBaseUrl(String url) async {
+    final trimmed = url.trim();
+    state = state.copyWith(aiApiBaseUrl: trimmed);
+    await _writeScopedValue(_aiApiBaseUrlKey, trimmed);
+  }
+
+  Future<void> setAiApiKey(String key) async {
+    final trimmed = key.trim();
+    state = state.copyWith(aiApiKey: trimmed);
+    await _writeScopedValue(_aiApiKeyKey, trimmed);
+  }
+
+  Future<void> setAiModelName(String name) async {
+    final trimmed = name.trim();
+    state = state.copyWith(aiModelName: trimmed);
+    await _writeScopedValue(_aiModelNameKey, trimmed);
+  }
+
+  Future<void> clearAiConfig() async {
+    state = state.copyWith(aiApiBaseUrl: '', aiApiKey: '', aiModelName: '');
+    await _deleteScopedValue(_aiApiBaseUrlKey);
+    await _deleteScopedValue(_aiApiKeyKey);
+    await _deleteScopedValue(_aiModelNameKey);
   }
 
   String _scopedKey(String userId, String key) => '${key}_$userId';

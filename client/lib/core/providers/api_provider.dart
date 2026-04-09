@@ -15,12 +15,5 @@ String _resolveApiBaseUrl() {
   const override = String.fromEnvironment('API_BASE_URL');
   if (override.isNotEmpty) return override;
 
-  if (kReleaseMode || kIsWeb) return _defaultApiBaseUrl;
-
-  switch (defaultTargetPlatform) {
-    case TargetPlatform.android:
-      return _androidEmulatorApiBaseUrl;
-    default:
-      return _localApiBaseUrl;
-  }
+  return _defaultApiBaseUrl;
 }
