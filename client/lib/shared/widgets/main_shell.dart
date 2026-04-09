@@ -68,7 +68,7 @@ class _MainShellState extends ConsumerState<MainShell> {
         : AppColors.lightTextTertiary;
     final bottomInset = MediaQuery.of(context).padding.bottom;
     const barHeight = 64.0;
-    const fabLift = 28.0;
+    const fabLift = 46.0;
 
     return SizedBox(
       height: barHeight + bottomInset + fabLift,
@@ -130,7 +130,7 @@ class _MainShellState extends ConsumerState<MainShell> {
                               inactiveColor: inactive,
                               onTap: () => _onTap(1),
                             ),
-                            const SizedBox(width: 60),
+                            const SizedBox(width: 86),
                             _NavSlot(
                               icon: oneKeepIconFont('a-064_wenben')!,
                               label: '账单',
@@ -165,20 +165,39 @@ class _MainShellState extends ConsumerState<MainShell> {
     );
   }
 
+  void _showManualEntrySheet(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.3),
+      builder: (_) => const _QuickAddSheet(),
+    );
+  }
+
   Widget _buildFabItem(bool isDark) {
     return GestureDetector(
-      onTap: () => _showAddMethodSheet(context),
+      onTap: () {
+        HapticFeedback.lightImpact();
+        Navigator.of(context, rootNavigator: true).push(
+          MaterialPageRoute(builder: (_) => const ChatPage()),
+        );
+      },
+      onLongPress: () {
+        HapticFeedback.mediumImpact();
+        _showManualEntrySheet(context);
+      },
       child: Container(
-        width: 64,
-        height: 64,
+        width: 86,
+        height: 86,
         decoration: BoxDecoration(
           color: AppColors.emerald,
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: AppColors.emerald.withValues(alpha: 0.3),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
+              color: AppColors.emerald.withValues(alpha: 0.38),
+              blurRadius: 24,
+              offset: const Offset(0, 7),
             )
           ],
           gradient: const LinearGradient(
@@ -187,7 +206,7 @@ class _MainShellState extends ConsumerState<MainShell> {
             colors: [AppColors.emeraldLight, AppColors.emerald],
           ),
         ),
-        child: const Icon(Icons.add_rounded, color: Colors.white, size: 36),
+        child: const Icon(LucideIcons.mic, color: Colors.white, size: 38),
       ),
     );
   }
@@ -212,14 +231,14 @@ class _AddMethodSheet extends ConsumerWidget {
     final prefs = ref.watch(preferencesProvider);
 
     return ClipRRect(
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 32, sigmaY: 32),
         child: Container(
           decoration: BoxDecoration(
             color: isDark
-                ? const Color(0xFF1C1C1E).withValues(alpha: 0.75)
-                : Colors.white.withValues(alpha: 0.8),
+                ? const Color(0xFF1C1C1E).withValues(alpha: 0.8)
+                : Colors.white.withValues(alpha: 0.85),
             border: Border(
               top: BorderSide(
                 color: Colors.white.withValues(alpha: isDark ? 0.08 : 0.6),
@@ -230,11 +249,11 @@ class _AddMethodSheet extends ConsumerWidget {
           child: SafeArea(
             top: false,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 16, 24, 36),
+              padding: const EdgeInsets.fromLTRB(20, 14, 20, 28),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // 拖拽指示条
+                  // 拖拽条
                   Container(
                     width: 32,
                     height: 4,
@@ -243,157 +262,201 @@ class _AddMethodSheet extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                  const SizedBox(height: 24),
-                  // 标题
-                  Text(
-                    '选择记账方式',
-                    style: oneKeepManrope(
-                      color: oneKeepTextPrimary(context),
-                      size: 20,
-                      weight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  // 选项
-                  Row(
-                    children: [
-                      // 人工记账
-                      Expanded(
-                        child: OneKeepBouncingCard(
-                          onTap: () {
-                            Navigator.pop(context);
-                            showModalBottomSheet<void>(
-                              context: context,
-                              isScrollControlled: true,
-                              backgroundColor: Colors.transparent,
-                              barrierColor: Colors.black.withValues(alpha: 0.3),
-                              builder: (_) => const _QuickAddSheet(),
-                            );
-                          },
-                          child: Container(
-                            height: 160,
-                            decoration: BoxDecoration(
-                              color: isDark
-                                  ? const Color(0xFF2C2C2E)
-                                  : const Color(0xFFF8FAFC),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.05),
+                  const SizedBox(height: 20),
+
+                  // ── 主按钮：AI 聊天记账 ───────────────────────────
+                  OneKeepBouncingCard(
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.of(context, rootNavigator: true).push(
+                        MaterialPageRoute(builder: (_) => const ChatPage()),
+                      );
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 20),
+                      decoration: BoxDecoration(
+                        gradient: prefs.hasAiConfigured
+                            ? const LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [Color(0xFF34D399), Color(0xFF059669)],
+                              )
+                            : null,
+                        color: prefs.hasAiConfigured
+                            ? null
+                            : (isDark ? const Color(0xFF2C2C2E) : const Color(0xFFF3F4F6)),
+                        borderRadius: BorderRadius.circular(20),
+                        border: prefs.hasAiConfigured
+                            ? null
+                            : Border.all(
+                                color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.06),
                                 width: 0.5,
                               ),
-                            ),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Container(
-                                  width: 52,
-                                  height: 52,
-                                  decoration: BoxDecoration(
-                                    color: AppColors.emerald.withValues(alpha: 0.12),
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  child: const Icon(
-                                    LucideIcons.pencil,
-                                    color: AppColors.emerald,
-                                    size: 24,
-                                  ),
+                        boxShadow: prefs.hasAiConfigured
+                            ? [
+                                BoxShadow(
+                                  color: AppColors.emerald.withValues(alpha: 0.28),
+                                  blurRadius: 20,
+                                  offset: const Offset(0, 8),
                                 ),
-                                const SizedBox(height: 14),
+                              ]
+                            : null,
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 52,
+                            height: 52,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(
+                                alpha: prefs.hasAiConfigured ? 0.18 : 0.0,
+                              ),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Icon(
+                              Icons.smart_toy_rounded,
+                              size: 28,
+                              color: prefs.hasAiConfigured
+                                  ? Colors.white
+                                  : AppColors.emerald,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
                                 Text(
-                                  '手动记账',
+                                  'AI 聊天记账',
                                   style: oneKeepManrope(
-                                    color: oneKeepTextPrimary(context),
-                                    size: 16,
+                                    color: prefs.hasAiConfigured
+                                        ? Colors.white
+                                        : oneKeepTextPrimary(context),
+                                    size: 18,
                                     weight: FontWeight.w700,
                                   ),
                                 ),
-                                const SizedBox(height: 4),
+                                const SizedBox(height: 3),
                                 Text(
-                                  '快速输入金额',
+                                  prefs.hasAiConfigured
+                                      ? '说出消费，AI 自动识别分类'
+                                      : '需先在「我的 → AI 设置」中配置',
                                   style: oneKeepInter(
-                                    color: oneKeepTextSecondary(context),
-                                    size: 12,
-                                    weight: FontWeight.w500,
+                                    color: prefs.hasAiConfigured
+                                        ? Colors.white.withValues(alpha: 0.75)
+                                        : oneKeepTextSecondary(context),
+                                    size: 13,
+                                    weight: FontWeight.w400,
                                   ),
                                 ),
                               ],
                             ),
+                          ),
+                          Icon(
+                            Icons.arrow_forward_ios_rounded,
+                            size: 15,
+                            color: prefs.hasAiConfigured
+                                ? Colors.white.withValues(alpha: 0.5)
+                                : oneKeepTextTertiary(context),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // ── 分割线 ─────────────────────────────────────
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          height: 0.5,
+                          color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.07),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: Text(
+                          '或',
+                          style: oneKeepInter(
+                            color: oneKeepTextTertiary(context),
+                            size: 12,
+                            weight: FontWeight.w500,
                           ),
                         ),
                       ),
-                      const SizedBox(width: 16),
-                      // 聊天记账
                       Expanded(
-                        child: OneKeepBouncingCard(
-                          onTap: () {
-                            Navigator.pop(context);
-                            Navigator.of(context, rootNavigator: true).push(
-                              MaterialPageRoute(builder: (_) => const ChatPage()),
-                            );
-                          },
-                          child: Container(
-                            height: 160,
-                            decoration: BoxDecoration(
-                              gradient: prefs.hasAiConfigured
-                                  ? const LinearGradient(
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                      colors: [AppColors.emeraldLight, AppColors.emerald],
-                                    )
-                                  : null,
-                              color: prefs.hasAiConfigured
-                                  ? null
-                                  : (isDark ? const Color(0xFF2C2C2E) : const Color(0xFFF8FAFC)),
-                              borderRadius: BorderRadius.circular(20),
-                              border: prefs.hasAiConfigured
-                                  ? null
-                                  : Border.all(
-                                      color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.05),
-                                      width: 0.5,
-                                    ),
-                            ),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Container(
-                                  width: 52,
-                                  height: 52,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withValues(alpha: prefs.hasAiConfigured ? 0.2 : 0.12),
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  child: Icon(
-                                    LucideIcons.messageCircle,
-                                    color: prefs.hasAiConfigured ? Colors.white : AppColors.emerald,
-                                    size: 24,
-                                  ),
-                                ),
-                                const SizedBox(height: 14),
-                                Text(
-                                  '聊天记账',
-                                  style: oneKeepManrope(
-                                    color: prefs.hasAiConfigured ? Colors.white : oneKeepTextPrimary(context),
-                                    size: 16,
-                                    weight: FontWeight.w700,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  prefs.hasAiConfigured ? 'AI 智能识别' : '需先配置 AI',
-                                  style: oneKeepInter(
-                                    color: prefs.hasAiConfigured
-                                        ? Colors.white.withValues(alpha: 0.8)
-                                        : oneKeepTextSecondary(context),
-                                    size: 12,
-                                    weight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                        child: Container(
+                          height: 0.5,
+                          color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.07),
                         ),
                       ),
                     ],
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // ── 次级按钮：手动记账 ──────────────────────────
+                  OneKeepBouncingCard(
+                    onTap: () {
+                      Navigator.pop(context);
+                      showModalBottomSheet<void>(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        barrierColor: Colors.black.withValues(alpha: 0.3),
+                        builder: (_) => const _QuickAddSheet(),
+                      );
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.05)
+                            : Colors.black.withValues(alpha: 0.03),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.06),
+                          width: 0.5,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            LucideIcons.pencil,
+                            size: 18,
+                            color: oneKeepTextSecondary(context),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            '手动记账',
+                            style: oneKeepManrope(
+                              color: oneKeepTextSecondary(context),
+                              size: 15,
+                              weight: FontWeight.w600,
+                            ),
+                          ),
+                          const Spacer(),
+                          Text(
+                            '快速输入金额',
+                            style: oneKeepInter(
+                              color: oneKeepTextTertiary(context),
+                              size: 12,
+                              weight: FontWeight.w400,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Icon(
+                            Icons.arrow_forward_ios_rounded,
+                            size: 12,
+                            color: oneKeepTextTertiary(context),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ],
               ),
