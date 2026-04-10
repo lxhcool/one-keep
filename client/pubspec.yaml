@@ -41,6 +41,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/app-logo.png
+    - assets/category/
   fonts:
     - family: OneKeepIconFont
       fonts:

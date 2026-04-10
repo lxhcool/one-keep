@@ -12,6 +12,7 @@ import '../../core/providers/api_provider.dart';
 import '../../core/providers/data_providers.dart';
 import '../../core/providers/preferences_provider.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/category_icons.dart';
 import '../../core/theme/onekeep_iconfont.dart';
 import '../../features/chat/chat_page.dart';
 import '../models/models.dart';
@@ -845,10 +846,15 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet>
                   borderRadius: BorderRadius.circular(18),
                   border: selected ? Border.all(color: tone.withValues(alpha: 0.4), width: 1.5) : null,
                 ),
-                child: Icon(
-                  oneKeepResolvedCategoryIcon(item.name, item.name, item.icon),
-                  size: 24,
-                  color: selected ? tone : oneKeepTextSecondary(context),
+                child: Image.asset(
+                  resolveCategoryIconAsset(item.icon.isNotEmpty ? item.icon : item.name),
+                  width: 24,
+                  height: 24,
+                  errorBuilder: (_, __, ___) => Icon(
+                    Icons.receipt_long_rounded,
+                    size: 24,
+                    color: selected ? tone : oneKeepTextSecondary(context),
+                  ),
                 ),
               ),
               const SizedBox(height: 6),

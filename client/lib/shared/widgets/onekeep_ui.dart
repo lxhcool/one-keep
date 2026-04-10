@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/category_icons.dart';
 import '../../core/theme/onekeep_iconfont.dart';
 
 enum OneKeepPageVariant { auth, home, stats, bills, profile }
@@ -154,7 +155,7 @@ class OneKeepCategoryBadge extends StatelessWidget {
       categoryName: categoryName,
       categoryIcon: categoryIcon,
     );
-    final icon = oneKeepResolvedCategoryIcon(title, categoryName, categoryIcon);
+    final assetPath = resolveCategoryIconAsset(categoryIcon.isNotEmpty ? categoryIcon : categoryName);
 
     return Container(
       width: size,
@@ -169,7 +170,18 @@ class OneKeepCategoryBadge extends StatelessWidget {
               )
             : null,
       ),
-      child: Icon(icon, size: iconSize, color: tone),
+      child: Center(
+        child: Image.asset(
+          assetPath,
+          width: iconSize,
+          height: iconSize,
+          errorBuilder: (_, __, ___) => Icon(
+            Icons.receipt_long_rounded,
+            size: iconSize,
+            color: tone,
+          ),
+        ),
+      ),
     );
   }
 }

@@ -7,6 +7,7 @@ import '../../core/network/api_client.dart';
 import '../../core/providers/api_provider.dart';
 import '../../core/providers/data_providers.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/category_icons.dart';
 import '../../core/theme/onekeep_iconfont.dart';
 import '../../shared/models/models.dart';
 import '../../shared/widgets/onekeep_ui.dart';
@@ -200,10 +201,15 @@ class _CategorySettingsPageState extends ConsumerState<CategorySettingsPage> {
                     shape: BoxShape.circle,
                   ),
                   child: Center(
-                    child: Icon(
-                      oneKeepIconFont(category.icon) ?? Icons.category,
-                      color: tone,
-                      size: 24,
+                    child: Image.asset(
+                      resolveCategoryIconAsset(category.icon.isNotEmpty ? category.icon : category.name),
+                      width: 24,
+                      height: 24,
+                      errorBuilder: (_, __, ___) => Icon(
+                        Icons.category,
+                        color: tone,
+                        size: 24,
+                      ),
                     ),
                   ),
                 ),
@@ -550,14 +556,14 @@ class _CategoryEditorPageState extends State<CategoryEditorPage> {
                   crossAxisSpacing: 16,
                   mainAxisSpacing: 20,
                 ),
-                itemCount: oneKeepCategoryIconKeys.length,
+                itemCount: categoryIconEntries.length,
                 itemBuilder: (context, index) {
-                  final key = oneKeepCategoryIconKeys[index];
-                  final isSelected = _icon == key;
+                  final entry = categoryIconEntries[index];
+                  final isSelected = _icon == entry.key;
                   return GestureDetector(
                     onTap: () {
                       HapticFeedback.lightImpact();
-                      setState(() => _icon = key);
+                      setState(() => _icon = entry.key);
                     },
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
@@ -565,10 +571,15 @@ class _CategoryEditorPageState extends State<CategoryEditorPage> {
                         color: isSelected ? _color.withValues(alpha: 0.12) : Colors.transparent,
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(
-                        oneKeepIconFont(key) ?? Icons.category,
-                        color: isSelected ? _color : (isDark ? const Color(0xFF5C5C5E) : const Color(0xFF999999)),
-                        size: 28,
+                      child: Image.asset(
+                        entry.asset,
+                        width: 28,
+                        height: 28,
+                        errorBuilder: (_, __, ___) => Icon(
+                          Icons.category,
+                          color: isSelected ? _color : (isDark ? const Color(0xFF5C5C5E) : const Color(0xFF999999)),
+                          size: 28,
+                        ),
                       ),
                     ),
                   );

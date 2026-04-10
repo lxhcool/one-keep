@@ -7,6 +7,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../core/providers/data_providers.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/category_icons.dart';
 import '../models/models.dart';
 import 'onekeep_ui.dart';
 
@@ -370,10 +371,15 @@ class _CategoryGrid extends StatelessWidget {
                     borderRadius: BorderRadius.circular(16),
                     border: selected ? Border.all(color: tone.withValues(alpha: 0.4), width: 1.5) : null,
                   ),
-                  child: Icon(
-                    oneKeepResolvedCategoryIcon(item.name, item.name, item.icon), 
-                    size: 22, 
-                    color: selected ? tone : unselectedColor,
+                  child: Image.asset(
+                    resolveCategoryIconAsset(item.icon.isNotEmpty ? item.icon : item.name),
+                    width: 22,
+                    height: 22,
+                    errorBuilder: (_, __, ___) => Icon(
+                      Icons.receipt_long_rounded,
+                      size: 22,
+                      color: selected ? tone : unselectedColor,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 6),
