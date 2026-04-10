@@ -52,3 +52,5 @@ flutter_launcher_icons:
   image_path: assets/images/app-logo.png
   min_sdk_android: 21
   remove_alpha_ios: true
+  adaptive_icon_background: "#10B981"
+  adaptive_icon_foreground: assets/images/app-logo.png

@@ -101,33 +101,53 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     }
 
     final t = (_scrollOffset / 150.0).clamp(0.0, 1.0);
+    final topPadding = MediaQuery.of(context).padding.top;
+    final bgHeight = 320.0 + topPadding;
+    const baseAvatarSize = 88.0;
+    const minAvatarSize = 54.0;
+    final avatarSize = baseAvatarSize - (baseAvatarSize - minAvatarSize) * t;
+    final fontSize = 28.0 - 8.0 * t;
+    final profileBlockOffsetY = 6.0 * (1 - t);
+    final usernameVisibility = (1 - t).clamp(0.0, 1.0);
+    final hasBackground = _backgroundBytes != null;
+    final actualScrollOffset = _scrollController.hasClients ? _scrollController.offset.clamp(0.0, double.infinity) : 0.0;
+    final avatarTop = (bgHeight - avatarSize - 44 - actualScrollOffset).clamp(topPadding + 12.0, double.infinity);
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF000000) : const Color(0xFFF2F2F7),
-      body: CustomScrollView(
-        controller: _scrollController,
-        physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-        slivers: [
-          SliverToBoxAdapter(
-            child: _buildHeroSection(
-              t: t,
-              isDark: isDark,
-              displayName: displayName,
-              username: username,
-              totalExpense: totalExpense,
-              totalIncome: totalIncome,
-              balance: balance,
-              isLoading: statsState.isLoading && statsOverview == null,
-              preferences: preferences,
-            ),
-          ),
+      body: Stack(
+        children: [
+          CustomScrollView(
+            controller: _scrollController,
+            physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+            slivers: [
+              SliverToBoxAdapter(
+                child: _buildHeroSection(
+                  t: t,
+                  isDark: isDark,
+                ),
+              ),
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 18),
+                  // Placeholder shortened to match overlay offset (-25px)
+                  Transform.translate(
+                    offset: const Offset(0, -21),
+                    child: Opacity(
+                      opacity: 0,
+                      child: _buildFinanceOverview(
+                        isDark: isDark,
+                        totalExpense: totalExpense,
+                        totalIncome: totalIncome,
+                        balance: balance,
+                        isLoading: statsState.isLoading && statsOverview == null,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 0),
                   _BentoGridMenu(
                     preferences: preferences,
                     onThemeTap: _showThemePicker,
@@ -137,24 +157,17 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     onCategoryTap: _openCategorySettings,
                     onAiTap: _openAiSettings,
                   ),
-                  const SizedBox(height: 48),
+                  const SizedBox(height: 28),
                   OneKeepBouncingCard(
                     onTap: () => ref.read(authProvider.notifier).logout(),
                     child: Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 20),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: [
-                          BoxShadow(
-                            color: isDark ? Colors.black.withValues(alpha: 0.3) : const Color(0x06000000),
-                            blurRadius: 20,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
+                        color: isDark ? const Color(0xFFFF3B30).withValues(alpha: 0.08) : const Color(0xFFFF3B30).withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: isDark ? Colors.white.withValues(alpha: 0.02) : Colors.black.withValues(alpha: 0.01),
+                          color: const Color(0xFFFF3B30).withValues(alpha: 0.1),
                         ),
                       ),
                       child: Row(
@@ -162,115 +175,33 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                         children: [
                           Icon(
                             Icons.power_settings_new_rounded,
-                            size: 20,
-                            color: const Color(0xFFFF3B30).withValues(alpha: 0.8),
+                            size: 18,
+                            color: const Color(0xFFFF3B30).withValues(alpha: 0.7),
                           ),
-                          const SizedBox(width: 10),
+                          const SizedBox(width: 8),
                           Text(
-                            '退出当前账号',
+                            '退出登录',
                             style: TextStyle(
-                              color: const Color(0xFFFF3B30),
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 0.3,
+                              color: const Color(0xFFFF3B30).withValues(alpha: 0.8),
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.2,
                             ),
                           ),
                         ],
                       ),
                     ),
                   ),
-                  const SizedBox(height: 140),
+                  const SizedBox(height: 120),
                 ],
               ),
             ),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildSectionTitle(String title, bool isDark) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 8, bottom: 8),
-      child: Text(
-        title.toUpperCase(),
-        style: TextStyle(
-          color: isDark ? const Color(0xFF86868B) : const Color(0xFF86868B),
-          fontSize: 12,
-          fontWeight: FontWeight.w800,
-          letterSpacing: 1.2,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeroSection({
-    required double t,
-    required bool isDark,
-    required String displayName,
-    required String username,
-    required double totalExpense,
-    required double totalIncome,
-    required double balance,
-    required bool isLoading,
-    required dynamic preferences,
-  }) {
-    final topPadding = MediaQuery.of(context).padding.top;
-    final bgHeight = 300.0 + topPadding;
-    const baseAvatarSize = 88.0;
-    const minAvatarSize = 54.0;
-    final avatarSize = baseAvatarSize - (baseAvatarSize - minAvatarSize) * t;
-    final fontSize = 28.0 - 8.0 * t;
-    final hasBackground = _backgroundBytes != null;
-
-    return SizedBox(
-      width: double.infinity,
-      height: bgHeight + 178, // background + card area
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          // ── Background ────────────────────────────────────────────
+          // ── Avatar & Nickname (fixed overlay, never enters status bar) ──
           Positioned(
-            top: 0, left: 0, right: 0, height: bgHeight,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                if (_backgroundBytes != null)
-                  Image.memory(_backgroundBytes!, fit: BoxFit.cover)
-                else
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: isDark
-                            ? [const Color(0xFF121214), const Color(0xFF1C1C1E)]
-                            : [const Color(0xFFE2E2E7), const Color(0xFFF2F2F7)],
-                      ),
-                    ),
-                  ),
-                Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        hasBackground ? Colors.black.withValues(alpha: 0.0) : Colors.transparent,
-                        hasBackground
-                            ? Colors.black.withValues(alpha: 0.55)
-                            : (isDark ? const Color(0xFF000000) : const Color(0xFFF2F2F7)),
-                      ],
-                      stops: hasBackground ? const [0.4, 1.0] : null,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // ── Avatar & Nickname (anchored near bottom of background) ──
-          Positioned(
-            top: bgHeight - avatarSize - 44,
+            top: avatarTop,
             left: 20,
             right: 20,
             child: Row(
@@ -318,82 +249,310 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 ),
                 SizedBox(width: (20 - 4 * t).clamp(12.0, 20.0)),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      OneKeepBouncingCard(
-                        onTap: _showNicknameSheet,
-                        child: Row(
+                  child: SizedBox(
+                    height: avatarSize,
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Transform.translate(
+                        offset: Offset(0, profileBlockOffsetY),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Flexible(
-                              child: Text(
-                                displayName,
-                                style: TextStyle(
-                                  color: hasBackground || isDark ? Colors.white : const Color(0xFF1C1C1E),
-                                  fontSize: fontSize,
-                                  fontWeight: FontWeight.w900,
-                                  letterSpacing: -0.8,
-                                  height: 1.1,
-                                  shadows: hasBackground
-                                      ? [Shadow(color: Colors.black.withValues(alpha: (0.3 * (1 - t)).clamp(0, 0.3)), blurRadius: 10, offset: const Offset(0, 2))]
-                                      : null,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                            OneKeepBouncingCard(
+                              onTap: _showNicknameSheet,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      displayName,
+                                      style: TextStyle(
+                                        color: hasBackground || isDark ? Colors.white : const Color(0xFF1C1C1E),
+                                        fontSize: fontSize,
+                                        fontWeight: FontWeight.w900,
+                                        letterSpacing: -0.8,
+                                        height: 1.1,
+                                        shadows: hasBackground
+                                            ? [Shadow(color: Colors.black.withValues(alpha: (0.3 * (1 - t)).clamp(0, 0.3)), blurRadius: 10, offset: const Offset(0, 2))]
+                                            : null,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Opacity(
+                                    opacity: (1 - t * 0.5).clamp(0.0, 1.0),
+                                    child: Icon(Icons.verified_rounded, size: 18 * (1 - t * 0.2), color: AppColors.teal),
+                                  ),
+                                ],
                               ),
                             ),
-                            const SizedBox(width: 6),
-                            Opacity(
-                              opacity: (1 - t * 0.5).clamp(0.0, 1.0),
-                              child: Icon(Icons.verified_rounded, size: 18 * (1 - t * 0.2), color: AppColors.teal),
-                            ),
+                            if (username.isNotEmpty)
+                              ClipRect(
+                                child: Align(
+                                  alignment: Alignment.topLeft,
+                                  heightFactor: usernameVisibility,
+                                  child: Opacity(
+                                    opacity: usernameVisibility,
+                                    child: Padding(
+                                      padding: EdgeInsets.only(top: 10 * usernameVisibility),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: (hasBackground || isDark ? Colors.white : Colors.black).withValues(alpha: 0.08),
+                                          borderRadius: BorderRadius.circular(8),
+                                          border: Border.all(color: (hasBackground || isDark ? Colors.white : Colors.black).withValues(alpha: 0.05)),
+                                        ),
+                                        child: Text(
+                                          username,
+                                          style: TextStyle(
+                                            color: (hasBackground || isDark ? Colors.white : const Color(0xFF1C1C1E)).withValues(alpha: 0.6),
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w700,
+                                            letterSpacing: 0.5,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
                           ],
                         ),
                       ),
-                      if (username.isNotEmpty)
-                        Opacity(
-                          opacity: (1 - t).clamp(0.0, 1.0),
-                          child: Padding(
-                            padding: const EdgeInsets.only(top: 8),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: (hasBackground || isDark ? Colors.white : Colors.black).withValues(alpha: 0.08),
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: (hasBackground || isDark ? Colors.white : Colors.black).withValues(alpha: 0.05)),
-                              ),
-                              child: Text(
-                                username,
-                                style: TextStyle(
-                                  color: (hasBackground || isDark ? Colors.white : const Color(0xFF1C1C1E)).withValues(alpha: 0.6),
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                            ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // ── Finance Card overlay ───────────────
+          Positioned(
+            top: bgHeight - 25 - actualScrollOffset + 4,
+            left: 20,
+            right: 20,
+            child: IgnorePointer(
+              child: _buildFinanceOverview(
+                isDark: isDark,
+                totalExpense: totalExpense,
+                totalIncome: totalIncome,
+                balance: balance,
+                isLoading: statsState.isLoading && statsOverview == null,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 8, bottom: 8),
+      child: Text(
+        title.toUpperCase(),
+        style: TextStyle(
+          color: isDark ? const Color(0xFF86868B) : const Color(0xFF86868B),
+          fontSize: 12,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 1.2,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFinanceOverview({
+    required bool isDark,
+    required double totalExpense,
+    required double totalIncome,
+    required double balance,
+    required bool isLoading,
+  }) {
+    final textColor = isDark ? Colors.white : const Color(0xFF1C1C1E);
+    final subTextColor = isDark ? const Color(0xFF8E8E93) : const Color(0xFF8E8E93);
+    final cardBg = isDark ? const Color(0xFF1C1C1E) : Colors.white;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: isDark ? Colors.black.withValues(alpha: 0.2) : Colors.black.withValues(alpha: 0.04),
+            blurRadius: 20,
+            offset: const Offset(0, 6),
+          ),
+        ],
+        border: Border.all(
+          color: isDark ? Colors.white.withValues(alpha: 0.04) : Colors.black.withValues(alpha: 0.03),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 余额行
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 6,
+                          height: 6,
+                          decoration: BoxDecoration(
+                            color: AppColors.emerald,
+                            borderRadius: BorderRadius.circular(3),
                           ),
                         ),
-                    ],
+                        const SizedBox(width: 6),
+                        Text(
+                          '总余额',
+                          style: TextStyle(
+                            color: subTextColor,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      isLoading ? '--' : '¥${oneKeepCurrency(balance)}',
+                      style: TextStyle(
+                        color: textColor,
+                        fontSize: 32,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -1.5,
+                        height: 1.0,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: AppColors.emerald.withValues(alpha: isDark ? 0.12 : 0.08),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(
+                  Icons.account_balance_wallet_rounded,
+                  color: AppColors.emerald,
+                  size: 20,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // 分隔线
+          Container(
+            height: 1,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.transparent,
+                  isDark ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.05),
+                  Colors.transparent,
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+          // 支出 / 收入
+          Row(
+            children: [
+              Expanded(
+                child: _FinanceMiniItem(
+                  label: '本月支出',
+                  amount: totalExpense,
+                  icon: Icons.arrow_upward_rounded,
+                  color: AppColors.expense,
+                  isLoading: isLoading,
+                  isDark: isDark,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _FinanceMiniItem(
+                  label: '本月收入',
+                  amount: totalIncome,
+                  icon: Icons.arrow_downward_rounded,
+                  color: AppColors.emerald,
+                  isLoading: isLoading,
+                  isDark: isDark,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeroSection({
+    required double t,
+    required bool isDark,
+  }) {
+    final topPadding = MediaQuery.of(context).padding.top;
+    final bgHeight = 320.0 + topPadding;
+    final hasBackground = _backgroundBytes != null;
+
+    return SizedBox(
+      width: double.infinity,
+      height: bgHeight,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          // ── Background ────────────────────────────────────────────
+          Positioned(
+            top: 0, left: 0, right: 0, height: bgHeight,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                if (_backgroundBytes != null)
+                  Image.memory(_backgroundBytes!, fit: BoxFit.cover)
+                else
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: isDark
+                            ? [const Color(0xFF121214), const Color(0xFF1C1C1E)]
+                            : [const Color(0xFFE2E2E7), const Color(0xFFF2F2F7)],
+                      ),
+                    ),
+                  ),
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        hasBackground ? Colors.black.withValues(alpha: 0.0) : Colors.transparent,
+                        hasBackground
+                            ? Colors.black.withValues(alpha: 0.55)
+                            : (isDark ? const Color(0xFF000000) : const Color(0xFFF2F2F7)),
+                      ],
+                      stops: hasBackground ? const [0.4, 1.0] : null,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
 
+          // ── Avatar & Nickname (anchored near bottom of background) ──
           // ── Finance Card (overlaps bottom of background) ──────────
-          Positioned(
-            top: bgHeight - 28,
-            left: 20,
-            right: 20,
-            child: _FinanceDashboardCard(
-              expense: totalExpense,
-              income: totalIncome,
-              balance: balance,
-              isLoading: isLoading,
-            ),
-          ),
         ],
       ),
     );
@@ -845,6 +1004,76 @@ class _FinanceItemModern extends StatelessWidget {
   }
 }
 
+class _FinanceMiniItem extends StatelessWidget {
+  final String label;
+  final double amount;
+  final IconData icon;
+  final Color color;
+  final bool isLoading;
+  final bool isDark;
+
+  const _FinanceMiniItem({
+    required this.label,
+    required this.amount,
+    required this.icon,
+    required this.color,
+    required this.isLoading,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.white.withValues(alpha: 0.04) : Colors.black.withValues(alpha: 0.025),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(9),
+            ),
+            child: Icon(icon, size: 14, color: color),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF8E8E93),
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 1),
+                Text(
+                  isLoading ? '--' : '¥${oneKeepCurrency(amount)}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: isDark ? Colors.white : const Color(0xFF1D1D1F),
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _BentoGridMenu extends StatelessWidget {
   final dynamic preferences;
   final VoidCallback onThemeTap;
@@ -878,7 +1107,7 @@ class _BentoGridMenu extends StatelessWidget {
               child: OneKeepBouncingCard(
                 onTap: onThemeTap,
                 child: _BentoBlock(
-                  height: 180,
+                  height: 148,
                   gradient: isLightMode 
                       ? const LinearGradient(
                           begin: Alignment.topLeft,
@@ -936,7 +1165,7 @@ class _BentoGridMenu extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 12),
             Expanded(
               flex: 1,
               child: Column(
@@ -944,63 +1173,47 @@ class _BentoGridMenu extends StatelessWidget {
                   OneKeepBouncingCard(
                     onTap: onCategoryTap,
                     child: _BentoBlock(
-                      height: 82,
+                      height: 66,
                       color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
                       child: Row(
                         children: [
                           Container(
-                            width: 46,
-                            height: 46,
+                            width: 38,
+                            height: 38,
                             decoration: BoxDecoration(
                               color: AppColors.teal.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(13),
+                              borderRadius: BorderRadius.circular(11),
                             ),
-                            child: const Icon(Icons.grid_view_rounded, color: AppColors.teal, size: 22),
+                            child: const Icon(Icons.grid_view_rounded, color: AppColors.teal, size: 18),
                           ),
-                          const SizedBox(width: 14),
+                          const SizedBox(width: 12),
                           Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text('分类管理', style: _bentoTitleStyle(isDark)),
-                                const SizedBox(height: 2),
-                                Text('编排图标', style: _bentoTipStyle(isDark)),
-                              ],
-                            ),
+                            child: Text('分类管理', style: _bentoTitleStyle(isDark)),
                           )
                         ],
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
                   OneKeepBouncingCard(
                     onTap: onBackgroundTap,
                     child: _BentoBlock(
-                      height: 82,
+                      height: 66,
                       color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
                       child: Row(
                         children: [
                           Container(
-                            width: 46,
-                            height: 46,
+                            width: 38,
+                            height: 38,
                             decoration: BoxDecoration(
                               color: const Color(0xFF8B5CF6).withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(13),
+                              borderRadius: BorderRadius.circular(11),
                             ),
-                            child: const Icon(Icons.style_rounded, color: Color(0xFF8B5CF6), size: 22),
+                            child: const Icon(Icons.style_rounded, color: Color(0xFF8B5CF6), size: 18),
                           ),
-                          const SizedBox(width: 14),
+                          const SizedBox(width: 12),
                           Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text('卡片背景', style: _bentoTitleStyle(isDark)),
-                                const SizedBox(height: 2),
-                                Text('个性皮肤', style: _bentoTipStyle(isDark)),
-                              ],
-                            ),
+                            child: Text('卡片背景', style: _bentoTitleStyle(isDark)),
                           )
                         ],
                       ),
@@ -1011,74 +1224,57 @@ class _BentoGridMenu extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(width: 18),
         Padding(
-          padding: const EdgeInsets.only(top: 16),
+          padding: const EdgeInsets.only(top: 12),
           child: Row(
             children: [
               Expanded(
                 child: OneKeepBouncingCard(
                   onTap: onAiTap,
                   child: _BentoBlock(
-                    height: 82,
+                    height: 66,
                     color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
                     child: Row(
                       children: [
                         Container(
-                          width: 40,
-                          height: 40,
+                          width: 38,
+                          height: 38,
                           decoration: BoxDecoration(
                             color: AppColors.emerald.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(11),
                           ),
-                          child: const Icon(Icons.smart_toy_rounded, color: AppColors.emerald, size: 20),
+                          child: const Icon(Icons.smart_toy_rounded, color: AppColors.emerald, size: 18),
                         ),
-                        const SizedBox(width: 14),
+                        const SizedBox(width: 12),
                         Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text('AI 设置', style: _bentoTitleStyle(isDark)),
-                              const SizedBox(height: 1),
-                              Text('模型配置', style: _bentoTipStyle(isDark)),
-                            ],
-                          ),
+                          child: Text('AI 设置', style: _bentoTitleStyle(isDark)),
                         ),
                       ],
                     )
                   ),
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 12),
               Expanded(
                 child: OneKeepBouncingCard(
                   onTap: () {},
                   child: _BentoBlock(
-                    height: 82,
+                    height: 66,
                     color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
                     child: Row(
                       children: [
                         Container(
-                          width: 40,
-                          height: 40,
+                          width: 38,
+                          height: 38,
                           decoration: BoxDecoration(
                             color: const Color(0xFF6B7280).withValues(alpha: 0.08),
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(11),
                           ),
-                          child: const Icon(Icons.info_outline_rounded, color: Color(0xFF6B7280), size: 20),
+                          child: const Icon(Icons.info_outline_rounded, color: Color(0xFF6B7280), size: 18),
                         ),
-                        const SizedBox(width: 14),
+                        const SizedBox(width: 12),
                         Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text('关于系统', style: _bentoTitleStyle(isDark)),
-                              const SizedBox(height: 1),
-                              Text('版本信息', style: _bentoTipStyle(isDark)),
-                            ],
-                          ),
+                          child: Text('关于系统', style: _bentoTitleStyle(isDark)),
                         ),
                       ],
                     )
@@ -1137,11 +1333,11 @@ class _BentoBlock extends StatelessWidget {
     return Container(
       width: double.infinity,
       height: height,
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(height <= 80 ? 14 : 20),
       decoration: BoxDecoration(
         color: color,
         gradient: gradient,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(height <= 80 ? 20 : 28),
         boxShadow: [
           if (color != null)
             BoxShadow(
