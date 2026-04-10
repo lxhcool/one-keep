@@ -28,7 +28,7 @@ class _CategorySettingsPageState extends ConsumerState<CategorySettingsPage> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF000000) : const Color(0xFFF2F2F7),
+      backgroundColor: isDark ? const Color(0xFF000000) : const Color(0xFFF8F8FA),
       body: categoriesAsync.when(
               data: (categories) {
                 final expenses = categories.where((e) => e.type == 'expense').toList();
@@ -88,41 +88,32 @@ class _CategorySettingsPageState extends ConsumerState<CategorySettingsPage> {
     return SafeArea(
       bottom: false,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
         child: Row(
           children: [
             GestureDetector(
               onTap: () => Navigator.of(context).pop(),
               child: Container(
-                width: 44,
-                height: 44,
+                width: 38,
+                height: 38,
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF2C2C2E) : Colors.white,
-                  borderRadius: BorderRadius.circular(14),
-                  boxShadow: [
-                    if (!isDark)
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.04),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                  ],
+                  color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.04),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
                   Icons.arrow_back_ios_new_rounded,
-                  size: 20,
-                  color: isDark ? Colors.white : const Color(0xFF1C1C1E),
+                  size: 18,
+                  color: oneKeepTextSecondary(context),
                 ),
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 14),
             Text(
               '分类管理',
-              style: TextStyle(
-                color: isDark ? Colors.white : const Color(0xFF1C1C1E),
-                fontSize: 28,
-                fontWeight: FontWeight.w800,
-                letterSpacing: -0.5,
+              style: oneKeepGrotesk(
+                color: oneKeepTextPrimary(context),
+                size: 22,
+                weight: FontWeight.w800,
               ),
             ),
           ],
@@ -136,35 +127,52 @@ class _CategorySettingsPageState extends ConsumerState<CategorySettingsPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 12),
-          child: Text(
-            title,
-            style: TextStyle(
-              color: isDark ? Colors.white.withValues(alpha: 0.9) : const Color(0xFF1C1C1E),
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-            ),
+          padding: const EdgeInsets.only(left: 4, bottom: 10),
+          child: Row(
+            children: [
+              Text(
+                title,
+                style: oneKeepManrope(
+                  color: oneKeepTextPrimary(context),
+                  size: 15,
+                  weight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: (type == 'expense' ? AppColors.expense : AppColors.income).withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  '${items.length}',
+                  style: oneKeepInter(
+                    color: type == 'expense' ? AppColors.expense : AppColors.income,
+                    size: 12,
+                    weight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
         Container(
           width: double.infinity,
-          padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
+          padding: const EdgeInsets.fromLTRB(12, 16, 12, 16),
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF2C2C2E) : Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.02),
-                blurRadius: 16,
-                offset: const Offset(0, 4),
-              )
-            ],
+            color: isDark ? Colors.white.withValues(alpha: 0.04) : Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
+            ),
           ),
           child: LayoutBuilder(
             builder: (context, constraints) {
-              final itemWidth = constraints.maxWidth / 4;
+              const columns = 4;
+              final itemWidth = constraints.maxWidth / columns;
               return Wrap(
-                runSpacing: 24,
+                runSpacing: 16,
                 alignment: WrapAlignment.start,
                 children: [
                   ...items.map((cat) => SizedBox(width: itemWidth, child: _buildGridItem(isDark, cat))),
@@ -190,64 +198,39 @@ class _CategorySettingsPageState extends ConsumerState<CategorySettingsPage> {
       onTap: () => _showEditor(category: category),
       child: Column(
         children: [
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: tone.withValues(alpha: 0.12),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                    child: Image.asset(
-                      resolveCategoryIconAsset(category.icon.isNotEmpty ? category.icon : category.name),
-                      width: 24,
-                      height: 24,
-                      errorBuilder: (_, __, ___) => Icon(
-                        Icons.category,
-                        color: tone,
-                        size: 24,
-                      ),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  right: -4,
-                  bottom: -4,
-                  child: Container(
-                    padding: const EdgeInsets.all(2),
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF3C3C3E) : const Color(0xFFE5E5EA),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: isDark ? const Color(0xFF2C2C2E) : Colors.white,
-                        width: 1.5,
-                      ),
-                    ),
-                    child: Icon(
-                      Icons.more_horiz,
-                      size: 10,
-                      color: isDark ? Colors.white70 : Colors.black54,
-                    ),
-                  ),
-                ),
-              ],
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: tone.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(16),
             ),
-            const SizedBox(height: 8),
-            Text(
-              category.name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: isDark ? Colors.white.withValues(alpha: 0.85) : const Color(0xFF3C3C43),
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
+            child: Center(
+              child: Image.asset(
+                resolveCategoryIconAsset(category.icon.isNotEmpty ? category.icon : category.name),
+                width: 26,
+                height: 26,
+                errorBuilder: (_, __, ___) => Icon(
+                  Icons.category,
+                  color: tone,
+                  size: 26,
+                ),
               ),
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            category.name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: oneKeepInter(
+              color: oneKeepTextSecondary(context),
+              size: 12,
+              weight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -256,32 +239,36 @@ class _CategorySettingsPageState extends ConsumerState<CategorySettingsPage> {
       onTap: _isSaving ? null : () => _showEditor(type: type),
       child: Column(
         children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF3C3C3E) : const Color(0xFFE5E5EA),
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: Icon(
-                  Icons.add,
-                  color: isDark ? Colors.white54 : const Color(0xFF8E8E93),
-                  size: 24,
-                ),
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.06),
+                width: 1,
               ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              '添加',
-              style: TextStyle(
-                color: isDark ? Colors.white54 : const Color(0xFF8E8E93),
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
+            child: Center(
+              child: Icon(
+                Icons.add_rounded,
+                color: oneKeepTextTertiary(context),
+                size: 22,
               ),
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '添加',
+            style: oneKeepInter(
+              color: oneKeepTextTertiary(context),
+              size: 12,
+              weight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -397,6 +384,8 @@ class _CategoryEditorPageState extends State<CategoryEditorPage> {
   late String _icon;
   late Color _color;
 
+  bool _userEditedName = false;
+
   @override
   void initState() {
     super.initState();
@@ -404,6 +393,7 @@ class _CategoryEditorPageState extends State<CategoryEditorPage> {
     _icon = widget.initialIcon;
     _color = oneKeepParseHexColor(widget.initialColor) ?? 
         (widget.initialType == 'expense' ? AppColors.expense : AppColors.income);
+    _userEditedName = widget.initialName.isNotEmpty;
   }
 
   @override
@@ -417,14 +407,15 @@ class _CategoryEditorPageState extends State<CategoryEditorPage> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     final nameLength = _nameController.text.length;
+    final canSave = _nameController.text.trim().isNotEmpty;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF000000) : const Color(0xFFF2F2F7),
+      backgroundColor: isDark ? const Color(0xFF000000) : const Color(0xFFF8F8FA),
       body: SafeArea(
         child: ListView(
-          padding: EdgeInsets.fromLTRB(24, 16, 24, 24 + bottomInset),
+          padding: EdgeInsets.fromLTRB(20, 12, 20, 24 + bottomInset),
           children: [
-            // 独立设计的大标题头部
+            // Header — close & delete
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -434,10 +425,18 @@ class _CategoryEditorPageState extends State<CategoryEditorPage> {
                     width: 36,
                     height: 36,
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF2C2C2E) : const Color(0xFFE5E5EA),
-                      shape: BoxShape.circle,
+                      color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.04),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(Icons.close_rounded, size: 20, color: isDark ? Colors.white : const Color(0xFF1C1C1E)),
+                    child: Icon(Icons.close_rounded, size: 20, color: oneKeepTextSecondary(context)),
+                  ),
+                ),
+                Text(
+                  widget.isEdit ? '编辑分类' : '添加分类',
+                  style: oneKeepManrope(
+                    color: oneKeepTextPrimary(context),
+                    size: 17,
+                    weight: FontWeight.w700,
                   ),
                 ),
                 if (widget.isEdit)
@@ -447,58 +446,69 @@ class _CategoryEditorPageState extends State<CategoryEditorPage> {
                       width: 36,
                       height: 36,
                       decoration: BoxDecoration(
-                        color: AppColors.expense.withValues(alpha: 0.1),
-                        shape: BoxShape.circle,
+                        color: AppColors.expense.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(Icons.delete_outline_rounded, size: 18, color: AppColors.expense),
                     ),
-                  ),
+                  )
+                else
+                  const SizedBox(width: 36),
               ],
             ),
-            const SizedBox(height: 16),
-            Text(
-              widget.isEdit ? '编辑分类' : '添加分类',
-              style: TextStyle(
-                color: isDark ? Colors.white : const Color(0xFF1C1C1E),
-                fontSize: 34,
-                fontWeight: FontWeight.w800,
-                letterSpacing: -0.5,
-              ),
-            ),
-            const SizedBox(height: 40),
-            // 分类名称输入区域
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
+            const SizedBox(height: 24),
+
+            // Preview card — large centered icon + name
+            Center(
+              child: Column(
                 children: [
-                  Text(
-                    '分类名称',
-                    style: TextStyle(
-                      color: isDark ? Colors.white : const Color(0xFF1C1C1E),
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 250),
+                    curve: Curves.easeOut,
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(
+                      color: _color.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(22),
+                      border: Border.all(
+                        color: _color.withValues(alpha: 0.15),
+                        width: 1,
+                      ),
+                    ),
+                    child: Center(
+                      child: _icon.isNotEmpty
+                          ? Image.asset(
+                              resolveCategoryIconAsset(_icon),
+                              width: 38,
+                              height: 38,
+                              errorBuilder: (_, __, ___) => Icon(Icons.category, size: 38, color: _color),
+                            )
+                          : Icon(Icons.add_rounded, size: 32, color: _color.withValues(alpha: 0.4)),
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
+                  const SizedBox(height: 12),
+                  // Inline editable name
+                  SizedBox(
+                    width: 160,
                     child: TextField(
                       controller: _nameController,
                       maxLength: 4,
-                      onChanged: (val) => setState(() {}),
-                      style: TextStyle(
-                        color: isDark ? Colors.white : Colors.black,
-                        fontSize: 16,
+                      textAlign: TextAlign.center,
+                      onChanged: (val) {
+                        _userEditedName = val.isNotEmpty;
+                        setState(() {});
+                      },
+                      style: oneKeepGrotesk(
+                        color: oneKeepTextPrimary(context),
+                        size: 20,
+                        weight: FontWeight.w700,
                       ),
                       decoration: InputDecoration(
-                        hintText: '不要与已有类型名重复',
-                        hintStyle: TextStyle(
-                          color: isDark ? const Color(0xFF5C5C5E) : const Color(0xFFC7C7CC),
-                          fontSize: 16,
+                        hintText: '分类名称',
+                        hintStyle: oneKeepGrotesk(
+                          color: oneKeepTextTertiary(context).withValues(alpha: 0.35),
+                          size: 20,
+                          weight: FontWeight.w500,
                         ),
                         counterText: '',
                         isDense: true,
@@ -509,127 +519,129 @@ class _CategoryEditorPageState extends State<CategoryEditorPage> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
                   Text(
-                    '$nameLength/4',
-                    style: TextStyle(
-                      color: isDark ? const Color(0xFF5C5C5E) : const Color(0xFFC7C7CC),
-                      fontSize: 14,
+                    '$nameLength / 4',
+                    style: oneKeepInter(
+                      color: oneKeepTextTertiary(context).withValues(alpha: 0.35),
+                      size: 12,
+                      weight: FontWeight.w400,
                     ),
-                  )
+                  ),
                 ],
               ),
             ),
-              const SizedBox(height: 32),
+            const SizedBox(height: 28),
 
-              // 分类图标
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text(
-                    '分类图标',
-                    style: TextStyle(
-                      color: isDark ? Colors.white : const Color(0xFF1C1C1E),
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Text(
-                    '请点击选择下方图标',
-                    style: TextStyle(
-                      color: isDark ? const Color(0xFF5C5C5E) : const Color(0xFFC7C7CC),
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
+            // Icon section header
+            Text(
+              '选择图标',
+              style: oneKeepManrope(
+                color: oneKeepTextPrimary(context),
+                size: 15,
+                weight: FontWeight.w700,
               ),
-              const SizedBox(height: 24),
+            ),
+            const SizedBox(height: 14),
 
-              // 图标网格
-              GridView.builder(
-                padding: EdgeInsets.zero,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 6,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 20,
-                ),
-                itemCount: categoryIconEntries.length,
-                itemBuilder: (context, index) {
-                  final entry = categoryIconEntries[index];
-                  final isSelected = _icon == entry.key;
-                  return GestureDetector(
-                    onTap: () {
-                      HapticFeedback.lightImpact();
-                      setState(() => _icon = entry.key);
-                    },
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      decoration: BoxDecoration(
-                        color: isSelected ? _color.withValues(alpha: 0.12) : Colors.transparent,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Image.asset(
-                        entry.asset,
-                        width: 28,
-                        height: 28,
-                        errorBuilder: (_, __, ___) => Icon(
-                          Icons.category,
-                          color: isSelected ? _color : (isDark ? const Color(0xFF5C5C5E) : const Color(0xFF999999)),
-                          size: 28,
+            // Icon grid — 5 columns with labels
+            GridView.builder(
+              padding: EdgeInsets.zero,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 5,
+                crossAxisSpacing: 8,
+                mainAxisSpacing: 6,
+                childAspectRatio: 0.78,
+              ),
+              itemCount: categoryIconEntries.length,
+              itemBuilder: (context, index) {
+                final entry = categoryIconEntries[index];
+                final isSelected = _icon == entry.key;
+                return GestureDetector(
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    setState(() {
+                      _icon = entry.key;
+                      // Auto-fill name if user hasn't manually edited
+                      if (!_userEditedName) {
+                        _nameController.text = entry.label;
+                      }
+                    });
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    curve: Curves.easeOut,
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? _color.withValues(alpha: 0.1)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(14),
+                      border: isSelected
+                          ? Border.all(color: _color.withValues(alpha: 0.3), width: 1.5)
+                          : null,
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Image.asset(
+                          entry.asset,
+                          width: 30,
+                          height: 30,
+                          errorBuilder: (_, __, ___) => Icon(
+                            Icons.category,
+                            color: isSelected ? _color : oneKeepTextTertiary(context),
+                            size: 30,
+                          ),
                         ),
-                      ),
+                        const SizedBox(height: 4),
+                        Text(
+                          entry.label,
+                          style: oneKeepInter(
+                            color: isSelected
+                                ? _color
+                                : oneKeepTextSecondary(context),
+                            size: 11,
+                            weight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                     ),
-                  );
-                },
-              ),
-              const SizedBox(height: 72), // extra space for bottom bar
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 80),
           ],
         ),
       ),
       bottomNavigationBar: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
         child: SafeArea(
           top: false,
-          child: GestureDetector(
-            onTap: () {
+          child: OneKeepBouncingCard(
+            onTap: canSave ? () {
               final name = _nameController.text.trim();
-              if (name.isEmpty) return;
               Navigator.pop(context, _CategoryEditorResult(name: name, icon: _icon, type: widget.initialType, color: oneKeepColorToHex(_color)));
-            },
-            child: OneKeepBouncingCard(
-              onTap: () {
-                final name = _nameController.text.trim();
-                if (name.isEmpty) return;
-                Navigator.pop(context, _CategoryEditorResult(name: name, icon: _icon, type: widget.initialType, color: oneKeepColorToHex(_color)));
-              },
-              child: Container(
-                height: 52,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: _nameController.text.isEmpty 
-                      ? (isDark ? const Color(0xFF2C2C2E) : const Color(0xFFE5E5EA)) 
-                      : const Color(0xFF2563EB).withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(26),
-                  border: Border.all(
-                    color: _nameController.text.isEmpty 
-                        ? Colors.transparent 
-                        : const Color(0xFF2563EB),
-                    width: 1.5,
-                  ),
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  '确认',
-                  style: TextStyle(
-                    color: _nameController.text.isEmpty 
-                        ? (isDark ? const Color(0xFF5C5C5E) : const Color(0xFFC7C7CC)) 
-                        : const Color(0xFF2563EB),
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
+            } : null,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              height: 52,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: canSave ? AppColors.teal : (isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03)),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                '确认',
+                style: oneKeepManrope(
+                  color: canSave ? Colors.white : oneKeepTextTertiary(context).withValues(alpha: 0.4),
+                  size: 16,
+                  weight: FontWeight.w700,
                 ),
               ),
             ),

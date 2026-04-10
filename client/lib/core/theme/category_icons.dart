@@ -117,13 +117,86 @@ String? categoryIconAsset(String key) => _byKey[key]?.asset;
 /// Get asset path by Chinese label (e.g. '咖啡' → 'assets/category/coffee.png')
 String? categoryIconAssetByLabel(String label) => _byLabel[label]?.asset;
 
+/// Legacy Material icon name → new key mapping (for old database entries)
+const Map<String, String> _legacyIconMap = {
+  'restaurant': 'lunch',
+  'restaurant_rounded': 'lunch',
+  'directions_bus': 'bus',
+  'directions_subway': 'bus',
+  'directions_subway_rounded': 'bus',
+  'shopping_bag': 'shopping',
+  'shopping_bag_rounded': 'shopping',
+  'receipt_long': 'other',
+  'receipt_long_rounded': 'other',
+  'sports_esports': 'gaming',
+  'local_hospital': 'clinic',
+  'school': 'stationery',
+  'more_horiz': 'other',
+  'work': 'salary',
+  'account_balance_wallet': 'salary',
+  'account_balance_wallet_rounded': 'salary',
+  'trending_up': 'investment',
+  'account_balance': 'investment',
+  'account_balance_rounded': 'investment',
+  'local_cafe': 'coffee',
+  'local_cafe_rounded': 'coffee',
+  // iconfont legacy keys
+  'a-068_yongcan': 'lunch',
+  'a-068_gongjiao': 'bus',
+  'a-068_gouwu': 'shopping',
+  'a-068_shuidian': 'utilities',
+  'a-068_jiayou': 'fuel',
+  'a-068_lvyou': 'travel',
+  'a-068_jiuyi': 'clinic',
+  'a-068_youxi': 'gaming',
+  'a-068_gongzi': 'salary',
+  'a-068_licai': 'investment',
+  'a-068_zhuanzhang': 'transfer',
+  'a-068_qita-60': 'other',
+  'a-068_chuzuche': 'taxi',
+  'a-068_dianying': 'movie',
+  'a-068_yifu': 'clothing',
+  'a-068_shuiguo': 'fruit',
+  'a-068_lingshi': 'snacks',
+  'a-068_yundong': 'sports',
+  'a-068_liwu': 'gift',
+  'a-068_yao': 'medicine',
+  'a-068_huafei': 'phone_bill',
+  'a-068_meifa': 'haircut',
+  'a-068_chongwu': 'pet',
+  'a-068_zaocan': 'breakfast',
+  'a-068_maicai': 'grocery',
+  'a-068_xianhua': 'flowers',
+  // Chinese category name aliases (old seed names)
+  '餐饮美食': 'lunch',
+  '交通出行': 'bus',
+  '购物消费': 'shopping',
+  '生活缴费': 'utilities',
+  '休闲娱乐': 'gaming',
+  '医疗健康': 'clinic',
+  '教育学习': 'stationery',
+  '其他支出': 'other',
+  '工资薪资': 'salary',
+  '兼职收入': 'salary',
+  '投资理财': 'investment',
+  '其他收入': 'other',
+  '用餐': 'lunch',
+  '旅行': 'travel',
+  '就医': 'clinic',
+  '生活': 'utilities',
+  '报销': 'transfer',
+};
+
 /// Resolve asset path from any identifier — tries key first, then label, then
-/// searches for substring match in key/label. Returns fallback 'other' if nothing matches.
+/// legacy icon name, then substring match. Returns fallback 'other' if nothing matches.
 String resolveCategoryIconAsset(String identifier) {
   // Exact key match
   if (_byKey.containsKey(identifier)) return _byKey[identifier]!.asset;
   // Exact label match
   if (_byLabel.containsKey(identifier)) return _byLabel[identifier]!.asset;
+  // Legacy icon name match
+  final legacyKey = _legacyIconMap[identifier];
+  if (legacyKey != null && _byKey.containsKey(legacyKey)) return _byKey[legacyKey]!.asset;
   // Substring search in labels
   for (final e in categoryIconEntries) {
     if (identifier.contains(e.label) || e.label.contains(identifier)) {

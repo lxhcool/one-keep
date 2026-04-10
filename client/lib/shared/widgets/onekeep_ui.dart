@@ -149,26 +149,15 @@ class OneKeepCategoryBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tone = oneKeepCategoryTone(
-      colorHex: colorHex,
-      categoryId: categoryId,
-      categoryName: categoryName,
-      categoryIcon: categoryIcon,
-    );
     final assetPath = resolveCategoryIconAsset(categoryIcon.isNotEmpty ? categoryIcon : categoryName);
+    const uniformBg = Color(0xFFF0F0F0);
 
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: tone.withValues(alpha: fillOpacity),
+        color: uniformBg,
         borderRadius: BorderRadius.circular(radius),
-        border: showBorder
-            ? Border.all(
-                color: tone.withValues(alpha: borderOpacity),
-                width: 0.8,
-              )
-            : null,
       ),
       child: Center(
         child: Image.asset(
@@ -178,7 +167,7 @@ class OneKeepCategoryBadge extends StatelessWidget {
           errorBuilder: (_, __, ___) => Icon(
             Icons.receipt_long_rounded,
             size: iconSize,
-            color: tone,
+            color: const Color(0xFF999999),
           ),
         ),
       ),
