@@ -1,4 +1,6 @@
-﻿import 'package:flutter/material.dart';
+﻿import 'dart:ui';
+
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
@@ -10,7 +12,7 @@ import '../../shared/models/models.dart';
 import '../../shared/widgets/onekeep_ui.dart';
 import '../../shared/widgets/transaction_editor_sheet.dart';
 
-const _billsPageBackground = Color(0xFFF2F3F5);
+const _billsPageBackground = Color(0xFFFFFFFF);
 
 class BillsPage extends ConsumerStatefulWidget {
   const BillsPage({super.key});
@@ -53,40 +55,40 @@ class _BillsPageState extends ConsumerState<BillsPage> {
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.darkBg : _billsPageBackground,
-      body: SafeArea(
-        bottom: false,
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-              child: Column(
-                children: [
-                  _buildHeader(),
-                  const SizedBox(height: 16),
-                  _buildFilterRow(),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            Expanded(
+      body: Column(
+        children: [
+          _buildGradientHeader(isDark),
+          const SizedBox(height: 16),
+          Expanded(
               child: state.isLoading && state.groups.isEmpty
                   ? const Center(child: CircularProgressIndicator())
                   : state.error != null && state.groups.isEmpty
                   ? Center(child: Text(state.error!))
                   : state.groups.isEmpty
                   ? Center(
-                      child: Text(
-                        '暂无账单记录',
-                        style: oneKeepInter(
-                          color: oneKeepTextSecondary(context),
-                          size: 12,
-                          weight: FontWeight.w400,
-                        ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.receipt_long_rounded,
+                            size: 48,
+                            color: oneKeepTextTertiary(context).withValues(alpha: 0.3),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            '暂无账单记录',
+                            style: oneKeepManrope(
+                              color: oneKeepTextSecondary(context),
+                              size: 14,
+                              weight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
                       ),
                     )
                   : ListView.builder(
                       controller: _scrollController,
-                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 110),
+                      padding: EdgeInsets.fromLTRB(16, 0, 16, MediaQuery.paddingOf(context).bottom + 24),
                       itemCount:
                           state.groups.length + (state.isLoading ? 1 : 0),
                       itemBuilder: (context, index) {
@@ -98,12 +100,102 @@ class _BillsPageState extends ConsumerState<BillsPage> {
                         }
                         return Padding(
                           padding: EdgeInsets.only(
-                            bottom: index == state.groups.length - 1 ? 0 : 16,
+                            bottom: index == state.groups.length - 1 ? 0 : 20,
                           ),
                           child: _buildDateGroup(state.groups[index], categoryColors),
                         );
                       },
                     ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGradientHeader(bool isDark) {
+    final topInset = MediaQuery.paddingOf(context).top;
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: isDark
+              ? [const Color(0xFF0D1111), const Color(0xFF0D1111)]
+              : [const Color(0xFF065F46), const Color(0xFF0D9373)],
+        ),
+      ),
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(16, topInset + 16, 16, 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(
+                  '账单',
+                  style: oneKeepGrotesk(
+                    color: Colors.white,
+                    size: 28,
+                    weight: FontWeight.w700,
+                  ),
+                ),
+                const Spacer(),
+                GestureDetector(
+                  onTap: _showMonthPicker,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        width: 0.5,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          [_selectedMonth.year, _selectedMonth.month.toString().padLeft(2, '0')].join('/'),
+                          style: oneKeepInter(
+                            color: Colors.white.withValues(alpha: 0.9),
+                            size: 13,
+                            weight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Icon(
+                          Icons.expand_more_rounded,
+                          size: 14,
+                          color: Colors.white.withValues(alpha: 0.7),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                _GradientFilterChip(
+                  label: '全部',
+                  active: _filterType == 'all',
+                  onTap: () => _setFilter('all'),
+                ),
+                const SizedBox(width: 10),
+                _GradientFilterChip(
+                  label: '支出',
+                  active: _filterType == 'expense',
+                  onTap: () => _setFilter('expense'),
+                ),
+                const SizedBox(width: 10),
+                _GradientFilterChip(
+                  label: '收入',
+                  active: _filterType == 'income',
+                  onTap: () => _setFilter('income'),
+                ),
+              ],
             ),
           ],
         ),
@@ -181,56 +273,61 @@ class _BillsPageState extends ConsumerState<BillsPage> {
   }
 
   Widget _buildDateGroup(BillGroup group, Map<String, String?> categoryColors) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final items = group.items;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Text(
-              _formatDateHeader(group.date),
-              style: oneKeepInter(
-                color: oneKeepTextSecondary(context),
-                size: 13,
-                weight: FontWeight.w500,
-              ),
-            ),
-            const Spacer(),
-            if (group.expenseTotal > 0)
+        Padding(
+          padding: const EdgeInsets.only(left: 4, right: 4, bottom: 12),
+          child: Row(
+            children: [
               Text(
-                '支出 ¥${oneKeepCurrency(group.expenseTotal)}',
-                style: oneKeepInter(
-                  color: oneKeepTextTertiary(context),
-                  size: 12,
-                  weight: FontWeight.w400,
+                _formatDateHeader(group.date),
+                style: oneKeepManrope(
+                  color: oneKeepTextSecondary(context),
+                  size: 13,
+                  weight: FontWeight.w600,
                 ),
               ),
-            if (group.incomeTotal > 0)
-              Padding(
-                padding: EdgeInsets.only(left: group.expenseTotal > 0 ? 10 : 0),
-                child: Text(
-                  '收入 ¥${oneKeepCurrency(group.incomeTotal)}',
+              const Spacer(),
+              if (group.expenseTotal > 0)
+                Text(
+                  '支出 ¥${oneKeepCurrency(group.expenseTotal)}',
                   style: oneKeepInter(
                     color: oneKeepTextTertiary(context),
                     size: 12,
                     weight: FontWeight.w400,
                   ),
                 ),
+              if (group.incomeTotal > 0)
+                Padding(
+                  padding: EdgeInsets.only(left: group.expenseTotal > 0 ? 10 : 0),
+                  child: Text(
+                    '收入 ¥${oneKeepCurrency(group.incomeTotal)}',
+                    style: oneKeepInter(
+                      color: oneKeepTextTertiary(context),
+                      size: 12,
+                      weight: FontWeight.w400,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        Column(
+          children: [
+            for (int i = 0; i < items.length; i++) 
+              _BillRow(
+                transaction: items[i],
+                categoryColor: categoryColors[items[i].categoryId] ?? items[i].categoryColor,
+                onTap: () => _showDetailSheet(
+                  items[i],
+                  categoryColors[items[i].categoryId] ?? items[i].categoryColor,
+                ),
+                isEven: i.isEven,
               ),
           ],
-        ),
-        const SizedBox(height: 12),
-        ...group.items.map(
-          (tx) => Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: _BillRow(
-              transaction: tx,
-              categoryColor: categoryColors[tx.categoryId] ?? tx.categoryColor,
-              onTap: () => _showDetailSheet(
-                tx,
-                categoryColors[tx.categoryId] ?? tx.categoryColor,
-              ),
-            ),
-          ),
         ),
       ],
     );
@@ -272,147 +369,124 @@ class _BillsPageState extends ConsumerState<BillsPage> {
       backgroundColor: Colors.transparent,
       barrierColor: oneKeepDimOverlay(context),
       builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
         return StatefulBuilder(
           builder: (context, setModalState) {
             return OneKeepSheetSurface(
               child: SafeArea(
                 top: false,
-                child: SizedBox(
-                  height: 374,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 12, 24, 36),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Align(
-                          alignment: Alignment.center,
-                          child: Container(
-                            width: 40,
-                            height: 4,
-                            decoration: BoxDecoration(
-                              color: oneKeepTextTertiary(context).withValues(alpha: 0.32),
-                              borderRadius: BorderRadius.circular(2),
-                            ),
-                          ),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 36,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: oneKeepTextTertiary(context).withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(2),
                         ),
-                        const SizedBox(height: 18),
-                        Row(
+                      ),
+                      const SizedBox(height: 20),
+                      // Year navigator
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Row(
                           children: [
+                            _yearNavButton(
+                              context: context,
+                              icon: Icons.chevron_left_rounded,
+                              enabled: true,
+                              isDark: isDark,
+                              onTap: () => setModalState(() => displayYear -= 1),
+                            ),
+                            const Spacer(),
                             Text(
-                              '选择月份',
-                              style: oneKeepManrope(
+                              '$displayYear年',
+                              style: oneKeepGrotesk(
                                 color: oneKeepTextPrimary(context),
                                 size: 18,
                                 weight: FontWeight.w700,
                               ),
                             ),
                             const Spacer(),
-                            GestureDetector(
-                              onTap: () => Navigator.pop(context),
-                              child: Icon(
-                                Icons.close_rounded,
-                                color: oneKeepTextSecondary(context),
-                                size: 24,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            GestureDetector(
-                              onTap: () => setModalState(() => displayYear -= 1),
-                              child: Icon(
-                                Icons.chevron_left_rounded,
-                                color: oneKeepTextSecondary(context),
-                                size: 20,
-                              ),
-                            ),
-                            const Spacer(),
-                            Text(
-                              '$displayYear',
-                              style: oneKeepManrope(
-                                color: oneKeepTextPrimary(context),
-                                size: 16,
-                                weight: FontWeight.w600,
-                              ),
-                            ),
-                            const Spacer(),
-                            GestureDetector(
+                            _yearNavButton(
+                              context: context,
+                              icon: Icons.chevron_right_rounded,
+                              enabled: displayYear < now.year,
+                              isDark: isDark,
                               onTap: displayYear < now.year
                                   ? () => setModalState(() => displayYear += 1)
                                   : null,
-                              child: Icon(
-                                Icons.chevron_right_rounded,
-                                color: displayYear < now.year
-                                    ? oneKeepTextSecondary(context)
-                                    : oneKeepTextTertiary(context).withValues(alpha: 0.5),
-                                size: 20,
-                              ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 16),
-                        Expanded(
-                          child: GridView.builder(
-                            physics: const NeverScrollableScrollPhysics(),
-                            itemCount: 12,
-                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 4,
-                              crossAxisSpacing: 10,
-                              mainAxisSpacing: 10,
-                              mainAxisExtent: 32,
-                            ),
-                            itemBuilder: (context, index) {
-                              final month = index + 1;
-                              final disabled = displayYear == now.year && month > now.month;
-                              final selected =
-                                  displayYear == _selectedMonth.year &&
-                                  month == _selectedMonth.month;
-
-                              return GestureDetector(
-                                onTap: disabled
-                                    ? null
-                                    : () {
-                                        setState(() {
-                                          _selectedMonth = DateTime(displayYear, month);
-                                        });
-                                        Navigator.pop(context);
-                                        _reload();
-                                      },
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: selected
-                                        ? AppColors.teal.withValues(alpha: 0.18)
-                                        : oneKeepGlassStrong(context),
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(
-                                      color: selected
-                                          ? AppColors.teal.withValues(alpha: 0.32)
-                                          : Colors.transparent,
-                                      width: 0.8,
-                                    ),
-                                  ),
-                                  alignment: Alignment.center,
-                                  child: Text(
-                                    '$month月',
-                                    style: oneKeepInter(
-                                      color: selected
-                                          ? AppColors.tealDark
-                                          : disabled
-                                          ? oneKeepTextTertiary(context).withValues(alpha: 0.5)
-                                          : oneKeepTextTertiary(context),
-                                      size: 12,
-                                      weight: selected ? FontWeight.w600 : FontWeight.w400,
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
+                      ),
+                      const SizedBox(height: 20),
+                      // Month grid
+                      GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: 12,
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 4,
+                          crossAxisSpacing: 10,
+                          mainAxisSpacing: 10,
+                          mainAxisExtent: 48,
                         ),
-                      ],
-                    ),
+                        itemBuilder: (context, index) {
+                          final month = index + 1;
+                          final disabled = displayYear == now.year && month > now.month;
+                          final selected =
+                              displayYear == _selectedMonth.year &&
+                              month == _selectedMonth.month;
+                          final isCurrent = displayYear == now.year && month == now.month;
+
+                          return GestureDetector(
+                            onTap: disabled
+                                ? null
+                                : () {
+                                    setState(() {
+                                      _selectedMonth = DateTime(displayYear, month);
+                                    });
+                                    Navigator.pop(context);
+                                    _reload();
+                                  },
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 180),
+                              curve: Curves.easeOut,
+                              decoration: BoxDecoration(
+                                color: selected
+                                    ? AppColors.teal
+                                    : (isDark ? Colors.white.withValues(alpha: 0.04) : Colors.black.withValues(alpha: 0.02)),
+                                borderRadius: BorderRadius.circular(14),
+                                border: isCurrent && !selected
+                                    ? Border.all(color: AppColors.teal.withValues(alpha: 0.4), width: 1.5)
+                                    : null,
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(
+                                '$month月',
+                                style: oneKeepGrotesk(
+                                  color: selected
+                                      ? Colors.white
+                                      : disabled
+                                      ? oneKeepTextTertiary(context).withValues(alpha: 0.3)
+                                      : oneKeepTextPrimary(context),
+                                  size: 15,
+                                  weight: selected ? FontWeight.w700 : FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -420,6 +494,42 @@ class _BillsPageState extends ConsumerState<BillsPage> {
           },
         );
       },
+    );
+  }
+
+  Widget _yearNavButton({
+    required BuildContext context,
+    required IconData icon,
+    required bool enabled,
+    required bool isDark,
+    required VoidCallback? onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: enabled
+              ? (isDark ? Colors.white.withValues(alpha: 0.08) : Colors.white)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: enabled && !isDark ? [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 4,
+              offset: const Offset(0, 1),
+            ),
+          ] : null,
+        ),
+        child: Icon(
+          icon,
+          color: enabled
+              ? oneKeepTextSecondary(context)
+              : oneKeepTextTertiary(context).withValues(alpha: 0.3),
+          size: 20,
+        ),
+      ),
     );
   }
 
@@ -597,22 +707,67 @@ class _FilterChip extends StatelessWidget {
   }
 }
 
+class _GradientFilterChip extends StatelessWidget {
+  final String label;
+  final bool active;
+  final VoidCallback onTap;
+
+  const _GradientFilterChip({
+    required this.label,
+    required this.active,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: active
+              ? Colors.white.withValues(alpha: 0.22)
+              : Colors.white.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(20),
+          border: active
+              ? Border.all(color: Colors.white.withValues(alpha: 0.4), width: 1)
+              : null,
+        ),
+        child: Text(
+          label,
+          style: oneKeepInter(
+            color: active
+                ? Colors.white
+                : Colors.white.withValues(alpha: 0.6),
+            size: 12,
+            weight: active ? FontWeight.w600 : FontWeight.w400,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _BillRow extends StatelessWidget {
   final Transaction transaction;
   final String? categoryColor;
   final VoidCallback onTap;
+  final bool isEven;
 
   const _BillRow({
     required this.transaction,
     required this.categoryColor,
     required this.onTap,
+    this.isEven = true,
   });
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isExpense = transaction.isExpense;
-    final tone = isExpense ? AppColors.expense : AppColors.income;
+    final tone = isExpense
+        ? (isDark ? const Color(0xFFFF6B6B) : const Color(0xFFE84545))
+        : AppColors.income;
     final detail = transaction.merchant ?? transaction.note;
     final title = detail != null && detail.isNotEmpty
         ? '${transaction.title} - $detail'
@@ -624,28 +779,18 @@ class _BillRow extends StatelessWidget {
       if (normalizedCategory.isNotEmpty && normalizedCategory != normalizedTitle)
         normalizedCategory,
     ];
+    final rowColor = isEven
+        ? (isDark ? Colors.white.withValues(alpha: 0.03) : Colors.black.withValues(alpha: 0.02))
+        : Colors.transparent;
 
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: Container(
-        padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         decoration: BoxDecoration(
-          color: isDark ? AppColors.darkCard : Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: isDark
-              ? Border.all(
-                  color: AppColors.darkCardBorder,
-                  width: 0.8,
-                )
-              : null,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.18 : 0.04),
-              blurRadius: 18,
-              offset: const Offset(0, 8),
-            ),
-          ],
+          color: rowColor,
+          borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
           children: [
@@ -674,13 +819,13 @@ class _BillRow extends StatelessWidget {
                       weight: FontWeight.w500,
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 4),
                   Text(
                     subtitleParts.join(' · '),
                     style: oneKeepInter(
                       color: oneKeepTextSecondary(context),
                       size: 12,
-                      weight: FontWeight.w500,
+                      weight: FontWeight.w400,
                     ),
                   ),
                 ],

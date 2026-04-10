@@ -117,11 +117,23 @@ class HomePage extends ConsumerStatefulWidget {
 class _HomePageState extends ConsumerState<HomePage> {
   bool _balanceVisible = true;
   bool _hasTriggeredInitialLoad = false;
+  late final ScrollController _scrollController;
+  double _scrollOffset = 0.0;
 
   @override
   void initState() {
     super.initState();
+    _scrollController = ScrollController();
+    _scrollController.addListener(() {
+      if (mounted) setState(() => _scrollOffset = _scrollController.offset);
+    });
     Future.microtask(_loadIfAuthenticated);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadIfAuthenticated() async {
@@ -179,23 +191,162 @@ class _HomePageState extends ConsumerState<HomePage> {
             : RefreshIndicator(
                 edgeOffset: MediaQuery.paddingOf(context).top + 12,
                 onRefresh: () => ref.read(homeProvider.notifier).load(),
-                child: ListView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: EdgeInsets.zero,
+                child: Stack(
                   children: [
-                    _buildHeroSection(
-                      state.summary,
-                      authState.user?.name,
-                      preferences,
+                    ListView(
+                      controller: _scrollController,
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: EdgeInsets.zero,
+                      children: [
+                        _buildHeroSection(
+                          state.summary,
+                          authState.user?.name,
+                          preferences,
+                        ),
+                        if (state.summary != null)
+                          _buildContentSection(
+                            state.summary!.recentTransactions,
+                            categoryColors,
+                          ),
+                      ],
                     ),
-                    if (state.summary != null)
-                      _buildContentSection(
-                        state.summary!.recentTransactions,
-                        categoryColors,
-                      ),
+                    // ── Sticky header ──
+                    _buildStickyHeader(preferences, palette, state.summary),
                   ],
                 ),
               ),
+      ),
+    );
+  }
+
+  Widget _buildStickyHeader(PreferencesState preferences, _HomePalette palette, HomeSummary? summary) {
+    final topInset = MediaQuery.paddingOf(context).top;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    // progress: 0 = not scrolled, 1 = fully compact
+    final progress = (_scrollOffset / 100.0).clamp(0.0, 1.0);
+
+    final userName = preferences.nickname.isNotEmpty
+        ? preferences.nickname
+        : (summary?.user.name.isNotEmpty == true
+              ? summary!.user.name
+              : 'OneKeep 用户');
+
+    // Avatar: 54 → 36
+    final avatarSize = 54.0 - 18.0 * progress;
+    final iconSize = 24.0 - 8.0 * progress;
+    // Content height: 78 → 48
+    final contentHeight = 78.0 - 30.0 * progress;
+    // Name font: 22 → 16
+    final nameFontSize = 22.0 - 6.0 * progress;
+    // Greeting opacity: fade out in first 40%
+    final greetingOpacity = progress < 0.4 ? (1.0 - progress / 0.4).clamp(0.0, 1.0) : 0.0;
+    // Greeting height factor
+    final greetingHeight = progress < 0.5 ? (1.0 - progress / 0.5).clamp(0.0, 1.0) : 0.0;
+    // Background opacity
+    final bgOpacity = progress;
+    // Blur
+    final blur = 24.0 * progress;
+    // Notification button: 44 → 36
+    final buttonSize = 44.0 - 8.0 * progress;
+    final buttonIconSize = 20.0 - 2.0 * progress;
+
+    return Positioned(
+      top: 0,
+      left: 0,
+      right: 0,
+      child: ClipRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
+          child: Container(
+            padding: EdgeInsets.fromLTRB(16, topInset + 12, 16, 12),
+            decoration: BoxDecoration(
+              color: (isDark
+                  ? const Color(0xFF0D1111)
+                  : const Color(0xFF065F46))
+                  .withValues(alpha: bgOpacity * 0.9),
+              border: Border(
+                bottom: BorderSide(
+                  color: Colors.white.withValues(alpha: 0.06 * progress),
+                  width: 0.5,
+                ),
+              ),
+            ),
+            child: SizedBox(
+              height: contentHeight,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  OneKeepAvatar(
+                    avatarIndex: preferences.avatarIndex,
+                    avatarImageData: preferences.avatarImageData,
+                    size: avatarSize,
+                    iconSize: iconSize,
+                  ),
+                  SizedBox(width: 16.0 - 4.0 * progress),
+                  Expanded(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Greeting fades and shrinks
+                        ClipRect(
+                          child: Align(
+                            alignment: Alignment.topLeft,
+                            heightFactor: greetingHeight,
+                            child: Opacity(
+                              opacity: greetingOpacity,
+                              child: Padding(
+                                padding: EdgeInsets.only(bottom: 6.0 * greetingHeight),
+                                child: Text(
+                                  _greeting(),
+                                  style: oneKeepManrope(
+                                    color: palette.heroGreetingText,
+                                    size: 14,
+                                    weight: FontWeight.w600,
+                                    height: 1,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        Text(
+                          userName,
+                          style: oneKeepGrotesk(
+                            color: Colors.white,
+                            size: nameFontSize,
+                            weight: FontWeight.w700,
+                            height: 1,
+                            letterSpacing: 0.1,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    width: buttonSize,
+                    height: buttonSize,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.12 + 0.03 * progress),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.2 * (1 - progress * 0.5)),
+                        width: 0.5,
+                      ),
+                    ),
+                    child: Icon(
+                      Icons.notifications_none_rounded,
+                      size: buttonIconSize,
+                      color: Colors.white.withValues(alpha: 0.9),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -210,7 +361,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     const headerTopSpacing = 24.0;
     const avatarSize = 54.0;
     const balanceCardTopSpacing = 24.0;
-    const balanceCardHeight = 236.0;
+    const balanceCardHeight = 196.0;
     const contentSpacing = 16.0;
     final balanceCardTop = topInset + headerTopSpacing + avatarSize + balanceCardTopSpacing;
     final heroHeight = balanceCardTop + balanceCardHeight + contentSpacing;
@@ -277,64 +428,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                   Align(
                     alignment: Alignment.topCenter,
                     child: Padding(
-                      padding: EdgeInsets.fromLTRB(20, topInset + headerTopSpacing, 20, 0),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          OneKeepAvatar(
-                            avatarIndex: preferences.avatarIndex,
-                            avatarImageData: preferences.avatarImageData,
-                            size: avatarSize,
-                            iconSize: 24,
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  _greeting(),
-                                  style: oneKeepManrope(
-                                    color: palette.heroGreetingText,
-                                    size: 14,
-                                    weight: FontWeight.w600,
-                                    height: 1,
-                                  ),
-                                ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  userName,
-                                  style: oneKeepGrotesk(
-                                    color: palette.heroNameText,
-                                    size: 22,
-                                    weight: FontWeight.w700,
-                                    height: 1,
-                                    letterSpacing: 0.1,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Container(
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              color: palette.heroActionBackground,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: palette.heroActionBorder,
-                                width: 0.5,
-                              ),
-                            ),
-                            child: Icon(
-                              Icons.notifications_none_rounded,
-                              size: 20,
-                              color: palette.heroActionIcon,
-                            ),
-                          ),
-                        ],
-                      ),
+                        padding: EdgeInsets.fromLTRB(16, topInset + headerTopSpacing, 16, 0),
+                      // Invisible spacer — actual header is in outer Stack overlay
+                      child: SizedBox(height: avatarSize),
                     ),
                   ),
                 ],
@@ -343,8 +439,8 @@ class _HomePageState extends ConsumerState<HomePage> {
           ),
           if (summary != null)
             Positioned(
-              left: 20,
-              right: 20,
+              left: 16,
+              right: 16,
               top: balanceCardTop,
               child: SizedBox(
                 height: balanceCardHeight,
@@ -401,7 +497,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               ),
             ),
             Container(
-              padding: const EdgeInsets.fromLTRB(24, 28, 24, 28),
+              padding: const EdgeInsets.fromLTRB(24, 20, 24, 20),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
@@ -443,19 +539,19 @@ class _HomePageState extends ConsumerState<HomePage> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 6),
                   Text(
                     _balanceVisible
                         ? '¥ ${oneKeepCurrency(summary.balance)}'
                         : '¥ ********',
                     style: oneKeepGrotesk(
                       color: Colors.white,
-                      size: 34,
+                      size: 30,
                       weight: FontWeight.w700,
                       letterSpacing: _balanceVisible ? 0.6 : 1.6,
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 14),
                   Row(
                     children: [
                       Expanded(
@@ -493,10 +589,10 @@ class _HomePageState extends ConsumerState<HomePage> {
   ) {
     return Padding(
       padding: EdgeInsets.fromLTRB(
-        20,
         8,
-        20,
-        MediaQuery.paddingOf(context).bottom + 110,
+        8,
+        8,
+        MediaQuery.paddingOf(context).bottom + 24,
       ),
       child: _buildRecentSection(items, categoryColors),
     );
@@ -507,6 +603,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     Map<String, String?> categoryColors,
   ) {
     final palette = _HomePalette.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -533,55 +630,77 @@ class _HomePageState extends ConsumerState<HomePage> {
             const Spacer(),
             GestureDetector(
               onTap: () => context.go('/bills'),
-              child: Row(
-                children: [
-                  Text(
-                    '查看全部',
-                    style: oneKeepManrope(
-                      color: palette.listSecondaryText,
-                      size: 13,
-                      weight: FontWeight.w500,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '全部',
+                      style: oneKeepManrope(
+                        color: palette.listSecondaryText,
+                        size: 12,
+                        weight: FontWeight.w600,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 2),
-                  Icon(
-                    Icons.chevron_right_rounded,
-                    size: 16,
-                    color: palette.listSecondaryText,
-                  ),
-                ],
+                    const SizedBox(width: 2),
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      size: 14,
+                      color: palette.listSecondaryText,
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 14),
         if (items.isEmpty)
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 32),
-              child: Text(
-                '暂无交易记录',
-                style: oneKeepManrope(
-                  color: palette.listSecondaryText,
-                  size: 13,
-                  weight: FontWeight.w400,
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 40),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Column(
+              children: [
+                Icon(
+                  Icons.receipt_long_rounded,
+                  size: 36,
+                  color: palette.listSecondaryText.withValues(alpha: 0.4),
                 ),
-              ),
+                const SizedBox(height: 10),
+                Text(
+                  '暂无记录',
+                  style: oneKeepManrope(
+                    color: palette.listSecondaryText,
+                    size: 13,
+                    weight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
           )
         else
-          ...items.map(
-            (item) => Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: _HomeTransactionRow(
-                transaction: item,
-                categoryColor: categoryColors[item.categoryId] ?? item.categoryColor,
-                onTap: () => _showTransactionSheet(
-                  item,
-                  categoryColors[item.categoryId] ?? item.categoryColor,
+          Column(
+            children: [
+              for (int i = 0; i < items.length; i++)
+                _HomeTransactionRow(
+                  transaction: items[i],
+                  categoryColor: categoryColors[items[i].categoryId] ?? items[i].categoryColor,
+                  onTap: () => _showTransactionSheet(
+                    items[i],
+                    categoryColors[items[i].categoryId] ?? items[i].categoryColor,
+                  ),
+                  isEven: i.isEven,
                 ),
-              ),
-            ),
+            ],
           ),
       ],
     );
@@ -807,23 +926,35 @@ class _HomeTransactionRow extends StatelessWidget {
   final Transaction transaction;
   final String? categoryColor;
   final VoidCallback onTap;
+  final bool isEven;
 
   const _HomeTransactionRow({
     required this.transaction,
     required this.categoryColor,
     required this.onTap,
+    this.isEven = true,
   });
 
   @override
   Widget build(BuildContext context) {
     final isExpense = transaction.isExpense;
     final palette = _HomePalette.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final amountColor = isExpense
+        ? (isDark ? const Color(0xFFFF6B6B) : const Color(0xFFE84545))
+        : AppColors.emerald;
+    final rowColor = isEven
+        ? (isDark ? Colors.white.withValues(alpha: 0.03) : Colors.black.withValues(alpha: 0.02))
+        : Colors.transparent;
 
-    return GestureDetector(
+    return OneKeepBouncingCard(
       onTap: onTap,
-      behavior: HitTestBehavior.opaque,
       child: Container(
-        padding: const EdgeInsets.fromLTRB(0, 14, 4, 14),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        decoration: BoxDecoration(
+          color: rowColor,
+          borderRadius: BorderRadius.circular(12),
+        ),
         child: Row(
           children: [
             OneKeepCategoryBadge(
@@ -832,11 +963,11 @@ class _HomeTransactionRow extends StatelessWidget {
               categoryIcon: transaction.categoryIcon,
               categoryId: transaction.categoryId,
               colorHex: categoryColor,
-              size: 44,
-              iconSize: 22,
-              radius: 12,
+              size: 42,
+              iconSize: 20,
+              radius: 13,
             ),
-            const SizedBox(width: 14),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -847,26 +978,33 @@ class _HomeTransactionRow extends StatelessWidget {
                       color: palette.listPrimaryText,
                       size: 15,
                       weight: FontWeight.w600,
+                      height: 1.2,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 3),
                   Text(
                     '${transaction.categoryName} · ${oneKeepDayTime(transaction.occurredAt)}',
                     style: oneKeepInter(
                       color: palette.listSecondaryText,
-                      size: 12,
+                      size: 11,
                       weight: FontWeight.w500,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
             ),
+            const SizedBox(width: 8),
             Text(
-              '${isExpense ? '-' : '+'} ¥${oneKeepCurrency(transaction.amount)}',
+              '${isExpense ? '-' : '+'}¥${oneKeepCurrency(transaction.amount)}',
               style: oneKeepGrotesk(
-                color: palette.listAccent,
+                color: amountColor,
                 size: 16,
                 weight: FontWeight.w700,
+                letterSpacing: -0.3,
               ),
             ),
           ],

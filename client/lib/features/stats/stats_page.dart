@@ -1,4 +1,5 @@
 ﻿import 'dart:math' as math;
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,7 +11,7 @@ import '../../core/theme/app_colors.dart';
 import '../../shared/models/models.dart';
 import '../../shared/widgets/onekeep_ui.dart';
 
-const _statsPageBackground = Color(0xFFF2F3F5);
+const _statsPageBackground = Color(0xFFFFFFFF);
 
 enum _StatsRange { day, week, month, year }
 
@@ -115,33 +116,35 @@ class _StatsPageState extends ConsumerState<StatsPage> {
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.darkBg : _statsPageBackground,
-      body: SafeArea(
-        bottom: false,
-        child: showLoading
-            ? const Center(child: CircularProgressIndicator())
-            : showError
-            ? Center(
-                child: Text(
-                  _aggregateError ?? state.error ?? '加载失败',
-                  style: oneKeepInter(
-                    color: oneKeepTextSecondary(context),
-                    size: 13,
-                    weight: FontWeight.w500,
+      body: Column(
+        children: [
+          _buildGradientHeader(isDark),
+          Expanded(
+            child: showLoading
+                ? const Center(child: CircularProgressIndicator())
+                : showError
+                ? Center(
+                    child: Text(
+                      _aggregateError ?? state.error ?? '加载失败',
+                      style: oneKeepInter(
+                        color: oneKeepTextSecondary(context),
+                        size: 13,
+                        weight: FontWeight.w500,
+                      ),
+                    ),
+                  )
+                : ListView(
+                    padding: EdgeInsets.fromLTRB(16, 20, 16, MediaQuery.paddingOf(context).bottom + 24),
+                    children: [
+                      if (displayStats != null) ...[
+                        _buildTrendSection(displayStats),
+                        const SizedBox(height: 28),
+                        _buildCategorySection(displayStats, categoryColors),
+                      ],
+                    ],
                   ),
-                ),
-              )
-            : ListView(
-                padding: const EdgeInsets.fromLTRB(20, 18, 20, 120),
-                children: [
-                  _buildHeader(),
-                  const SizedBox(height: 24),
-                  if (displayStats != null) ...[
-                  _buildTrendSection(displayStats),
-                  const SizedBox(height: 28),
-                    _buildCategorySection(displayStats, categoryColors),
-                  ],
-                ],
-              ),
+          ),
+        ],
       ),
     );
   }
@@ -338,6 +341,85 @@ class _StatsPageState extends ConsumerState<StatsPage> {
     }).toList();
   }
 
+  Widget _buildGradientHeader(bool isDark) {
+    final topInset = MediaQuery.paddingOf(context).top;
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: isDark
+              ? [const Color(0xFF0D1111), const Color(0xFF0D1111)]
+              : [const Color(0xFF065F46), const Color(0xFF0D9373)],
+        ),
+      ),
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(16, topInset + 16, 16, 20),
+        child: Row(
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '统计',
+                  style: oneKeepGrotesk(
+                    color: Colors.white,
+                    size: 28,
+                    weight: FontWeight.w700,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '查看你的收支趋势',
+                  style: oneKeepInter(
+                    color: Colors.white.withValues(alpha: 0.6),
+                    size: 13,
+                    weight: FontWeight.w400,
+                  ),
+                ),
+              ],
+            ),
+            const Spacer(),
+            GestureDetector(
+              onTap: _showMonthPicker,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    width: 0.5,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      [_selectedMonth.year, _selectedMonth.month.toString().padLeft(2, '0')].join('/'),
+                      style: oneKeepInter(
+                        color: Colors.white.withValues(alpha: 0.9),
+                        size: 13,
+                        weight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Icon(
+                      Icons.expand_more_rounded,
+                      size: 14,
+                      color: Colors.white.withValues(alpha: 0.7),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildHeader() {
     return Row(
       children: [
@@ -370,6 +452,7 @@ class _StatsPageState extends ConsumerState<StatsPage> {
 
   Widget _buildTrendSection(_ResolvedStats stats) {
     const tone = Color(0xFF308781);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -398,13 +481,13 @@ class _StatsPageState extends ConsumerState<StatsPage> {
         Container(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
             borderRadius: BorderRadius.circular(22),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
-                blurRadius: 18,
-                offset: const Offset(0, 8),
+                color: isDark ? Colors.black.withValues(alpha: 0.2) : Colors.black.withValues(alpha: 0.04),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
@@ -492,6 +575,7 @@ class _StatsPageState extends ConsumerState<StatsPage> {
     _ResolvedStats stats,
     Map<String, String?> categoryColors,
   ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final ranks = stats.categoryRanks.take(5).toList();
     final totalAmount = ranks.isEmpty
         ? 0.0
@@ -512,28 +596,51 @@ class _StatsPageState extends ConsumerState<StatsPage> {
         ),
         const SizedBox(height: 18),
         if (ranks.isEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            child: Text(
-              '暂无数据',
-              style: oneKeepInter(
-                color: oneKeepTextSecondary(context),
-                size: 13,
-                weight: FontWeight.w400,
-              ),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 40),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: isDark ? Colors.black.withValues(alpha: 0.2) : Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 16,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                Icon(
+                  Icons.pie_chart_outline_rounded,
+                  size: 40,
+                  color: oneKeepTextTertiary(context).withValues(alpha: 0.3),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  '暂无数据',
+                  style: oneKeepManrope(
+                    color: oneKeepTextSecondary(context),
+                    size: 14,
+                    weight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
           )
         else
-          ...ranks.asMap().entries.map((entry) {
-            return Padding(
-              padding: EdgeInsets.only(bottom: entry.key == ranks.length - 1 ? 0 : 18),
-              child: _RankRow(
-                rank: entry.value,
-                categoryColor: categoryColors[entry.value.categoryId] ?? entry.value.categoryColor,
-                progressRatio: totalAmount > 0 ? entry.value.amount / totalAmount : 0,
-              ),
-            );
-          }),
+          Column(
+            children: [
+              for (int i = 0; i < ranks.length; i++)
+                _RankRow(
+                  rank: ranks[i],
+                  categoryColor: categoryColors[ranks[i].categoryId] ?? ranks[i].categoryColor,
+                  progressRatio: totalAmount > 0 ? ranks[i].amount / totalAmount : 0,
+                  isEven: i.isEven,
+                ),
+            ],
+          ),
       ],
     );
   }
@@ -547,147 +654,124 @@ class _StatsPageState extends ConsumerState<StatsPage> {
       backgroundColor: Colors.transparent,
       barrierColor: oneKeepDimOverlay(context),
       builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
         return StatefulBuilder(
           builder: (context, setModalState) {
             return OneKeepSheetSurface(
               child: SafeArea(
                 top: false,
-                child: SizedBox(
-                  height: 374,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 12, 24, 36),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Align(
-                          alignment: Alignment.center,
-                          child: Container(
-                            width: 40,
-                            height: 4,
-                            decoration: BoxDecoration(
-                              color: oneKeepTextTertiary(context).withValues(alpha: 0.32),
-                              borderRadius: BorderRadius.circular(2),
-                            ),
-                          ),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 36,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: oneKeepTextTertiary(context).withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(2),
                         ),
-                        const SizedBox(height: 18),
-                        Row(
+                      ),
+                      const SizedBox(height: 20),
+                      // Year navigator
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Row(
                           children: [
+                            _yearNavButton(
+                              context: context,
+                              icon: Icons.chevron_left_rounded,
+                              enabled: true,
+                              isDark: isDark,
+                              onTap: () => setModalState(() => displayYear -= 1),
+                            ),
+                            const Spacer(),
                             Text(
-                              '选择月份',
-                              style: oneKeepManrope(
+                              '$displayYear年',
+                              style: oneKeepGrotesk(
                                 color: oneKeepTextPrimary(context),
                                 size: 18,
                                 weight: FontWeight.w700,
                               ),
                             ),
                             const Spacer(),
-                            GestureDetector(
-                              onTap: () => Navigator.pop(context),
-                              child: Icon(
-                                Icons.close_rounded,
-                                color: oneKeepTextSecondary(context),
-                                size: 24,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            GestureDetector(
-                              onTap: () => setModalState(() => displayYear -= 1),
-                              child: Icon(
-                                Icons.chevron_left_rounded,
-                                color: oneKeepTextSecondary(context),
-                                size: 20,
-                              ),
-                            ),
-                            const Spacer(),
-                            Text(
-                              '$displayYear',
-                              style: oneKeepManrope(
-                                color: oneKeepTextPrimary(context),
-                                size: 16,
-                                weight: FontWeight.w600,
-                              ),
-                            ),
-                            const Spacer(),
-                            GestureDetector(
+                            _yearNavButton(
+                              context: context,
+                              icon: Icons.chevron_right_rounded,
+                              enabled: displayYear < now.year,
+                              isDark: isDark,
                               onTap: displayYear < now.year
                                   ? () => setModalState(() => displayYear += 1)
                                   : null,
-                              child: Icon(
-                                Icons.chevron_right_rounded,
-                                color: displayYear < now.year
-                                    ? oneKeepTextSecondary(context)
-                                    : oneKeepTextTertiary(context).withValues(alpha: 0.5),
-                                size: 20,
-                              ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 16),
-                        Expanded(
-                          child: GridView.builder(
-                            physics: const NeverScrollableScrollPhysics(),
-                            itemCount: 12,
-                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 4,
-                              crossAxisSpacing: 10,
-                              mainAxisSpacing: 10,
-                              mainAxisExtent: 32,
-                            ),
-                            itemBuilder: (context, index) {
-                              final month = index + 1;
-                              final disabled = displayYear == now.year && month > now.month;
-                              final selected =
-                                  displayYear == _selectedMonth.year &&
-                                  month == _selectedMonth.month;
-
-                              return GestureDetector(
-                                onTap: disabled
-                                    ? null
-                                    : () async {
-                                        setState(() {
-                                          _selectedMonth = DateTime(displayYear, month);
-                                        });
-                                        Navigator.pop(context);
-                                        await _reload();
-                                      },
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: selected
-                                        ? AppColors.teal.withValues(alpha: 0.18)
-                                        : oneKeepGlassStrong(context),
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(
-                                      color: selected
-                                          ? AppColors.teal.withValues(alpha: 0.32)
-                                          : Colors.transparent,
-                                      width: 0.8,
-                                    ),
-                                  ),
-                                  alignment: Alignment.center,
-                                  child: Text(
-                                    '$month月',
-                                    style: oneKeepInter(
-                                      color: selected
-                                          ? AppColors.tealDark
-                                          : disabled
-                                          ? oneKeepTextTertiary(context).withValues(alpha: 0.5)
-                                          : oneKeepTextTertiary(context),
-                                      size: 12,
-                                      weight: selected ? FontWeight.w600 : FontWeight.w400,
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
+                      ),
+                      const SizedBox(height: 20),
+                      // Month grid
+                      GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: 12,
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 4,
+                          crossAxisSpacing: 10,
+                          mainAxisSpacing: 10,
+                          mainAxisExtent: 48,
                         ),
-                      ],
-                    ),
+                        itemBuilder: (context, index) {
+                          final month = index + 1;
+                          final disabled = displayYear == now.year && month > now.month;
+                          final selected =
+                              displayYear == _selectedMonth.year &&
+                              month == _selectedMonth.month;
+                          final isCurrent = displayYear == now.year && month == now.month;
+
+                          return GestureDetector(
+                            onTap: disabled
+                                ? null
+                                : () async {
+                                    setState(() {
+                                      _selectedMonth = DateTime(displayYear, month);
+                                    });
+                                    Navigator.pop(context);
+                                    await _reload();
+                                  },
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 180),
+                              curve: Curves.easeOut,
+                              decoration: BoxDecoration(
+                                color: selected
+                                    ? AppColors.teal
+                                    : (isDark ? Colors.white.withValues(alpha: 0.04) : Colors.black.withValues(alpha: 0.02)),
+                                borderRadius: BorderRadius.circular(14),
+                                border: isCurrent && !selected
+                                    ? Border.all(color: AppColors.teal.withValues(alpha: 0.4), width: 1.5)
+                                    : null,
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(
+                                '$month月',
+                                style: oneKeepGrotesk(
+                                  color: selected
+                                      ? Colors.white
+                                      : disabled
+                                      ? oneKeepTextTertiary(context).withValues(alpha: 0.3)
+                                      : oneKeepTextPrimary(context),
+                                  size: 15,
+                                  weight: selected ? FontWeight.w700 : FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -695,6 +779,42 @@ class _StatsPageState extends ConsumerState<StatsPage> {
           },
         );
       },
+    );
+  }
+
+  Widget _yearNavButton({
+    required BuildContext context,
+    required IconData icon,
+    required bool enabled,
+    required bool isDark,
+    required VoidCallback? onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: enabled
+              ? (isDark ? Colors.white.withValues(alpha: 0.08) : Colors.white)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: enabled && !isDark ? [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 4,
+              offset: const Offset(0, 1),
+            ),
+          ] : null,
+        ),
+        child: Icon(
+          icon,
+          color: enabled
+              ? oneKeepTextSecondary(context)
+              : oneKeepTextTertiary(context).withValues(alpha: 0.3),
+          size: 20,
+        ),
+      ),
     );
   }
 
@@ -980,15 +1100,18 @@ class _RankRow extends StatelessWidget {
   final CategoryRank rank;
   final String? categoryColor;
   final double progressRatio;
+  final bool isEven;
 
   const _RankRow({
     required this.rank,
     required this.categoryColor,
     required this.progressRatio,
+    this.isEven = true,
   });
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final tone = oneKeepCategoryTone(
       colorHex: categoryColor,
       categoryId: rank.categoryId,
@@ -998,19 +1121,15 @@ class _RankRow extends StatelessWidget {
     final visibleProgress = rank.amount <= 0
         ? 0.0
         : progressRatio.clamp(0.04, 1.0);
+    final rowColor = isEven
+        ? (isDark ? Colors.white.withValues(alpha: 0.03) : Colors.black.withValues(alpha: 0.02))
+        : Colors.transparent;
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        color: rowColor,
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         children: [
@@ -1039,31 +1158,27 @@ class _RankRow extends StatelessWidget {
                     weight: FontWeight.w500,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 LayoutBuilder(
                   builder: (context, constraints) {
-                    final barWidth = constraints.maxWidth * 0.5;
-                    return SizedBox(
-                      width: barWidth,
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(999),
-                        child: Container(
-                          height: 8,
-                          color: tone.withValues(alpha: 0.14),
-                          alignment: Alignment.centerLeft,
-                          child: FractionallySizedBox(
-                            widthFactor: visibleProgress,
-                            child: SizedBox.expand(
-                              child: DecoratedBox(
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      tone.withValues(alpha: 0.72),
-                                      tone,
-                                    ],
-                                  ),
-                                  borderRadius: BorderRadius.circular(999),
+                    return ClipRRect(
+                      borderRadius: BorderRadius.circular(999),
+                      child: Container(
+                        height: 6,
+                        color: tone.withValues(alpha: 0.10),
+                        alignment: Alignment.centerLeft,
+                        child: FractionallySizedBox(
+                          widthFactor: visibleProgress,
+                          child: SizedBox.expand(
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    tone.withValues(alpha: 0.72),
+                                    tone,
+                                  ],
                                 ),
+                                borderRadius: BorderRadius.circular(999),
                               ),
                             ),
                           ),

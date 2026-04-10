@@ -129,7 +129,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               ),
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -202,8 +202,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           // ── Avatar & Nickname (fixed overlay, never enters status bar) ──
           Positioned(
             top: avatarTop,
-            left: 20,
-            right: 20,
+            left: 16,
+            right: 16,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
@@ -331,8 +331,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           // ── Finance Card overlay ───────────────
           Positioned(
             top: bgHeight - 25 - actualScrollOffset + 4,
-            left: 20,
-            right: 20,
+            left: 16,
+            right: 16,
             child: IgnorePointer(
               child: _buildFinanceOverview(
                 isDark: isDark,
@@ -350,7 +350,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
   Widget _buildSectionTitle(String title, bool isDark) {
     return Padding(
-      padding: const EdgeInsets.only(left: 8, bottom: 8),
+      padding: const EdgeInsets.only(left: 16, bottom: 8),
       child: Text(
         title.toUpperCase(),
         style: TextStyle(
