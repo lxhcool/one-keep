@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 
 import 'category_settings_page.dart';
 import 'ai_settings_page.dart';
+import 'export_data_page.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/data_providers.dart';
 import '../../core/providers/preferences_provider.dart';
@@ -156,6 +157,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     onNicknameTap: _showNicknameSheet,
                     onCategoryTap: _openCategorySettings,
                     onAiTap: _openAiSettings,
+                    onExportTap: _showExportSheet,
                   ),
                   const SizedBox(height: 28),
                   OneKeepBouncingCard(
@@ -635,6 +637,16 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     );
   }
 
+  Future<void> _showExportSheet() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.25),
+      builder: (_) => const ExportDataSheet(),
+    );
+  }
+
   Future<void> _showThemePicker() async {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -1082,6 +1094,7 @@ class _BentoGridMenu extends StatelessWidget {
   final VoidCallback onNicknameTap;
   final VoidCallback onCategoryTap;
   final VoidCallback onAiTap;
+  final VoidCallback onExportTap;
 
   const _BentoGridMenu({
     required this.preferences,
@@ -1091,6 +1104,7 @@ class _BentoGridMenu extends StatelessWidget {
     required this.onNicknameTap,
     required this.onCategoryTap,
     required this.onAiTap,
+    required this.onExportTap,
   });
 
   @override
@@ -1283,7 +1297,39 @@ class _BentoGridMenu extends StatelessWidget {
               ),
             ],
           ),
-        )
+        ),
+        Padding(
+          padding: const EdgeInsets.only(top: 12),
+          child: OneKeepBouncingCard(
+            onTap: onExportTap,
+            child: _BentoBlock(
+              height: 66,
+              color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+              child: Row(
+                children: [
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0EA5E9).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(11),
+                    ),
+                    child: const Icon(Icons.file_download_outlined, color: Color(0xFF0EA5E9), size: 18),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text('数据导出', style: _bentoTitleStyle(isDark)),
+                  ),
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    size: 20,
+                    color: isDark ? const Color(0xFF48484A) : const Color(0xFFD1D5DB),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ],
     );
   }

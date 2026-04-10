@@ -7,6 +7,7 @@ import statsRoutes from "./routes/stats.js";
 import billsRoutes from "./routes/bills.js";
 import categoryRoutes from "./routes/categories.js";
 import transactionRoutes from "./routes/transactions.js";
+import exportRoutes from "./routes/export.js";
 
 export async function buildApp() {
   const app = Fastify({
@@ -26,6 +27,7 @@ export async function buildApp() {
   await app.register(billsRoutes);
   await app.register(categoryRoutes);
   await app.register(transactionRoutes);
+  await app.register(exportRoutes);
 
   // 健康检查
   app.get("/api/health", async () => ({ status: "ok" }));
