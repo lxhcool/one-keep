@@ -119,6 +119,8 @@ class _ExportDataSheetState extends ConsumerState<ExportDataSheet> {
 
       if (!mounted) return;
 
+      setState(() => _isExporting = false);
+
       if (!kIsWeb) {
         Navigator.of(context).pop();
       }
