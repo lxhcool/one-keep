@@ -1,16 +1,20 @@
-import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
 
 import '../../core/providers/api_provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../shared/widgets/onekeep_ui.dart';
 import 'profile_page.dart'; // for OneKeepGlassSheet
+
+// Platform-specific download implementation
+//   - Native (default): saves to temp dir & shares via system sheet
+//   - Web (dart.library.html): triggers browser download via Blob URL
+import 'export_download_impl.dart';
 
 enum ExportFormat { csv, xlsx }
 
@@ -103,50 +107,61 @@ class _ExportDataSheetState extends ConsumerState<ExportDataSheet> {
           'endMonth': endMonth,
         },
         options: Options(
-          responseType: isXlsx ? ResponseType.bytes : ResponseType.plain,
+          responseType: ResponseType.bytes,
+          receiveTimeout: const Duration(seconds: 60),
         ),
       );
 
-      // Save to temp directory
-      final dir = await getTemporaryDirectory();
+      final bytes = _extractBytes(response.data);
       final filename = 'onekeep-$startMonth-$endMonth.$ext';
-      final file = File('${dir.path}/$filename');
 
-      if (isXlsx) {
-        final bytes = response.data as List<int>;
-        await file.writeAsBytes(bytes);
-      } else {
-        final text = response.data as String;
-        await file.writeAsString(text);
-      }
+      await exportDownload(bytes, filename, ext);
 
       if (!mounted) return;
 
-      // Share the file
-      await Share.shareXFiles(
-        [XFile(file.path)],
-        subject: 'OneKeep 记账数据导出',
-      );
-
-      if (mounted) {
+      if (!kIsWeb) {
         Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('导出成功'),
-            backgroundColor: AppColors.emerald,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        );
       }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('导出成功'),
+          backgroundColor: AppColors.emerald,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
     } catch (e) {
       if (mounted) {
         setState(() {
-          _error = '导出失败，请稍后重试';
+          _error = '导出失败：${_readableError(e)}';
           _isExporting = false;
         });
       }
     }
+  }
+
+  /// Extract bytes from Dio response data
+  Uint8List _extractBytes(dynamic data) {
+    if (data is Uint8List) return data;
+    if (data is List<int>) return Uint8List.fromList(data);
+    throw Exception('无法解析响应数据');
+  }
+
+  String _readableError(Object error) {
+    if (error is DioException) {
+      final statusCode = error.response?.statusCode;
+      if (statusCode == 401) return '请重新登录';
+      if (statusCode == 400) return '请求参数错误';
+      if (error.type == DioExceptionType.connectionTimeout ||
+          error.type == DioExceptionType.receiveTimeout) {
+        return '网络超时，请重试';
+      }
+      if (error.type == DioExceptionType.connectionError) {
+        return '网络连接失败';
+      }
+      return '服务器错误（${statusCode ?? '未知'}）';
+    }
+    return error.toString();
   }
 
   @override
