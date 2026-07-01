@@ -24,7 +24,6 @@ class LoginPage extends ConsumerStatefulWidget {
 class _LoginPageState extends ConsumerState<LoginPage>
     with SingleTickerProviderStateMixin {
   late AnimationController _flowController;
-  final _scrollController = ScrollController();
 
   final _emailController = TextEditingController();
   final _codeController = TextEditingController();
@@ -46,7 +45,6 @@ class _LoginPageState extends ConsumerState<LoginPage>
   @override
   void dispose() {
     _flowController.dispose();
-    _scrollController.dispose();
     _emailController.dispose();
     _codeController.dispose();
     _countdownTimer?.cancel();
@@ -132,7 +130,6 @@ class _LoginPageState extends ConsumerState<LoginPage>
 
             SafeArea(
               child: SingleChildScrollView(
-                controller: _scrollController,
                 padding: const EdgeInsets.only(
                   left: 16,
                   right: 16,
@@ -270,7 +267,6 @@ class _LoginPageState extends ConsumerState<LoginPage>
           keyboardType: TextInputType.emailAddress,
           autofillHints: const [AutofillHints.email],
           onChanged: (_) => setState(() {}),
-          onFocus: () => _scrollController.animateTo(200, duration: const Duration(milliseconds: 200), curve: Curves.easeOut),
         ),
       ],
     );
@@ -287,7 +283,6 @@ class _LoginPageState extends ConsumerState<LoginPage>
       maxLength: 6,
       onChanged: (_) => setState(() {}),
       suffix: _buildCodeSuffix(isDark),
-      onFocus: () => _scrollController.animateTo(240, duration: const Duration(milliseconds: 200), curve: Curves.easeOut),
     );
   }
 
@@ -484,7 +479,6 @@ class _PremiumTextField extends StatefulWidget {
   final Iterable<String>? autofillHints;
   final int? maxLength;
   final ValueChanged<String>? onChanged;
-  final VoidCallback? onFocus;
 
   const _PremiumTextField({
     required this.controller,
@@ -496,7 +490,6 @@ class _PremiumTextField extends StatefulWidget {
     this.autofillHints,
     this.maxLength,
     this.onChanged,
-    this.onFocus,
   });
 
   @override
@@ -511,9 +504,6 @@ class _PremiumTextFieldState extends State<_PremiumTextField> {
   void initState() {
     super.initState();
     _focusNode.addListener(() {
-      if (_focusNode.hasFocus) {
-        widget.onFocus?.call();
-      }
       setState(() => _isFocused = _focusNode.hasFocus);
     });
   }

@@ -1,0 +1,3426 @@
+厘清记账软件 V1.0 - 计算机软件著作权源代码文档
+============================================================
+前 30 页 + 后 30 页
+每页不超过 50 行
+
+============================================================
+
+厘清记账软件 V1.0    前第  1 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+// ---- File: client/lib/shared/models/models.dart ----
+String _readString(
+  Map<String, dynamic> json,
+  String key, {
+  String fallback = '',
+}) {
+  final value = json[key];
+  if (value == null) return fallback;
+  return value.toString();
+}
+
+String? _readNullableString(Map<String, dynamic> json, String key) {
+  final value = json[key];
+  if (value == null) return null;
+  final text = value.toString();
+  return text.isEmpty ? null : text;
+}
+
+double _readDouble(
+  Map<String, dynamic> json,
+  String key, {
+  double fallback = 0,
+}) {
+  final value = json[key];
+  if (value is num) return value.toDouble();
+  if (value is String) return double.tryParse(value) ?? fallback;
+  return fallback;
+}
+
+class Transaction {
+  final String transactionId;
+  final String categoryId;
+  final String title;
+  final String categoryName;
+  final String categoryIcon;
+  final String? categoryColor;
+  final DateTime occurredAt;
+  final double amount;
+  final String direction;
+  final String? note;
+  final String? merchant;
+
+  const Transaction({
+    required this.transactionId,
+    required this.categoryId,
+    required this.title,
+    required this.categoryName,
+    required this.categoryIcon,
+    this.categoryColor,
+    required this.occurredAt,
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    前第  2 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+    required this.amount,
+    required this.direction,
+    this.note,
+    this.merchant,
+  });
+
+  bool get isExpense => direction == 'expense';
+  bool get isIncome => direction == 'income';
+
+  factory Transaction.fromJson(Map<String, dynamic> json) => Transaction(
+    transactionId: _readString(json, 'transactionId'),
+    categoryId: _readString(json, 'categoryId'),
+    title: _readString(json, 'title', fallback: '未命名交易'),
+    categoryName: _readString(json, 'categoryName', fallback: '未分类'),
+    categoryIcon: _readString(json, 'categoryIcon', fallback: 'receipt_long'),
+    categoryColor:
+        _readNullableString(json, 'categoryColor') ??
+        _readNullableString(json, 'color'),
+    occurredAt:
+        (DateTime.tryParse(_readString(json, 'occurredAt')) ?? DateTime.now()).toLocal(),
+    amount: _readDouble(json, 'amount'),
+    direction: _readString(json, 'direction', fallback: 'expense'),
+    note: _readNullableString(json, 'note'),
+    merchant: _readNullableString(json, 'merchant'),
+  );
+}
+
+class HomeSummary {
+  final UserInfo user;
+  final double balance;
+  final double income;
+  final double expense;
+  final List<Transaction> recentTransactions;
+
+  const HomeSummary({
+    required this.user,
+    required this.balance,
+    required this.income,
+    required this.expense,
+    required this.recentTransactions,
+  });
+
+  factory HomeSummary.fromJson(Map<String, dynamic> json) => HomeSummary(
+    user: UserInfo.fromJson(json['user'] as Map<String, dynamic>),
+    balance: (json['balanceSummary']['amount'] as num).toDouble(),
+    income: (json['incomeSummary']['amount'] as num).toDouble(),
+    expense: (json['expenseSummary']['amount'] as num).toDouble(),
+    recentTransactions: (json['recentTransactions'] as List)
+        .map((e) => Transaction.fromJson(e as Map<String, dynamic>))
+        .toList(),
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    前第  3 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+  );
+}
+
+class UserInfo {
+  final String id;
+  final String? username;
+  final String name;
+  final String email;
+
+  const UserInfo({
+    required this.id,
+    this.username,
+    required this.name,
+    required this.email,
+  });
+
+  UserInfo copyWith({
+    String? id,
+    String? username,
+    String? name,
+    String? email,
+  }) {
+    return UserInfo(
+      id: id ?? this.id,
+      username: username ?? this.username,
+      name: name ?? this.name,
+      email: email ?? this.email,
+    );
+  }
+
+  factory UserInfo.fromJson(Map<String, dynamic> json) => UserInfo(
+    id: _readString(json, 'id'),
+    username: _readNullableString(json, 'username'),
+    name: _readString(
+      json,
+      'displayName',
+      fallback: _readString(json, 'name', fallback: '厘清用户'),
+    ),
+    email: _readString(json, 'email'),
+  );
+}
+
+class StatsOverview {
+  final double totalIncome;
+  final double totalExpense;
+  final List<TrendPoint> trendSeries;
+  final List<CategoryRank> categoryRanks;
+
+  const StatsOverview({
+    required this.totalIncome,
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    前第  4 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+    required this.totalExpense,
+    required this.trendSeries,
+    required this.categoryRanks,
+  });
+
+  factory StatsOverview.fromJson(Map<String, dynamic> json) => StatsOverview(
+    totalIncome: _readDouble(json['totals'] as Map<String, dynamic>, 'income'),
+    totalExpense: _readDouble(
+      json['totals'] as Map<String, dynamic>,
+      'expense',
+    ),
+    trendSeries: (json['trendSeries'] as List)
+        .map((e) => TrendPoint.fromJson(e as Map<String, dynamic>))
+        .toList(),
+    categoryRanks: (json['categoryRanks'] as List)
+        .map((e) => CategoryRank.fromJson(e as Map<String, dynamic>))
+        .toList(),
+  );
+}
+
+class TrendPoint {
+  final String label;
+  final double value;
+
+  const TrendPoint({required this.label, required this.value});
+
+  factory TrendPoint.fromJson(Map<String, dynamic> json) => TrendPoint(
+    label: _readString(json, 'label'),
+    value: _readDouble(json, 'value'),
+  );
+}
+
+class CategoryRank {
+  final String categoryId;
+  final String categoryName;
+  final String categoryIcon;
+  final String? categoryColor;
+  final double amount;
+  final double progressRatio;
+
+  const CategoryRank({
+    required this.categoryId,
+    required this.categoryName,
+    required this.categoryIcon,
+    this.categoryColor,
+    required this.amount,
+    required this.progressRatio,
+  });
+
+  factory CategoryRank.fromJson(Map<String, dynamic> json) => CategoryRank(
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    前第  5 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+    categoryId: _readString(json, 'categoryId'),
+    categoryName: _readString(json, 'categoryName', fallback: '未分类'),
+    categoryIcon: _readString(json, 'categoryIcon', fallback: 'receipt_long'),
+    categoryColor:
+        _readNullableString(json, 'categoryColor') ??
+        _readNullableString(json, 'color'),
+    amount: _readDouble(json, 'amount'),
+    progressRatio: _readDouble(json, 'progressRatio'),
+  );
+}
+
+class BillGroup {
+  final String date;
+  final double expenseTotal;
+  final double incomeTotal;
+  final List<Transaction> items;
+
+  const BillGroup({
+    required this.date,
+    required this.expenseTotal,
+    required this.incomeTotal,
+    required this.items,
+  });
+
+  factory BillGroup.fromJson(Map<String, dynamic> json) => BillGroup(
+    date: _readString(json, 'date'),
+    expenseTotal: _readDouble(
+      json['summary'] as Map<String, dynamic>,
+      'expense',
+    ),
+    incomeTotal: _readDouble(json['summary'] as Map<String, dynamic>, 'income'),
+    items: (json['items'] as List)
+        .map((e) => Transaction.fromJson(e as Map<String, dynamic>))
+        .toList(),
+  );
+}
+
+class BillsResponse {
+  final List<BillGroup> groupedBills;
+  final String? nextCursor;
+
+  const BillsResponse({required this.groupedBills, this.nextCursor});
+
+  factory BillsResponse.fromJson(Map<String, dynamic> json) => BillsResponse(
+    groupedBills: (json['groupedBills'] as List)
+        .map((e) => BillGroup.fromJson(e as Map<String, dynamic>))
+        .toList(),
+    nextCursor: json['nextCursor'] as String?,
+  );
+}
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    前第  6 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+
+class Category {
+  final String id;
+  final String name;
+  final String icon;
+  final String type;
+  final String? color;
+
+  const Category({
+    required this.id,
+    required this.name,
+    required this.icon,
+    required this.type,
+    this.color,
+  });
+
+  factory Category.fromJson(Map<String, dynamic> json) => Category(
+    id: _readString(json, 'id'),
+    name: _readString(json, 'name', fallback: '未分类'),
+    icon: _readString(json, 'icon', fallback: 'receipt_long'),
+    type: _readString(json, 'type', fallback: 'expense'),
+    color:
+        _readNullableString(json, 'color') ??
+        _readNullableString(json, 'categoryColor'),
+  );
+}
+
+// ---- File: client/lib/main.dart ----
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'app.dart';
+
+void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(const ProviderScope(child: OneKeepApp()));
+}
+
+// ---- File: client/lib/app.dart ----
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'core/router/app_router.dart';
+import 'core/providers/preferences_provider.dart';
+import 'core/theme/app_theme.dart';
+
+class OneKeepApp extends ConsumerWidget {
+  const OneKeepApp({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final router = ref.watch(routerProvider);
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    前第  7 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+    final preferences = ref.watch(preferencesProvider);
+
+    return MaterialApp.router(
+      title: '厘清',
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
+      themeMode: preferences.themeMode,
+      routerConfig: router,
+    );
+  }
+}
+
+// ---- File: client/lib/core/router/app_router.dart ----
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import '../providers/auth_provider.dart';
+import '../../features/auth/login_page.dart';
+import '../../features/auth/privacy_policy_page.dart';
+import '../../features/auth/terms_of_service_page.dart';
+import '../../features/home/home_page.dart';
+import '../../features/stats/stats_page.dart';
+import '../../features/bills/bills_page.dart';
+import '../../features/profile/profile_page.dart';
+import '../../features/profile/about_page.dart';
+import '../../shared/widgets/main_shell.dart';
+
+final routerProvider = Provider<GoRouter>((ref) {
+  final authStatus = ref.watch(authProvider.select((state) => state.status));
+
+  return GoRouter(
+    initialLocation: '/home',
+    redirect: (context, state) {
+      final isAuth = authStatus == AuthStatus.authenticated;
+      final isAuthRoute = state.matchedLocation.startsWith('/auth');
+      final isLegalRoute =
+          state.matchedLocation == '/legal/privacy' ||
+          state.matchedLocation == '/legal/terms' ||
+          state.matchedLocation == '/about';
+
+      if (authStatus == AuthStatus.unknown) return null;
+      if (!isAuth && !isAuthRoute && !isLegalRoute) return '/auth/login';
+      if (isAuth && isAuthRoute) return '/home';
+      return null;
+    },
+    routes: [
+      ShellRoute(
+        builder: (context, state, child) => MainShell(child: child),
+        routes: [
+          GoRoute(
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    前第  8 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+            path: '/home',
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: HomePage()),
+          ),
+          GoRoute(
+            path: '/stats',
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: StatsPage()),
+          ),
+          GoRoute(
+            path: '/bills',
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: BillsPage()),
+          ),
+          GoRoute(
+            path: '/profile',
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: ProfilePage()),
+          ),
+        ],
+      ),
+      GoRoute(
+        path: '/auth/login',
+        builder: (context, state) => const LoginPage(),
+      ),
+      GoRoute(
+        path: '/legal/privacy',
+        builder: (context, state) => const PrivacyPolicyPage(),
+      ),
+      GoRoute(
+        path: '/legal/terms',
+        builder: (context, state) => const TermsOfServicePage(),
+      ),
+      GoRoute(path: '/about', builder: (context, state) => const AboutPage()),
+    ],
+  );
+});
+
+// ---- File: client/lib/core/providers/api_provider.dart ----
+import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../network/api_client.dart';
+
+const _defaultApiBaseUrl = 'https://onekeep.lxhcoool.cn';
+const _localApiBaseUrl = 'http://192.168.10.231:3002';
+
+final apiClientProvider = Provider<ApiClient>((ref) {
+  return ApiClient(baseUrl: _resolveApiBaseUrl());
+});
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    前第  9 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+
+String _resolveApiBaseUrl() {
+  const override = String.fromEnvironment('API_BASE_URL');
+  if (override.isNotEmpty) return override;
+
+  if (kReleaseMode) return _defaultApiBaseUrl;
+
+  return _localApiBaseUrl;
+}
+
+// ---- File: client/lib/core/providers/auth_provider.dart ----
+import 'dart:convert';
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../network/api_client.dart';
+import '../../shared/models/models.dart';
+import 'api_provider.dart';
+
+/// 认证状态
+enum AuthStatus { unknown, authenticated, unauthenticated }
+
+const Object _unset = Object();
+
+class AuthState {
+  final AuthStatus status;
+  final UserInfo? user;
+  final bool isLoading;
+  final bool isSendingCode;
+  final String? error;
+
+  const AuthState({
+    this.status = AuthStatus.unknown,
+    this.user,
+    this.isLoading = false,
+    this.isSendingCode = false,
+    this.error,
+  });
+
+  AuthState copyWith({
+    AuthStatus? status,
+    Object? user = _unset,
+    bool? isLoading,
+    bool? isSendingCode,
+    Object? error = _unset,
+  }) => AuthState(
+    status: status ?? this.status,
+    user: identical(user, _unset) ? this.user : user as UserInfo?,
+    isLoading: isLoading ?? this.isLoading,
+    isSendingCode: isSendingCode ?? this.isSendingCode,
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    前第 10 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+    error: identical(error, _unset) ? this.error : error as String?,
+  );
+}
+
+class AuthNotifier extends StateNotifier<AuthState> {
+  final ApiClient _api;
+  static const _storage = FlutterSecureStorage();
+  static const _currentUserKey = 'auth_current_user';
+
+  AuthNotifier(this._api) : super(const AuthState()) {
+    _checkAuth();
+  }
+
+  Future<void> _checkAuth() async {
+    final token = await ApiClient.getToken();
+    if (token == null) {
+      await _storage.delete(key: _currentUserKey);
+      state = state.copyWith(status: AuthStatus.unauthenticated, user: null);
+      return;
+    }
+
+    try {
+      final res = await _api.dio.get('/api/auth/me');
+      final data = res.data as Map<String, dynamic>;
+      final user = UserInfo.fromJson(
+        Map<String, dynamic>.from(data['user'] as Map<String, dynamic>),
+      );
+      await _writeStoredUser(user);
+      state = state.copyWith(status: AuthStatus.authenticated, user: user);
+    } catch (_) {
+      await ApiClient.clearToken();
+      await _storage.delete(key: _currentUserKey);
+      state = state.copyWith(status: AuthStatus.unauthenticated, user: null);
+    }
+  }
+
+  Future<void> login(String identifier, String password) async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final res = await _api.dio.post(
+        '/api/auth/login',
+        data: {'identifier': identifier, 'password': password},
+      );
+      final data = res.data as Map<String, dynamic>;
+      final user = Map<String, dynamic>.from(
+        data['user'] as Map<String, dynamic>,
+      );
+      user['name'] ??= user['displayName'];
+      final userInfo = UserInfo.fromJson(user);
+      await ApiClient.saveToken(data['token'] as String);
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    前第 11 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+      await _writeStoredUser(userInfo);
+      state = state.copyWith(
+        status: AuthStatus.authenticated,
+        user: userInfo,
+        isLoading: false,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: ApiClient.readableError(e, fallback: '登录失败'),
+      );
+    }
+  }
+
+  Future<void> register(
+    String username,
+    String email,
+    String password,
+    String displayName,
+  ) async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final res = await _api.dio.post(
+        '/api/auth/register',
+        data: {
+          'username': username,
+          'email': email,
+          'password': password,
+          'displayName': displayName,
+        },
+      );
+      final data = res.data as Map<String, dynamic>;
+      final user = Map<String, dynamic>.from(
+        data['user'] as Map<String, dynamic>,
+      );
+      user['name'] ??= user['displayName'];
+      final userInfo = UserInfo.fromJson(user);
+      await ApiClient.saveToken(data['token'] as String);
+      await _writeStoredUser(userInfo);
+      state = state.copyWith(
+        status: AuthStatus.authenticated,
+        user: userInfo,
+        isLoading: false,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: ApiClient.readableError(e, fallback: '注册失败'),
+      );
+    }
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    前第 12 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+  }
+
+  /// 发送邮箱验证码
+  Future<bool> sendCode(String email) async {
+    state = state.copyWith(isSendingCode: true, error: null);
+    try {
+      await _api.dio.post('/api/auth/send-code', data: {'email': email});
+      state = state.copyWith(isSendingCode: false);
+      return true;
+    } catch (e) {
+      state = state.copyWith(
+        isSendingCode: false,
+        error: ApiClient.readableError(e, fallback: '发送验证码失败'),
+      );
+      return false;
+    }
+  }
+
+  /// 验证邮箱验证码并登录/自动注册
+  Future<void> verifyCode(String email, String code) async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final res = await _api.dio.post(
+        '/api/auth/verify-code',
+        data: {'email': email, 'code': code},
+      );
+      final data = res.data as Map<String, dynamic>;
+      final user = Map<String, dynamic>.from(
+        data['user'] as Map<String, dynamic>,
+      );
+      user['name'] ??= user['displayName'];
+      final userInfo = UserInfo.fromJson(user);
+      await ApiClient.saveToken(data['token'] as String);
+      await _writeStoredUser(userInfo);
+      state = state.copyWith(
+        status: AuthStatus.authenticated,
+        user: userInfo,
+        isLoading: false,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: ApiClient.readableError(e, fallback: '验证失败'),
+      );
+    }
+  }
+
+  Future<void> logout() async {
+    await ApiClient.clearToken();
+    await _storage.delete(key: _currentUserKey);
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    前第 13 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+    state = const AuthState(status: AuthStatus.unauthenticated);
+  }
+
+  void updateLocalUser({String? name}) {
+    if (state.user == null) return;
+    final user = state.user!.copyWith(name: name);
+    state = state.copyWith(user: user);
+    _writeStoredUser(user);
+  }
+
+  void clearError() {
+    state = state.copyWith(error: null);
+  }
+
+  void setError(String message) {
+    state = state.copyWith(error: message);
+  }
+
+  Future<void> _writeStoredUser(UserInfo user) {
+    return _storage.write(
+      key: _currentUserKey,
+      value: jsonEncode({
+        'id': user.id,
+        'username': user.username,
+        'name': user.name,
+        'email': user.email,
+      }),
+    );
+  }
+}
+
+final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
+  return AuthNotifier(ref.read(apiClientProvider));
+});
+
+// ---- File: client/lib/core/providers/data_providers.dart ----
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
+import '../network/api_client.dart';
+import '../../shared/models/models.dart';
+import 'api_provider.dart';
+import 'auth_provider.dart';
+
+// ============ Home ============
+
+class HomeState {
+  final HomeSummary? summary;
+  final bool isLoading;
+  final String? error;
+
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    前第 14 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+  const HomeState({this.summary, this.isLoading = false, this.error});
+}
+
+class HomeNotifier extends StateNotifier<HomeState> {
+  final ApiClient _api;
+
+  HomeNotifier(this._api) : super(const HomeState());
+
+  Future<void> load([String? month]) async {
+    state = HomeState(isLoading: true);
+    try {
+      final m = month ?? DateFormat('yyyy-MM').format(DateTime.now());
+      final res = await _api.dio.get('/api/home/summary', queryParameters: {'month': m});
+      state = HomeState(summary: HomeSummary.fromJson(res.data as Map<String, dynamic>));
+    } catch (e) {
+      state = HomeState(error: '加载失败');
+    }
+  }
+}
+
+final homeProvider = StateNotifierProvider<HomeNotifier, HomeState>((ref) {
+  return HomeNotifier(ref.read(apiClientProvider));
+});
+
+// ============ Stats ============
+
+class StatsState {
+  final StatsOverview? overview;
+  final bool isLoading;
+  final String? error;
+
+  const StatsState({this.overview, this.isLoading = false, this.error});
+}
+
+class StatsNotifier extends StateNotifier<StatsState> {
+  final ApiClient _api;
+
+  StatsNotifier(this._api) : super(const StatsState());
+
+  Future<void> load({String? month, String metricType = 'expense'}) async {
+    state = StatsState(isLoading: true);
+    try {
+      final m = month ?? DateFormat('yyyy-MM').format(DateTime.now());
+      final res = await _api.dio.get('/api/stats/overview', queryParameters: {
+        'month': m,
+        'metricType': metricType,
+      });
+      state = StatsState(overview: StatsOverview.fromJson(res.data as Map<String, dynamic>));
+    } catch (e) {
+      state = StatsState(error: '加载失败');
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    前第 15 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+    }
+  }
+}
+
+final statsProvider = StateNotifierProvider<StatsNotifier, StatsState>((ref) {
+  return StatsNotifier(ref.read(apiClientProvider));
+});
+
+// ============ Bills ============
+
+class BillsState {
+  final List<BillGroup> groups;
+  final bool isLoading;
+  final bool hasMore;
+  final String? nextCursor;
+  final String? error;
+
+  const BillsState({
+    this.groups = const [],
+    this.isLoading = false,
+    this.hasMore = true,
+    this.nextCursor,
+    this.error,
+  });
+}
+
+class BillsNotifier extends StateNotifier<BillsState> {
+  final ApiClient _api;
+
+  BillsNotifier(this._api) : super(const BillsState());
+
+  Future<void> load({
+    String? month,
+    String filterType = 'all',
+    String? query,
+  }) async {
+    state = const BillsState(isLoading: true);
+    try {
+      final m = month ?? DateFormat('yyyy-MM').format(DateTime.now());
+      final res = await _api.dio.get('/api/bills', queryParameters: {
+        'month': m,
+        'filterType': filterType,
+        if (query != null && query.isNotEmpty) 'query': query,
+      });
+      final data = BillsResponse.fromJson(res.data as Map<String, dynamic>);
+      state = BillsState(
+        groups: data.groupedBills,
+        hasMore: data.nextCursor != null,
+        nextCursor: data.nextCursor,
+      );
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    前第 16 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+    } catch (e) {
+      state = BillsState(error: '加载失败');
+    }
+  }
+
+  Future<void> loadMore({
+    String? month,
+    String filterType = 'all',
+    String? query,
+  }) async {
+    if (state.isLoading || !state.hasMore) return;
+    state = BillsState(
+      groups: state.groups,
+      isLoading: true,
+      hasMore: state.hasMore,
+      nextCursor: state.nextCursor,
+    );
+    try {
+      final m = month ?? DateFormat('yyyy-MM').format(DateTime.now());
+      final res = await _api.dio.get('/api/bills', queryParameters: {
+        'month': m,
+        'filterType': filterType,
+        if (query != null && query.isNotEmpty) 'query': query,
+        if (state.nextCursor != null) 'cursor': state.nextCursor,
+      });
+      final data = BillsResponse.fromJson(res.data as Map<String, dynamic>);
+      final merged = [...state.groups];
+      for (final g in data.groupedBills) {
+        final idx = merged.indexWhere((e) => e.date == g.date);
+        if (idx >= 0) {
+          merged[idx] = BillGroup(
+            date: g.date,
+            expenseTotal: g.expenseTotal,
+            incomeTotal: g.incomeTotal,
+            items: [...merged[idx].items, ...g.items],
+          );
+        } else {
+          merged.add(g);
+        }
+      }
+      state = BillsState(
+        groups: merged,
+        hasMore: data.nextCursor != null,
+        nextCursor: data.nextCursor,
+      );
+    } catch (e) {
+      state = BillsState(
+        groups: state.groups,
+        error: '加载更多失败',
+        hasMore: state.hasMore,
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    前第 17 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+        nextCursor: state.nextCursor,
+      );
+    }
+  }
+}
+
+final billsProvider = StateNotifierProvider<BillsNotifier, BillsState>((ref) {
+  return BillsNotifier(ref.read(apiClientProvider));
+});
+
+// ============ Categories ============
+
+final categoriesProvider = FutureProvider<List<Category>>((ref) async {
+  final authState = ref.watch(authProvider);
+  if (authState.status != AuthStatus.authenticated) {
+    return const <Category>[];
+  }
+
+  final api = ref.read(apiClientProvider);
+  final res = await api.dio.get('/api/categories');
+  return (res.data['categories'] as List)
+      .map((e) => Category.fromJson(e as Map<String, dynamic>))
+      .toList();
+});
+
+// ---- File: client/lib/core/providers/chat_provider.dart ----
+import 'dart:convert';
+
+import 'package:dio/dio.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../core/providers/api_provider.dart';
+import '../../core/providers/data_providers.dart';
+import '../../core/providers/preferences_provider.dart';
+import '../../shared/models/models.dart';
+
+/// 聊天消息模型
+class ChatMessage {
+  final String id;
+  final String content;
+  final bool isUser;
+  final DateTime timestamp;
+  final List<ParsedTransaction>? transactions;
+
+  const ChatMessage({
+    required this.id,
+    required this.content,
+    required this.isUser,
+    required this.timestamp,
+    this.transactions,
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    前第 18 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+  });
+
+  ChatMessage copyWith({
+    String? id,
+    String? content,
+    bool? isUser,
+    DateTime? timestamp,
+    List<ParsedTransaction>? transactions,
+    bool clearTransactions = false,
+  }) => ChatMessage(
+    id: id ?? this.id,
+    content: content ?? this.content,
+    isUser: isUser ?? this.isUser,
+    timestamp: timestamp ?? this.timestamp,
+    transactions: clearTransactions
+        ? null
+        : (transactions ?? this.transactions),
+  );
+}
+
+/// AI 解析出的交易记录
+class ParsedTransaction {
+  final String title;
+  final double amount;
+  final String direction;
+  final String? categoryName;
+  final String? note;
+
+  const ParsedTransaction({
+    required this.title,
+    required this.amount,
+    required this.direction,
+    this.categoryName,
+    this.note,
+  });
+
+  factory ParsedTransaction.fromJson(Map<String, dynamic> json) =>
+      ParsedTransaction(
+        title: json['title'] as String? ?? '未命名',
+        amount: (json['amount'] as num?)?.toDouble() ?? 0,
+        direction: json['direction'] as String? ?? 'expense',
+        categoryName: json['categoryName'] as String?,
+        note: json['note'] as String?,
+      );
+}
+
+/// 聊天状态
+class ChatState {
+  final List<ChatMessage> messages;
+  final bool isLoading;
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    前第 19 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+  final String? error;
+  final Set<String> confirmingMessageIds;
+  final Set<String> confirmedMessageIds;
+
+  const ChatState({
+    this.messages = const [],
+    this.isLoading = false,
+    this.error,
+    this.confirmingMessageIds = const {},
+    this.confirmedMessageIds = const {},
+  });
+
+  ChatState copyWith({
+    List<ChatMessage>? messages,
+    bool? isLoading,
+    String? error,
+    Set<String>? confirmingMessageIds,
+    Set<String>? confirmedMessageIds,
+  }) => ChatState(
+    messages: messages ?? this.messages,
+    isLoading: isLoading ?? this.isLoading,
+    error: error,
+    confirmingMessageIds: confirmingMessageIds ?? this.confirmingMessageIds,
+    confirmedMessageIds: confirmedMessageIds ?? this.confirmedMessageIds,
+  );
+
+  bool isTransactionConfirming(String messageId) =>
+      confirmingMessageIds.contains(messageId);
+
+  bool isTransactionConfirmed(String messageId) =>
+      confirmedMessageIds.contains(messageId);
+}
+
+class ChatNotifier extends StateNotifier<ChatState> {
+  ChatNotifier(this._ref) : super(const ChatState());
+
+  final Ref _ref;
+
+  /// 添加用户消息并获取 AI 响应
+  Future<void> sendMessage(String content) async {
+    if (content.trim().isEmpty) return;
+
+    final userMessage = ChatMessage(
+      id: _uuid(),
+      content: content.trim(),
+      isUser: true,
+      timestamp: DateTime.now(),
+    );
+
+    final updatedMessages = [...state.messages, userMessage];
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    前第 20 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+    state = state.copyWith(
+      messages: updatedMessages,
+      isLoading: true,
+      error: null,
+    );
+
+    try {
+      final categories = _ref.read(categoriesProvider).valueOrNull ?? [];
+      final aiResponse = await _callAiForBookkeeping(content, categories);
+
+      final assistantMessage = ChatMessage(
+        id: _uuid(),
+        content: aiResponse['reply'] as String? ?? '抱歉，我没能理解你的记账内容。',
+        isUser: false,
+        timestamp: DateTime.now(),
+        transactions: (aiResponse['transactions'] as List<dynamic>?)
+            ?.map((e) => ParsedTransaction.fromJson(e as Map<String, dynamic>))
+            .toList(),
+      );
+
+      state = state.copyWith(
+        messages: [...state.messages, assistantMessage],
+        isLoading: false,
+      );
+    } catch (e) {
+      // 添加错误提示消息
+      final errorMsg = ChatMessage(
+        id: _uuid(),
+        content: e.toString().replaceFirst('Exception: ', ''),
+        isUser: false,
+        timestamp: DateTime.now(),
+      );
+      state = state.copyWith(
+        messages: [...state.messages, errorMsg],
+        isLoading: false,
+        error: e.toString(),
+      );
+    }
+  }
+
+  /// 确认并提交 AI 解析出的交易记录
+  Future<void> confirmTransactions(
+    String messageId,
+    List<ParsedTransaction> transactions,
+  ) async {
+    if (state.isTransactionConfirming(messageId) ||
+        state.isTransactionConfirmed(messageId)) {
+      return;
+    }
+
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    前第 21 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+    final message = state.messages
+        .where((item) => item.id == messageId)
+        .firstOrNull;
+    if (message == null ||
+        message.transactions == null ||
+        message.transactions!.isEmpty) {
+      return;
+    }
+
+    state = state.copyWith(
+      confirmingMessageIds: {...state.confirmingMessageIds, messageId},
+      error: null,
+    );
+
+    final categories = _ref.read(categoriesProvider).valueOrNull ?? [];
+    var createdCount = 0;
+
+    for (final tx in transactions) {
+      String? categoryId;
+      if (tx.categoryName != null) {
+        final match = categories
+            .where(
+              (c) =>
+                  c.name == tx.categoryName ||
+                  c.name.contains(tx.categoryName!),
+            )
+            .firstOrNull;
+        categoryId = match?.id;
+      }
+      if (categoryId == null) {
+        final fallback = categories
+            .where((c) => c.type == tx.direction)
+            .firstOrNull;
+        categoryId = fallback?.id;
+      }
+      if (categoryId == null) continue;
+
+      try {
+        final api = _ref.read(apiClientProvider);
+        await api.dio.post(
+          '/api/transactions',
+          data: {
+            'title': tx.title,
+            'amount': tx.amount,
+            'direction': tx.direction,
+            'categoryId': categoryId,
+            'occurredAt': DateTime.now().toUtc().toIso8601String(),
+            if (tx.note != null) 'note': tx.note,
+          },
+        );
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    前第 22 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+        createdCount += 1;
+      } catch (_) {
+        // 静默跳过失败的提交
+      }
+    }
+
+    _ref.read(homeProvider.notifier).load();
+    _ref.read(billsProvider.notifier).load();
+
+    final updatedMessages = createdCount > 0
+        ? state.messages
+              .map(
+                (item) => item.id == messageId
+                    ? item.copyWith(clearTransactions: true)
+                    : item,
+              )
+              .toList()
+        : state.messages;
+
+    final confirmMsg = ChatMessage(
+      id: _uuid(),
+      content: createdCount > 0
+          ? '已成功记录 $createdCount 笔交易！'
+          : '没有成功记录交易，请稍后再试。',
+      isUser: false,
+      timestamp: DateTime.now(),
+    );
+
+    state = state.copyWith(
+      messages: [...updatedMessages, confirmMsg],
+      confirmingMessageIds: state.confirmingMessageIds
+          .where((id) => id != messageId)
+          .toSet(),
+      confirmedMessageIds: createdCount > 0
+          ? {...state.confirmedMessageIds, messageId}
+          : state.confirmedMessageIds,
+    );
+  }
+
+  /// 清空聊天记录
+  void clearChat() {
+    state = const ChatState();
+  }
+
+  Future<Map<String, dynamic>> _callAiForBookkeeping(
+    String userMessage,
+    List<Category> categories,
+  ) async {
+    final prefs = _ref.read(preferencesProvider);
+    if (!prefs.hasAiConfigured) {
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    前第 23 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+      throw Exception('请先在「我的 → AI 设置」中配置 AI 服务');
+    }
+
+    final modelName = prefs.aiModelName.isNotEmpty
+        ? prefs.aiModelName
+        : 'gpt-4o-mini';
+
+    try {
+      final categoryList = categories
+          .map((c) => '  - ${c.name}（${c.type == 'expense' ? '支出' : '收入'}）')
+          .join('\n');
+
+      final systemPrompt =
+          '''你是一个智能记账助手。用户会用自然语言描述他们的收支，你需要从中提取出交易信息。
+
+用户的分类列表如下：
+$categoryList
+
+请严格按以下 JSON 格式回复，不要输出任何其他内容（不要输出思考过程、解释或markdown代码块）：
+{"reply":"简短的确认回复","transactions":[{"title":"交易名称","amount":金额数字,"direction":"expense或income","categoryName":"匹配的分类名","note":"可选备注"}]}
+
+注意事项：
+1. amount 必须是数字，不含货币符号
+2. direction 只能是 "expense" 或 "income"
+3. categoryName 必须从上面的分类列表中选择最匹配的
+4. 如果用户描述了多笔交易，transactions 数组中放多条记录
+5. 如果无法理解用户的意图，reply 中说明，transactions 设为空数组
+6. 只输出纯 JSON，不要输出思考过程，不要用markdown代码块包裹''';
+
+      var baseUrl = prefs.aiApiBaseUrl.replaceAll(RegExp(r'/+$'), '');
+      // 如果 baseUrl 以 /v1 结尾，去掉后统一拼接
+      if (baseUrl.endsWith('/v1')) {
+        baseUrl = baseUrl.substring(0, baseUrl.length - 3);
+      }
+
+      final dio = Dio();
+      final response = await dio.post(
+        '$baseUrl/v1/chat/completions',
+        data: {
+          'model': modelName,
+          'messages': [
+            {'role': 'system', 'content': systemPrompt},
+            // 发送完整对话上下文，AI 回复中清理掉 <think/> 等推理标签
+            ...state.messages
+                .take(20)
+                .map(
+                  (m) => {
+                    'role': m.isUser ? 'user' : 'assistant',
+                    'content': m.isUser
+                        ? m.content
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    前第 24 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+                        : _stripThinkTags(m.content),
+                  },
+                ),
+          ],
+          'temperature': 0.2,
+        },
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer ${prefs.aiApiKey}',
+            'Content-Type': 'application/json',
+          },
+          sendTimeout: const Duration(seconds: 30),
+          receiveTimeout: const Duration(seconds: 60),
+        ),
+      );
+
+      // 解析 AI 响应
+      final body = response.data as Map<String, dynamic>;
+      final choices = body['choices'] as List<dynamic>?;
+      if (choices == null || choices.isEmpty) {
+        throw Exception('AI 服务返回了空响应');
+      }
+
+      // 检查 finish_reason
+      final finishReason = choices[0]['finish_reason'] as String? ?? 'stop';
+      if (finishReason == 'content_filter' || finishReason == 'length') {
+        throw Exception('AI 响应被截断（$finishReason），请尝试简化输入');
+      }
+
+      var content = choices[0]['message']?['content'] as String?;
+
+      // 处理 content 为 null 的情况（推理模型可能只返回 reasoning_content）
+      if (content == null || content.trim().isEmpty) {
+        final reasoning =
+            choices[0]['message']?['reasoning_content'] as String?;
+        if (reasoning != null && reasoning.trim().isNotEmpty) {
+          // 推理模型只返回了思考过程，没有实际回复内容
+          // 尝试从推理内容中提取 JSON
+          content = reasoning;
+        } else {
+          throw Exception(
+            '模型 "$modelName" 返回了空内容，请检查模型是否支持此请求方式，或在「我的 → AI 设置」中更换模型',
+          );
+        }
+      }
+
+      // 尝试解析 JSON，失败则返回原始文本作为回复
+      Map<String, dynamic> result;
+      try {
+        final jsonStr = _extractJson(content);
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    前第 25 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+        result = jsonDecode(jsonStr) as Map<String, dynamic>;
+      } catch (_) {
+        result = {'reply': content, 'transactions': <dynamic>[]};
+      }
+
+      return result;
+    } on DioException catch (e) {
+      String errorMsg;
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.sendTimeout ||
+          e.type == DioExceptionType.receiveTimeout) {
+        errorMsg = '连接超时，请检查网络或稍后重试';
+      } else if (e.response?.statusCode != null) {
+        final code = e.response!.statusCode!;
+        switch (code) {
+          case 401:
+            errorMsg = 'API Key 无效，请在「我的 → AI 设置」中检查配置';
+            break;
+          case 403:
+            errorMsg = 'API 访问被拒绝，请检查权限或余额';
+            break;
+          case 404:
+            errorMsg = 'API 地址不正确，模型 "$modelName" 可能不存在';
+            break;
+          case 429:
+            errorMsg = '请求过于频繁，请稍后重试';
+            break;
+          case 500:
+          case 502:
+          case 503:
+          case 504:
+            errorMsg = 'AI 服务暂时不可用（HTTP $code），请稍后重试';
+            break;
+          default:
+            errorMsg = 'AI 服务请求失败（HTTP $code）';
+        }
+      } else {
+        errorMsg = '无法连接到 AI 服务，请检查网络和 API 配置';
+      }
+      throw Exception(errorMsg);
+    } catch (e) {
+      throw Exception('AI 服务异常：${e.toString().split('\n').first}');
+    }
+  }
+
+  String _extractJson(String text) {
+    // 先去掉推理模型的 <think...</think*> 标签内容
+    var cleaned = text.replaceAll(RegExp(r'<think[\s\S]*?</think\s*>'), '');
+    // 去掉 <think... 开头但没有闭合标签的情况（截断的推理内容）
+    cleaned = cleaned.replaceAll(RegExp(r'<think[\s\S]*'), '');
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    前第 26 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+    cleaned = cleaned.trim();
+
+    // 尝试提取 markdown 代码块中的 JSON
+    final codeBlockRegex = RegExp(r'```(?:json)?\s*([\s\S]*?)\s*```');
+    final match = codeBlockRegex.firstMatch(cleaned);
+    if (match != null) {
+      return match.group(1)!.trim();
+    }
+
+    // 提取最外层的 { ... } JSON 对象
+    final braceStart = cleaned.indexOf('{');
+    final braceEnd = cleaned.lastIndexOf('}');
+    if (braceStart != -1 && braceEnd != -1 && braceEnd > braceStart) {
+      return cleaned.substring(braceStart, braceEnd + 1);
+    }
+
+    return cleaned;
+  }
+
+  /// 清理 AI 回复中的 `<think/>` 推理标签，用于构建上下文时保持干净
+  String _stripThinkTags(String text) {
+    var cleaned = text.replaceAll(RegExp(r'<think[\s\S]*?</think\s*>'), '');
+    cleaned = cleaned.replaceAll(RegExp(r'<think[\s\S]*'), '');
+    return cleaned.trim();
+  }
+
+  String _uuid() => DateTime.now().microsecondsSinceEpoch.toString();
+}
+
+final chatProvider = StateNotifierProvider<ChatNotifier, ChatState>((ref) {
+  return ChatNotifier(ref);
+});
+
+// ---- File: client/lib/core/providers/preferences_provider.dart ----
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
+import '../constants/ai_defaults.dart';
+import 'auth_provider.dart';
+
+const _noPreferenceChange = Object();
+
+class PreferencesState {
+  final ThemeMode themeMode;
+  final String nickname;
+  final int avatarIndex;
+  final String? avatarImageData;
+  final String? profileBackgroundImageData;
+  final String aiApiBaseUrl;
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    前第 27 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+  final String aiApiKey;
+  final String aiModelName;
+  final bool isLoaded;
+
+  const PreferencesState({
+    this.themeMode = ThemeMode.light, // 修改默认值为 light
+    this.nickname = '',
+    this.avatarIndex = 0,
+    this.avatarImageData,
+    this.profileBackgroundImageData,
+    this.aiApiBaseUrl = AiDefaults.baseUrl,
+    this.aiApiKey = AiDefaults.apiKey,
+    this.aiModelName = AiDefaults.modelName,
+    this.isLoaded = false,
+  });
+
+  bool get hasAiConfigured => aiApiBaseUrl.isNotEmpty && aiApiKey.isNotEmpty;
+
+  PreferencesState copyWith({
+    ThemeMode? themeMode,
+    String? nickname,
+    int? avatarIndex,
+    Object? avatarImageData = _noPreferenceChange,
+    Object? profileBackgroundImageData = _noPreferenceChange,
+    String? aiApiBaseUrl,
+    String? aiApiKey,
+    String? aiModelName,
+    bool? isLoaded,
+  }) {
+    return PreferencesState(
+      themeMode: themeMode ?? this.themeMode,
+      nickname: nickname ?? this.nickname,
+      avatarIndex: avatarIndex ?? this.avatarIndex,
+      avatarImageData: avatarImageData == _noPreferenceChange
+          ? this.avatarImageData
+          : avatarImageData as String?,
+      profileBackgroundImageData:
+          profileBackgroundImageData == _noPreferenceChange
+          ? this.profileBackgroundImageData
+          : profileBackgroundImageData as String?,
+      aiApiBaseUrl: aiApiBaseUrl ?? this.aiApiBaseUrl,
+      aiApiKey: aiApiKey ?? this.aiApiKey,
+      aiModelName: aiModelName ?? this.aiModelName,
+      isLoaded: isLoaded ?? this.isLoaded,
+    );
+  }
+}
+
+class PreferencesNotifier extends StateNotifier<PreferencesState> {
+  PreferencesNotifier(this._ref) : super(const PreferencesState()) {
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    前第 28 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+    _load();
+  }
+
+  final Ref _ref;
+  static const _storage = FlutterSecureStorage();
+  static const _themeModeKey = 'pref_theme_mode';
+  static const _nicknameKey = 'pref_nickname';
+  static const _avatarIndexKey = 'pref_avatar_index';
+  static const _avatarImageKey = 'pref_avatar_image';
+  static const _profileBackgroundImageKey = 'pref_profile_background_image';
+  static const _aiApiBaseUrlKey = 'pref_ai_api_base_url';
+  static const _aiApiKeyKey = 'pref_ai_api_key';
+  static const _aiModelNameKey = 'pref_ai_model_name';
+  static const _legacyUserPrefsMigratedKey = 'pref_user_scoped_migrated';
+
+  Future<void> _load() async {
+    await _loadForUser(_ref.read(authProvider).user?.id);
+  }
+
+  Future<void> handleAuthChanged(AuthState? previous, AuthState next) async {
+    final previousUserId = previous?.user?.id;
+    final nextUserId = next.user?.id;
+    final signedOut =
+        previous?.status != AuthStatus.unauthenticated &&
+        next.status == AuthStatus.unauthenticated;
+
+    if (!signedOut && previousUserId == nextUserId) return;
+
+    await _loadForUser(nextUserId);
+  }
+
+  Future<void> _loadForUser(String? userId) async {
+    state = const PreferencesState(isLoaded: false);
+
+    if (userId == null || userId.isEmpty) {
+      state = const PreferencesState(isLoaded: true);
+      return;
+    }
+
+    await _migrateLegacyPreferencesIfNeeded(userId);
+
+    final themeModeValue = await _storage.read(key: _scopedKey(userId, _themeModeKey));
+    final nicknameValue = await _storage.read(key: _scopedKey(userId, _nicknameKey));
+    final avatarValue = await _storage.read(key: _scopedKey(userId, _avatarIndexKey));
+    final avatarImageValue = await _storage.read(
+      key: _scopedKey(userId, _avatarImageKey),
+    );
+    final profileBackgroundImageValue = await _storage.read(
+      key: _scopedKey(userId, _profileBackgroundImageKey),
+    );
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    前第 29 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+    final aiApiBaseUrlValue = await _storage.read(
+      key: _scopedKey(userId, _aiApiBaseUrlKey),
+    );
+    final aiApiKeyValue = await _storage.read(
+      key: _scopedKey(userId, _aiApiKeyKey),
+    );
+    final aiModelNameValue = await _storage.read(
+      key: _scopedKey(userId, _aiModelNameKey),
+    );
+
+    state = PreferencesState(
+      themeMode: _decodeThemeMode(themeModeValue),
+      nickname: nicknameValue ?? '',
+      avatarIndex: int.tryParse(avatarValue ?? '') ?? 0,
+      avatarImageData: avatarImageValue,
+      profileBackgroundImageData: profileBackgroundImageValue,
+      aiApiBaseUrl: aiApiBaseUrlValue ?? AiDefaults.baseUrl,
+      aiApiKey: aiApiKeyValue ?? AiDefaults.apiKey,
+      aiModelName: aiModelNameValue ?? AiDefaults.modelName,
+      isLoaded: true,
+    );
+  }
+
+  Future<void> setThemeMode(ThemeMode themeMode) async {
+    state = state.copyWith(themeMode: themeMode);
+    await _writeScopedValue(_themeModeKey, _encodeThemeMode(themeMode));
+  }
+
+  Future<void> setNickname(String nickname) async {
+    final trimmed = nickname.trim();
+    state = state.copyWith(nickname: trimmed);
+    await _writeScopedValue(_nicknameKey, trimmed);
+  }
+
+  Future<void> setAvatarIndex(int avatarIndex) async {
+    state = state.copyWith(avatarIndex: avatarIndex, avatarImageData: null);
+    await _writeScopedValue(_avatarIndexKey, '$avatarIndex');
+    await _deleteScopedValue(_avatarImageKey);
+  }
+
+  Future<void> setAvatarImageData(String avatarImageData) async {
+    state = state.copyWith(avatarImageData: avatarImageData);
+    await _writeScopedValue(_avatarImageKey, avatarImageData);
+  }
+
+  Future<void> clearAvatarImageData() async {
+    state = state.copyWith(avatarImageData: null);
+    await _deleteScopedValue(_avatarImageKey);
+  }
+
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    前第 30 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+  Future<void> setProfileBackgroundImageData(
+    String profileBackgroundImageData,
+  ) async {
+    state = state.copyWith(
+      profileBackgroundImageData: profileBackgroundImageData,
+    );
+    await _writeScopedValue(
+      _profileBackgroundImageKey,
+      profileBackgroundImageData,
+    );
+  }
+
+  Future<void> clearProfileBackgroundImageData() async {
+    state = state.copyWith(profileBackgroundImageData: null);
+    await _deleteScopedValue(_profileBackgroundImageKey);
+  }
+
+  Future<void> setAiApiBaseUrl(String url) async {
+    final trimmed = url.trim();
+    state = state.copyWith(aiApiBaseUrl: trimmed);
+    await _writeScopedValue(_aiApiBaseUrlKey, trimmed);
+  }
+
+  Future<void> setAiApiKey(String key) async {
+    final trimmed = key.trim();
+    state = state.copyWith(aiApiKey: trimmed);
+    await _writeScopedValue(_aiApiKeyKey, trimmed);
+  }
+
+  Future<void> setAiModelName(String name) async {
+    final trimmed = name.trim();
+    state = state.copyWith(aiModelName: trimmed);
+    await _writeScopedValue(_aiModelNameKey, trimmed);
+  }
+
+  Future<void> clearAiConfig() async {
+    state = state.copyWith(
+      aiApiBaseUrl: AiDefaults.baseUrl,
+      aiApiKey: AiDefaults.apiKey,
+      aiModelName: AiDefaults.modelName,
+    );
+    await _deleteScopedValue(_aiApiBaseUrlKey);
+    await _deleteScopedValue(_aiApiKeyKey);
+    await _deleteScopedValue(_aiModelNameKey);
+  }
+
+  String _scopedKey(String userId, String key) => '${key}_$userId';
+
+  String? _currentUserId() => _ref.read(authProvider).user?.id;
+
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    后第  1 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+// ---- File: server/prisma/schema.prisma ----
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  username  String?  @unique
+  email     String   @unique
+  password  String
+  name      String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  transactions Transaction[]
+  categories   Category[]
+
+  @@map("users")
+}
+
+model Category {
+  id       String          @id @default(cuid())
+  name     String
+  icon     String
+  type     TransactionType
+  sort     Int             @default(0)
+  userId   String?         @map("user_id")
+  user     User?           @relation(fields: [userId], references: [id])
+
+  transactions Transaction[]
+
+  @@index([userId, type, sort])
+  @@map("categories")
+}
+
+model Transaction {
+  id         String          @id @default(cuid())
+  title      String
+  amount     Decimal
+  direction  TransactionType
+  note       String?
+  merchant   String?
+  occurredAt DateTime        @map("occurred_at")
+  createdAt  DateTime        @default(now()) @map("created_at")
+  updatedAt  DateTime        @updatedAt @map("updated_at")
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    后第  2 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+
+  userId     String          @map("user_id")
+  user       User            @relation(fields: [userId], references: [id])
+
+  categoryId String          @map("category_id")
+  category   Category        @relation(fields: [categoryId], references: [id])
+
+  @@index([userId, occurredAt])
+  @@index([userId, direction])
+  @@map("transactions")
+}
+
+model VerificationCode {
+  id        String   @id @default(cuid())
+  email     String
+  code      String
+  expiresAt DateTime @map("expires_at")
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([email, code])
+  @@index([email])
+  @@map("verification_codes")
+}
+
+enum TransactionType {
+  expense
+  income
+}
+
+// ---- File: server/src/server.ts ----
+import "dotenv/config";
+import { buildApp } from "./app.js";
+
+const PORT = Number(process.env.PORT) || 3002;
+const HOST = process.env.HOST || "0.0.0.0";
+
+async function start() {
+  const app = await buildApp();
+
+  try {
+    await app.listen({ port: PORT, host: HOST });
+    app.log.info(`Server running at http://${HOST}:${PORT}`);
+    app.log.info(`API docs at http://${HOST}:${PORT}/docs`);
+  } catch (err) {
+    app.log.error(err);
+    process.exit(1);
+  }
+}
+
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    后第  3 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+start();
+
+// ---- File: server/src/app.ts ----
+import Fastify from "fastify";
+import corePlugins from "./plugins/core.js";
+import authPlugin from "./plugins/auth.js";
+import authRoutes from "./routes/auth.js";
+import homeRoutes from "./routes/home.js";
+import statsRoutes from "./routes/stats.js";
+import billsRoutes from "./routes/bills.js";
+import categoryRoutes from "./routes/categories.js";
+import transactionRoutes from "./routes/transactions.js";
+import exportRoutes from "./routes/export.js";
+
+export async function buildApp() {
+  const app = Fastify({
+    logger: {
+      level: process.env.NODE_ENV === "production" ? "info" : "debug",
+    },
+  });
+
+  // 插件
+  await app.register(corePlugins);
+  await app.register(authPlugin);
+
+  // 路由
+  await app.register(authRoutes);
+  await app.register(homeRoutes);
+  await app.register(statsRoutes);
+  await app.register(billsRoutes);
+  await app.register(categoryRoutes);
+  await app.register(transactionRoutes);
+  await app.register(exportRoutes);
+
+  // 健康检查
+  app.get("/api/health", async () => ({ status: "ok" }));
+
+  return app;
+}
+
+// ---- File: server/src/plugins/core.ts ----
+import type { FastifyInstance } from "fastify";
+import fp from "fastify-plugin";
+import cors from "@fastify/cors";
+import helmet from "@fastify/helmet";
+import rateLimit from "@fastify/rate-limit";
+import jwt from "@fastify/jwt";
+import swagger from "@fastify/swagger";
+import swaggerUI from "@fastify/swagger-ui";
+
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    后第  4 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+export default fp(async function corePlugins(app: FastifyInstance) {
+  const isDev = process.env.NODE_ENV !== "production";
+
+  // 安全头
+  await app.register(helmet);
+
+  // 限流 — 登录接口每 IP 每分钟最多 10 次
+  await app.register(rateLimit, {
+    max: 100,
+    timeWindow: "1 minute",
+    keyGenerator: (request) => {
+      return request.ip;
+    },
+  });
+
+  // CORS — 生产环境只允许自己的域名
+  await app.register(cors, {
+    origin: isDev
+      ? true
+      : (process.env.CORS_ORIGIN || "https://onekeep.lxhcoool.cn").split(","),
+  });
+
+  // JWT — 生产环境必须设置 JWT_SECRET
+  if (!process.env.JWT_SECRET) {
+    throw new Error("JWT_SECRET environment variable is required in production");
+  }
+  await app.register(jwt, {
+    secret: process.env.JWT_SECRET,
+  });
+
+  // Swagger — 仅开发环境开启
+  if (isDev) {
+    await app.register(swagger, {
+      openapi: {
+        info: {
+          title: "OneKeep API",
+          version: "1.0.0",
+          description: "个人记账应用 API",
+        },
+      },
+    });
+
+    await app.register(swaggerUI, {
+      routePrefix: "/docs",
+    });
+  }
+});
+
+// ---- File: server/src/plugins/auth.ts ----
+import type { FastifyInstance } from "fastify";
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    后第  5 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+import fp from "fastify-plugin";
+import { getPrisma } from "../utils/prisma.js";
+
+declare module "fastify" {
+  interface FastifyRequest {
+    userId: string;
+  }
+}
+
+export default fp(async function authPlugin(app: FastifyInstance) {
+  app.decorateRequest("userId", "");
+
+  app.addHook("onRequest", async (request, reply) => {
+    // 跳过不需要认证的路由
+    const publicRoutes = ["/api/auth/login", "/api/auth/register", "/api/auth/send-code", "/api/auth/verify-code", "/api/health", "/docs"];
+    const isPublic = publicRoutes.some((r) => request.url.startsWith(r));
+    if (isPublic) return;
+
+    try {
+      const decoded = await request.jwtVerify<{ sub: string }>();
+      request.userId = decoded.sub;
+    } catch {
+      reply.status(401).send({ error: "未授权" });
+    }
+  });
+});
+
+// ---- File: server/src/routes/auth.ts ----
+import type { FastifyInstance } from "fastify";
+import bcrypt from "bcryptjs";
+import crypto from "node:crypto";
+import { getPrisma } from "../utils/prisma.js";
+import { registerSchema, loginSchema, meSchema, sendCodeSchema, verifyCodeSchema } from "../schemas/auth.js";
+import { ensureUserCategories } from "../utils/default-categories.js";
+
+function serializeUser(user: {
+  id: string;
+  username: string | null;
+  email: string;
+  name: string;
+}) {
+  return {
+    id: user.id,
+    username: user.username,
+    email: user.email,
+    name: user.name,
+    displayName: user.name,
+  };
+}
+
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    后第  6 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+export default async function authRoutes(app: FastifyInstance) {
+  const prisma = getPrisma();
+
+  app.get("/api/auth/me", { schema: meSchema }, async (request) => {
+    const user = await prisma.user.findUniqueOrThrow({
+      where: { id: request.userId },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        name: true,
+      },
+    });
+
+    return {
+      user: serializeUser(user),
+    };
+  });
+
+  app.post("/api/auth/register", { schema: registerSchema }, async (request, reply) => {
+    const { username, email, displayName, password } = request.body as {
+      username: string;
+      email: string;
+      displayName: string;
+      password: string;
+    };
+
+    const normalizedUsername = username.trim().toLowerCase();
+    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedDisplayName = displayName.trim();
+
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        OR: [{ email: normalizedEmail }, { username: normalizedUsername }],
+      },
+    });
+
+    if (existingUser?.email === normalizedEmail) {
+      return reply.status(409).send({ error: "邮箱已被注册" });
+    }
+    if (existingUser?.username === normalizedUsername) {
+      return reply.status(409).send({ error: "用户名已被占用" });
+    }
+
+    const hashed = await bcrypt.hash(password, 10);
+    const user = await prisma.user.create({
+      data: {
+        username: normalizedUsername,
+        email: normalizedEmail,
+        password: hashed,
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    后第  7 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+        name: normalizedDisplayName,
+      },
+    });
+    await ensureUserCategories(prisma, user.id);
+
+    const token = app.jwt.sign({ sub: user.id }, { expiresIn: "7d" });
+    return {
+      token,
+      user: serializeUser(user),
+    };
+  });
+
+  app.delete("/api/auth/account", async (request, reply) => {
+    const userId = request.userId;
+
+    // 删除用户的所有交易记录和分类
+    await prisma.transaction.deleteMany({ where: { userId } });
+    await prisma.category.deleteMany({ where: { userId } });
+    // 删除用户本身
+    await prisma.user.delete({ where: { id: userId } });
+
+    return { success: true };
+  });
+
+  app.post("/api/auth/login", { schema: loginSchema }, async (request, reply) => {
+    const { identifier, password } = request.body as {
+      identifier: string;
+      password: string;
+    };
+
+    const normalizedIdentifier = identifier.trim().toLowerCase();
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [{ email: normalizedIdentifier }, { username: normalizedIdentifier }],
+      },
+    });
+
+    if (!user) {
+      return reply.status(401).send({ error: "用户名/邮箱或密码错误" });
+    }
+
+    const valid = await bcrypt.compare(password, user.password);
+    if (!valid) {
+      return reply.status(401).send({ error: "用户名/邮箱或密码错误" });
+    }
+
+    const token = app.jwt.sign({ sub: user.id }, { expiresIn: "7d" });
+    return {
+      token,
+      user: serializeUser(user),
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    后第  8 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+    };
+  });
+
+  // ========== 邮箱验证码登录/注册 ==========
+
+  app.post("/api/auth/send-code", { schema: sendCodeSchema }, async (request, reply) => {
+    const { email } = request.body as { email: string };
+    const normalizedEmail = email.trim().toLowerCase();
+
+    // 限流: 同一邮箱 60 秒内只能发一次
+    const recent = await prisma.verificationCode.findFirst({
+      where: {
+        email: normalizedEmail,
+        createdAt: { gte: new Date(Date.now() - 60 * 1000) },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+    if (recent) {
+      const wait = Math.ceil((recent.createdAt.getTime() + 60000 - Date.now()) / 1000);
+      return reply.status(429).send({ error: `请 ${wait} 秒后再试` });
+    }
+
+    // 生成 6 位验证码
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 分钟有效
+
+    await prisma.verificationCode.create({
+      data: { email: normalizedEmail, code, expiresAt },
+    });
+
+    // 发送邮件。开发环境未配置 Resend 时，验证码打印到服务端日志方便本地联调。
+    const resendKey = process.env.RESEND_API_KEY;
+    if (resendKey) {
+      try {
+        const { Resend } = await import("resend");
+        const resend = new Resend(resendKey);
+        const result = await resend.emails.send({
+          from: process.env.RESEND_FROM || "厘清 <noreply@lxhcoool.cn>",
+          to: normalizedEmail,
+          subject: "您的厘清验证码",
+          html: `<div style="font-family: sans-serif; padding: 24px;">
+            <h2 style="color: #10B981;">厘清</h2>
+            <p>您的验证码是：</p>
+            <div style="font-size: 32px; letter-spacing: 8px; font-weight: bold; color: #10B981; padding: 16px; text-align: center;">
+              ${code}
+            </div>
+            <p style="color: #666;">验证码 10 分钟内有效，请勿透露给他人。</p>
+          </div>`,
+        });
+        if (result.error) {
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    后第  9 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+          request.log.warn(result.error, "Failed to send email via Resend");
+          return reply.status(502).send({ error: "验证码邮件发送失败，请稍后重试" });
+        }
+      } catch (e) {
+        request.log.warn(e, "Failed to send email via Resend");
+        return reply.status(502).send({ error: "验证码邮件发送失败，请稍后重试" });
+      }
+    } else if (process.env.NODE_ENV !== "production") {
+      request.log.info(`[DEV] Verification code for ${normalizedEmail}: ${code}`);
+    } else {
+      request.log.error("RESEND_API_KEY is not configured");
+      return reply.status(503).send({ error: "验证码邮件服务未配置" });
+    }
+
+    return { success: true };
+  });
+
+  app.post("/api/auth/verify-code", { schema: verifyCodeSchema }, async (request, reply) => {
+    const { email, code } = request.body as { email: string; code: string };
+    const normalizedEmail = email.trim().toLowerCase();
+
+    // 查找有效的验证码
+    const record = await prisma.verificationCode.findFirst({
+      where: {
+        email: normalizedEmail,
+        code,
+        used: false,
+        expiresAt: { gte: new Date() },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    if (!record) {
+      return reply.status(400).send({ error: "验证码无效或已过期" });
+    }
+
+    // 标记为已使用
+    await prisma.verificationCode.update({
+      where: { id: record.id },
+      data: { used: true },
+    });
+
+    // 查找或创建用户
+    let user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+    let isNewUser = false;
+
+    if (!user) {
+      const defaultName = normalizedEmail.split("@")[0];
+      const randomSuffix = crypto.randomBytes(3).toString("hex");
+      user = await prisma.user.create({
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    后第 10 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+        data: {
+          email: normalizedEmail,
+          username: `user_${randomSuffix}`,
+          password: "", // 邮箱验证用户无需密码
+          name: defaultName,
+        },
+      });
+      await ensureUserCategories(prisma, user.id);
+      isNewUser = true;
+    }
+
+    const token = app.jwt.sign({ sub: user.id }, { expiresIn: "7d" });
+    return {
+      token,
+      user: serializeUser(user),
+      isNewUser,
+    };
+  });
+}
+
+// ---- File: server/src/routes/home.ts ----
+import type { FastifyInstance } from "fastify";
+import { getPrisma } from "../utils/prisma.js";
+import { monthRange, toNumber } from "../utils/date.js";
+import { homeSummarySchema } from "../schemas/home.js";
+
+export default async function homeRoutes(app: FastifyInstance) {
+  const prisma = getPrisma();
+
+  // GET /api/home/summary?month=2026-03
+  app.get("/api/home/summary", { schema: homeSummarySchema }, async (request) => {
+    const { month } = request.query as { month: string };
+    const userId = request.userId;
+    const { start, end } = monthRange(month);
+
+    // 并行查询
+    const [user, aggregates, recentTransactions] = await Promise.all([
+      prisma.user.findUniqueOrThrow({
+        where: { id: userId },
+        select: { id: true, name: true, email: true },
+      }),
+
+      prisma.transaction.groupBy({
+        by: ["direction"],
+        where: { userId, occurredAt: { gte: start, lt: end } },
+        _sum: { amount: true },
+      }),
+
+      prisma.transaction.findMany({
+        where: { userId, occurredAt: { gte: start, lt: end } },
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    后第 11 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+        orderBy: { occurredAt: "desc" },
+        take: 10,
+        include: { category: { select: { name: true, icon: true } } },
+      }),
+    ]);
+
+    const income = aggregates.find((a) => a.direction === "income");
+    const expense = aggregates.find((a) => a.direction === "expense");
+
+    const totalIncome = income?._sum.amount ? toNumber(income._sum.amount) : 0;
+    const totalExpense = expense?._sum.amount ? toNumber(expense._sum.amount) : 0;
+
+    return {
+      user,
+      balanceSummary: {
+        amount: totalIncome - totalExpense,
+      },
+      incomeSummary: { amount: totalIncome },
+      expenseSummary: { amount: totalExpense },
+      recentTransactions: recentTransactions.map((t) => ({
+        transactionId: t.id,
+        categoryId: t.categoryId,
+        title: t.title,
+        categoryName: t.category.name,
+        categoryIcon: t.category.icon,
+        occurredAt: t.occurredAt.toISOString(),
+        amount: toNumber(t.amount),
+        direction: t.direction,
+        note: t.note,
+        merchant: t.merchant,
+      })),
+    };
+  });
+}
+
+// ---- File: server/src/routes/stats.ts ----
+import type { FastifyInstance } from "fastify";
+import { getPrisma } from "../utils/prisma.js";
+import { monthRange, toNumber } from "../utils/date.js";
+import { statsOverviewSchema } from "../schemas/stats.js";
+import type { TransactionType } from "@prisma/client";
+
+export default async function statsRoutes(app: FastifyInstance) {
+  const prisma = getPrisma();
+
+  // GET /api/stats/overview?month=2026-03&metricType=expense
+  app.get("/api/stats/overview", { schema: statsOverviewSchema }, async (request) => {
+    const { month, metricType } = request.query as {
+      month: string;
+      metricType?: TransactionType;
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    后第 12 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+    };
+    const userId = request.userId;
+    const { start, end } = monthRange(month);
+
+    const whereBase = { userId, occurredAt: { gte: start, lt: end } };
+
+    // 总览
+    const aggregates = await prisma.transaction.groupBy({
+      by: ["direction"],
+      where: whereBase,
+      _sum: { amount: true },
+    });
+
+    const incomeAgg = aggregates.find((a) => a.direction === "income");
+    const expenseAgg = aggregates.find((a) => a.direction === "expense");
+
+    const totalIncome = incomeAgg?._sum.amount ? toNumber(incomeAgg._sum.amount) : 0;
+    const totalExpense = expenseAgg?._sum.amount ? toNumber(expenseAgg._sum.amount) : 0;
+
+    // 趋势：按日聚合（当月每一天）— 用 Prisma 查询代替原生 SQL 以兼容 SQLite/MySQL
+    const trendDirection = metricType ?? "expense";
+    const trendTransactions = await prisma.transaction.findMany({
+      where: { userId, direction: trendDirection, occurredAt: { gte: start, lt: end } },
+      select: { occurredAt: true, amount: true },
+      orderBy: { occurredAt: "asc" },
+    });
+
+    // 在应用层按日聚合
+    const dayMap = new Map<string, number>();
+    for (const t of trendTransactions) {
+      const day = t.occurredAt.toISOString().slice(0, 10);
+      dayMap.set(day, (dayMap.get(day) ?? 0) + toNumber(t.amount));
+    }
+    const trendSeries = Array.from(dayMap.entries()).map(([day, total]) => ({
+      label: day.slice(5), // "03-01"
+      value: total,
+    }));
+
+    // 分类排行
+    const categoryRanks = await prisma.transaction.groupBy({
+      by: ["categoryId"],
+      where: { ...whereBase, direction: trendDirection },
+      _sum: { amount: true },
+      orderBy: { _sum: { amount: "desc" } },
+      take: 10,
+    });
+
+    const categoryIds = categoryRanks.map((r) => r.categoryId);
+    const categories = await prisma.category.findMany({
+      where: { id: { in: categoryIds } },
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    后第 13 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+    });
+    const catMap = new Map(categories.map((c) => [c.id, c]));
+
+    const maxAmount = categoryRanks[0]?._sum.amount
+      ? toNumber(categoryRanks[0]._sum.amount)
+      : 0;
+
+    return {
+      totals: { income: totalIncome, expense: totalExpense },
+      trendSeries,
+      categoryRanks: categoryRanks.map((r) => {
+        const cat = catMap.get(r.categoryId);
+        const amount = r._sum.amount ? toNumber(r._sum.amount) : 0;
+        return {
+          categoryId: r.categoryId,
+          categoryName: cat?.name ?? "",
+          categoryIcon: cat?.icon ?? "",
+          amount,
+          progressBase: maxAmount,
+          progressRatio: maxAmount > 0 ? amount / maxAmount : 0,
+        };
+      }),
+    };
+  });
+}
+
+// ---- File: server/src/routes/bills.ts ----
+import type { FastifyInstance } from "fastify";
+import { getPrisma } from "../utils/prisma.js";
+import { monthRange, toNumber } from "../utils/date.js";
+import { billsListSchema } from "../schemas/bills.js";
+import type { Prisma } from "@prisma/client";
+
+export default async function billsRoutes(app: FastifyInstance) {
+  const prisma = getPrisma();
+
+  // GET /api/bills
+  app.get("/api/bills", { schema: billsListSchema }, async (request) => {
+    const { month, filterType, query, cursor, pageSize } = request.query as {
+      month?: string;
+      filterType?: string;
+      query?: string;
+      cursor?: string;
+      pageSize?: number;
+    };
+    const userId = request.userId;
+    const take = pageSize ?? 20;
+
+    const where: Prisma.TransactionWhereInput = { userId };
+
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    后第 14 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+    // 月份筛选
+    if (month) {
+      const { start, end } = monthRange(month);
+      where.occurredAt = { gte: start, lt: end };
+    }
+
+    // 收支类型筛选
+    if (filterType && filterType !== "all") {
+      where.direction = filterType as "expense" | "income";
+    }
+
+    // 搜索
+    if (query) {
+      where.OR = [
+        { title: { contains: query } },
+        { note: { contains: query } },
+        { category: { name: { contains: query } } },
+      ];
+    }
+
+    // 游标分页
+    const findArgs: Prisma.TransactionFindManyArgs = {
+      where,
+      orderBy: { occurredAt: "desc" },
+      take: take + 1, // 多取一条判断是否有下一页
+      include: { category: { select: { name: true, icon: true } } },
+    };
+    if (cursor) {
+      findArgs.cursor = { id: cursor };
+      findArgs.skip = 1;
+    }
+
+    const items = await prisma.transaction.findMany(findArgs);
+    const hasMore = items.length > take;
+    if (hasMore) items.pop();
+
+    // 按日期分组
+    const groups = new Map<
+      string,
+      {
+        date: string;
+        items: typeof items;
+        expenseTotal: number;
+        incomeTotal: number;
+      }
+    >();
+
+    for (const item of items) {
+      const dateKey = item.occurredAt.toISOString().slice(0, 10);
+      let group = groups.get(dateKey);
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    后第 15 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+      if (!group) {
+        group = { date: dateKey, items: [], expenseTotal: 0, incomeTotal: 0 };
+        groups.set(dateKey, group);
+      }
+      group.items.push(item);
+      const amt = toNumber(item.amount);
+      if (item.direction === "expense") group.expenseTotal += amt;
+      else group.incomeTotal += amt;
+    }
+
+    const groupedBills = Array.from(groups.values()).map((g) => ({
+      date: g.date,
+      summary: {
+        expense: g.expenseTotal,
+        income: g.incomeTotal,
+      },
+      items: g.items.map((t) => {
+        const cat = (t as any).category as { name: string; icon: string };
+        return {
+          transactionId: t.id,
+          categoryId: t.categoryId,
+          title: t.title,
+          categoryName: cat.name,
+          categoryIcon: cat.icon,
+          occurredAt: t.occurredAt.toISOString(),
+          amount: toNumber(t.amount),
+          direction: t.direction,
+          note: t.note,
+          merchant: t.merchant,
+        };
+      }),
+    }));
+
+    return {
+      groupedBills,
+      nextCursor: hasMore ? items[items.length - 1]?.id : null,
+    };
+  });
+}
+
+// ---- File: server/src/routes/categories.ts ----
+import type { FastifyInstance, FastifyReply } from "fastify";
+import type { TransactionType } from "@prisma/client";
+import { getPrisma } from "../utils/prisma.js";
+import {
+  createCategorySchema,
+  deleteCategorySchema,
+  listCategoriesSchema,
+  reorderCategoriesSchema,
+  updateCategorySchema,
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    后第 16 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+} from "../schemas/category.js";
+import {
+  ensureUserCategories,
+  resequenceUserCategories,
+} from "../utils/default-categories.js";
+
+function serializeCategory(category: {
+  id: string;
+  name: string;
+  icon: string;
+  type: TransactionType;
+  sort: number;
+}) {
+  return {
+    id: category.id,
+    name: category.name,
+    icon: category.icon,
+    type: category.type,
+    sort: category.sort,
+  };
+}
+
+async function findOwnedCategory(
+  prisma: ReturnType<typeof getPrisma>,
+  userId: string,
+  categoryId: string,
+  reply: FastifyReply,
+) {
+  const category = await prisma.category.findFirst({
+    where: { id: categoryId, userId },
+  });
+
+  if (!category) {
+    reply.status(404).send({ error: "分类不存在" });
+    return null;
+  }
+
+  return category;
+}
+
+export default async function categoryRoutes(app: FastifyInstance) {
+  const prisma = getPrisma();
+
+  app.get("/api/categories", { schema: listCategoriesSchema }, async (request) => {
+    await ensureUserCategories(prisma, request.userId);
+
+    const categories = await prisma.category.findMany({
+      where: { userId: request.userId },
+      orderBy: [{ type: "asc" }, { sort: "asc" }, { id: "asc" }],
+    });
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    后第 17 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+
+    return { categories: categories.map(serializeCategory) };
+  });
+
+  app.post("/api/categories", { schema: createCategorySchema }, async (request, reply) => {
+    const { name, icon, type } = request.body as {
+      name: string;
+      icon: string;
+      type: TransactionType;
+    };
+    const userId = request.userId;
+
+    await ensureUserCategories(prisma, userId);
+
+    const sort = await prisma.category.count({
+      where: { userId, type },
+    });
+
+    const category = await prisma.category.create({
+      data: {
+        name: name.trim(),
+        icon,
+        type,
+        sort: sort + 1,
+        userId,
+      },
+    });
+
+    return reply.status(201).send({ category: serializeCategory(category) });
+  });
+
+  app.put("/api/categories/reorder", { schema: reorderCategoriesSchema }, async (request, reply) => {
+    const { type, categoryIds } = request.body as {
+      type: TransactionType;
+      categoryIds: string[];
+    };
+    const userId = request.userId;
+
+    const categories = await prisma.category.findMany({
+      where: { userId, type },
+      select: { id: true },
+      orderBy: [{ sort: "asc" }, { id: "asc" }],
+    });
+    const ownedIds = categories.map((category) => category.id);
+
+    if (
+      ownedIds.length !== categoryIds.length ||
+      ownedIds.some((id) => !categoryIds.includes(id))
+    ) {
+      return reply.status(400).send({ error: "分类排序数据无效" });
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    后第 18 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+    }
+
+    await prisma.$transaction(
+      categoryIds.map((id, index) =>
+        prisma.category.update({
+          where: { id },
+          data: { sort: index + 1 },
+        }),
+      ),
+    );
+
+    const updated = await prisma.category.findMany({
+      where: { userId },
+      orderBy: [{ type: "asc" }, { sort: "asc" }, { id: "asc" }],
+    });
+
+    return { categories: updated.map(serializeCategory) };
+  });
+
+  app.put("/api/categories/:id", { schema: updateCategorySchema }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const { name, icon, type } = request.body as {
+      name?: string;
+      icon?: string;
+      type?: TransactionType;
+    };
+    const userId = request.userId;
+
+    const category = await findOwnedCategory(prisma, userId, id, reply);
+    if (!category) return;
+
+    const nextType = type ?? category.type;
+    if (type && type !== category.type) {
+      const txCount = await prisma.transaction.count({
+        where: { categoryId: category.id },
+      });
+      if (txCount > 0) {
+        return reply.status(400).send({ error: "已有记账记录的分类暂不支持切换收入/支出类型" });
+      }
+    }
+
+    const nextSort =
+      nextType === category.type
+        ? category.sort
+        : (await prisma.category.count({ where: { userId, type: nextType } })) + 1;
+
+    const updated = await prisma.category.update({
+      where: { id: category.id },
+      data: {
+        name: name?.trim() ?? category.name,
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    后第 19 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+        icon: icon ?? category.icon,
+        type: nextType,
+        sort: nextSort,
+      },
+    });
+
+    if (nextType !== category.type) {
+      await resequenceUserCategories(prisma, userId, category.type);
+      await resequenceUserCategories(prisma, userId, nextType);
+    }
+
+    return { category: serializeCategory(updated) };
+  });
+
+  app.delete("/api/categories/:id", { schema: deleteCategorySchema }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const userId = request.userId;
+
+    const category = await findOwnedCategory(prisma, userId, id, reply);
+    if (!category) return;
+
+    const txCount = await prisma.transaction.count({
+      where: { categoryId: category.id },
+    });
+    if (txCount > 0) {
+      return reply.status(400).send({ error: "已有记账记录的分类不能删除" });
+    }
+
+    await prisma.category.delete({
+      where: { id: category.id },
+    });
+    await resequenceUserCategories(prisma, userId, category.type);
+
+    return reply.status(204).send();
+  });
+}
+
+// ---- File: server/src/routes/transactions.ts ----
+import type { FastifyInstance } from "fastify";
+import { getPrisma } from "../utils/prisma.js";
+import {
+  createTransactionSchema,
+  deleteTransactionSchema,
+  updateTransactionSchema,
+} from "../schemas/transaction.js";
+
+export default async function transactionRoutes(app: FastifyInstance) {
+  const prisma = getPrisma();
+
+  async function findAccessibleCategory(userId: string, categoryId: string) {
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    后第 20 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+    return prisma.category.findFirst({
+      where: {
+        id: categoryId,
+        OR: [{ userId }, { userId: null }],
+      },
+    });
+  }
+
+  app.post("/api/transactions", { schema: createTransactionSchema }, async (request, reply) => {
+    const { title, amount, direction, categoryId, occurredAt, note, merchant } = request.body as {
+      title: string;
+      amount: number;
+      direction: "expense" | "income";
+      categoryId: string;
+      occurredAt: string;
+      note?: string;
+      merchant?: string;
+    };
+    const userId = request.userId;
+
+    const category = await findAccessibleCategory(userId, categoryId);
+    if (!category) {
+      return reply.status(400).send({ error: "分类不存在" });
+    }
+    if (category.type !== direction) {
+      return reply.status(400).send({ error: "分类类型与记账方向不匹配" });
+    }
+
+    const tx = await prisma.transaction.create({
+      data: {
+        title,
+        amount,
+        direction,
+        categoryId,
+        occurredAt: new Date(occurredAt),
+        note,
+        merchant,
+        userId,
+      },
+    });
+
+    return reply.status(201).send({
+      transactionId: tx.id,
+      createdAt: tx.createdAt.toISOString(),
+    });
+  });
+
+  app.put("/api/transactions/:id", { schema: updateTransactionSchema }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const userId = request.userId;
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    后第 21 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+    const data = request.body as Record<string, unknown>;
+
+    const existing = await prisma.transaction.findUnique({ where: { id } });
+    if (!existing || existing.userId !== userId) {
+      return reply.status(404).send({ error: "记账记录不存在" });
+    }
+
+    const nextDirection = (data.direction as "expense" | "income" | undefined) ?? existing.direction;
+    const nextCategoryId = (data.categoryId as string | undefined) ?? existing.categoryId;
+    const category = await findAccessibleCategory(userId, nextCategoryId);
+    if (!category) {
+      return reply.status(400).send({ error: "分类不存在" });
+    }
+    if (category.type !== nextDirection) {
+      return reply.status(400).send({ error: "分类类型与记账方向不匹配" });
+    }
+
+    if (data.occurredAt) {
+      data.occurredAt = new Date(data.occurredAt as string);
+    }
+
+    const updated = await prisma.transaction.update({
+      where: { id },
+      data,
+    });
+
+    return { transactionId: updated.id, updatedAt: updated.updatedAt.toISOString() };
+  });
+
+  app.delete(
+    "/api/transactions/:id",
+    { schema: deleteTransactionSchema },
+    async (request, reply) => {
+      const { id } = request.params as { id: string };
+      const userId = request.userId;
+
+      const existing = await prisma.transaction.findUnique({ where: { id } });
+      if (!existing || existing.userId !== userId) {
+        return reply.status(404).send({ error: "记账记录不存在" });
+      }
+
+      await prisma.transaction.delete({ where: { id } });
+      return reply.status(204).send();
+    },
+  );
+}
+
+// ---- File: server/src/routes/export.ts ----
+import type { FastifyInstance } from "fastify";
+import { getPrisma } from "../utils/prisma.js";
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    后第 22 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+import { toNumber } from "../utils/date.js";
+import { exportDataSchema } from "../schemas/export.js";
+import ExcelJS from "exceljs";
+
+interface ExportQuery {
+  startMonth?: string;
+  endMonth?: string;
+}
+
+interface TransactionRow {
+  occurredAt: string;
+  direction: string;
+  categoryName: string;
+  title: string;
+  amount: number;
+  merchant: string;
+  note: string;
+}
+
+function buildDateRange(startMonth?: string, endMonth?: string) {
+  const now = new Date();
+  const start = startMonth
+    ? new Date(`${startMonth}-01T00:00:00.000Z`)
+    : new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1));
+
+  let end: Date;
+  if (endMonth) {
+    const [y, m] = endMonth.split("-").map(Number);
+    end = new Date(Date.UTC(y, m, 1)); // first day of next month
+  } else {
+    end = new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 1));
+  }
+
+  return { start, end };
+}
+
+async function fetchTransactions(userId: string, startMonth?: string, endMonth?: string): Promise<TransactionRow[]> {
+  const prisma = getPrisma();
+  const { start, end } = buildDateRange(startMonth, endMonth);
+
+  const items = await prisma.transaction.findMany({
+    where: {
+      userId,
+      occurredAt: { gte: start, lt: end },
+    },
+    orderBy: { occurredAt: "desc" },
+    include: {
+      category: { select: { name: true } },
+    },
+  });
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    后第 23 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+
+  return items.map((t) => ({
+    occurredAt: t.occurredAt.toISOString().slice(0, 10),
+    direction: t.direction === "expense" ? "支出" : "收入",
+    categoryName: (t as any).category?.name ?? "未分类",
+    title: t.title,
+    amount: toNumber(t.amount),
+    merchant: t.merchant ?? "",
+    note: t.note ?? "",
+  }));
+}
+
+const CSV_HEADERS = ["日期", "类型", "分类", "标题", "金额", "商家", "备注"];
+
+function buildCsv(rows: TransactionRow[]): string {
+  // BOM for Excel to recognize UTF-8
+  const bom = "\uFEFF";
+  const lines: string[] = [CSV_HEADERS.join(",")];
+
+  for (const r of rows) {
+    const cells = [
+      r.occurredAt,
+      r.direction,
+      escapeCsvField(r.categoryName),
+      escapeCsvField(r.title),
+      r.amount.toFixed(2),
+      escapeCsvField(r.merchant),
+      escapeCsvField(r.note),
+    ];
+    lines.push(cells.join(","));
+  }
+
+  return bom + lines.join("\n");
+}
+
+function escapeCsvField(value: string): string {
+  if (value.includes(",") || value.includes('"') || value.includes("\n")) {
+    return `"${value.replace(/"/g, '""')}"`;
+  }
+  return value;
+}
+
+async function buildXlsx(rows: TransactionRow[]): Promise<Buffer> {
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = "OneKeep";
+  workbook.created = new Date();
+
+  const sheet = workbook.addWorksheet("记账数据");
+
+  // Define columns
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    后第 24 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+  sheet.columns = [
+    { header: "日期", key: "occurredAt", width: 14 },
+    { header: "类型", key: "direction", width: 8 },
+    { header: "分类", key: "categoryName", width: 12 },
+    { header: "标题", key: "title", width: 20 },
+    { header: "金额", key: "amount", width: 12 },
+    { header: "商家", key: "merchant", width: 18 },
+    { header: "备注", key: "note", width: 24 },
+  ];
+
+  // Style header row
+  const headerRow = sheet.getRow(1);
+  headerRow.font = { bold: true, color: { argb: "FFFFFFFF" } };
+  headerRow.fill = {
+    type: "pattern",
+    pattern: "solid",
+    fgColor: { argb: "FF10B981" },
+  };
+  headerRow.alignment = { vertical: "middle", horizontal: "center" };
+  headerRow.height = 28;
+
+  // Add data rows
+  for (const r of rows) {
+    const row = sheet.addRow({
+      occurredAt: r.occurredAt,
+      direction: r.direction,
+      categoryName: r.categoryName,
+      title: r.title,
+      amount: r.amount,
+      merchant: r.merchant,
+      note: r.note,
+    });
+
+    // Color-code expense/income
+    const directionCell = row.getCell("direction");
+    if (r.direction === "支出") {
+      directionCell.font = { color: { argb: "FFFF6B6B" } };
+    } else {
+      directionCell.font = { color: { argb: "FF10B981" } };
+    }
+
+    // Number format for amount
+    row.getCell("amount").numFmt = "#,##0.00";
+  }
+
+  // Freeze header row
+  sheet.views = [{ state: "frozen", ySplit: 1 }];
+
+  const buffer = await workbook.xlsx.writeBuffer();
+  return Buffer.from(buffer);
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    后第 25 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+}
+
+export default async function exportRoutes(app: FastifyInstance) {
+  // GET /api/export/csv
+  app.get("/api/export/csv", { schema: exportDataSchema }, async (request, reply) => {
+    const userId = request.userId;
+    const { startMonth, endMonth } = request.query as ExportQuery;
+
+    const rows = await fetchTransactions(userId, startMonth, endMonth);
+    const csv = buildCsv(rows);
+
+    const filename = `onekeep-export-${startMonth ?? "all"}-${endMonth ?? "all"}.csv`;
+
+    reply
+      .header("Content-Type", "text/csv; charset=utf-8")
+      .header("Content-Disposition", `attachment; filename="${filename}"`)
+      .send(csv);
+  });
+
+  // GET /api/export/xlsx
+  app.get("/api/export/xlsx", { schema: exportDataSchema }, async (request, reply) => {
+    const userId = request.userId;
+    const { startMonth, endMonth } = request.query as ExportQuery;
+
+    const rows = await fetchTransactions(userId, startMonth, endMonth);
+    const buffer = await buildXlsx(rows);
+
+    const filename = `onekeep-export-${startMonth ?? "all"}-${endMonth ?? "all"}.xlsx`;
+
+    reply
+      .header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+      .header("Content-Disposition", `attachment; filename="${filename}"`)
+      .send(buffer);
+  });
+}
+
+// ---- File: server/src/schemas/auth.ts ----
+export const registerSchema = {
+  body: {
+    type: "object",
+    additionalProperties: false,
+    required: ["username", "email", "displayName", "password"],
+    properties: {
+      username: {
+        type: "string",
+        minLength: 3,
+        maxLength: 20,
+        pattern: "^[a-zA-Z0-9_]+$",
+      },
+      email: { type: "string", format: "email" },
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    后第 26 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+      password: { type: "string", minLength: 6 },
+      displayName: { type: "string", minLength: 1, maxLength: 20 },
+    },
+  },
+} as const;
+
+export const loginSchema = {
+  body: {
+    type: "object",
+    additionalProperties: false,
+    required: ["identifier", "password"],
+    properties: {
+      identifier: { type: "string", minLength: 1, maxLength: 100 },
+      password: { type: "string", minLength: 1 },
+    },
+  },
+} as const;
+
+export const meSchema = {} as const;
+
+export const sendCodeSchema = {
+  body: {
+    type: "object",
+    additionalProperties: false,
+    required: ["email"],
+    properties: {
+      email: { type: "string", format: "email" },
+    },
+  },
+} as const;
+
+export const verifyCodeSchema = {
+  body: {
+    type: "object",
+    additionalProperties: false,
+    required: ["email", "code"],
+    properties: {
+      email: { type: "string", format: "email" },
+      code: { type: "string", minLength: 6, maxLength: 6, pattern: "^[0-9]{6}$" },
+    },
+  },
+} as const;
+
+// ---- File: server/src/schemas/category.ts ----
+const categoryTypeSchema = { type: "string", enum: ["expense", "income"] } as const;
+
+export const listCategoriesSchema = {} as const;
+
+export const createCategorySchema = {
+  body: {
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    后第 27 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+    type: "object",
+    required: ["name", "icon", "type"],
+    properties: {
+      name: { type: "string", minLength: 1, maxLength: 20 },
+      icon: { type: "string", minLength: 1, maxLength: 60 },
+      type: categoryTypeSchema,
+    },
+  },
+} as const;
+
+export const updateCategorySchema = {
+  params: {
+    type: "object",
+    required: ["id"],
+    properties: {
+      id: { type: "string", minLength: 1 },
+    },
+  },
+  body: {
+    type: "object",
+    minProperties: 1,
+    properties: {
+      name: { type: "string", minLength: 1, maxLength: 20 },
+      icon: { type: "string", minLength: 1, maxLength: 60 },
+      type: categoryTypeSchema,
+    },
+  },
+} as const;
+
+export const reorderCategoriesSchema = {
+  body: {
+    type: "object",
+    required: ["type", "categoryIds"],
+    properties: {
+      type: categoryTypeSchema,
+      categoryIds: {
+        type: "array",
+        minItems: 1,
+        uniqueItems: true,
+        items: { type: "string", minLength: 1 },
+      },
+    },
+  },
+} as const;
+
+export const deleteCategorySchema = {
+  params: {
+    type: "object",
+    required: ["id"],
+    properties: {
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    后第 28 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+      id: { type: "string", minLength: 1 },
+    },
+  },
+} as const;
+
+// ---- File: server/src/schemas/transaction.ts ----
+export const createTransactionSchema = {
+  body: {
+    type: "object",
+    required: ["title", "amount", "direction", "categoryId", "occurredAt"],
+    properties: {
+      title: { type: "string", minLength: 1, maxLength: 100 },
+      amount: { type: "number", exclusiveMinimum: 0 },
+      direction: { type: "string", enum: ["expense", "income"] },
+      categoryId: { type: "string", minLength: 1 },
+      occurredAt: { type: "string", format: "date-time" },
+      note: { type: "string", maxLength: 500 },
+      merchant: { type: "string", maxLength: 100 },
+    },
+  },
+} as const;
+
+export const updateTransactionSchema = {
+  params: {
+    type: "object",
+    required: ["id"],
+    properties: {
+      id: { type: "string" },
+    },
+  },
+  body: {
+    type: "object",
+    properties: {
+      title: { type: "string", minLength: 1, maxLength: 100 },
+      amount: { type: "number", exclusiveMinimum: 0 },
+      direction: { type: "string", enum: ["expense", "income"] },
+      categoryId: { type: "string", minLength: 1 },
+      occurredAt: { type: "string", format: "date-time" },
+      note: { type: "string", maxLength: 500 },
+      merchant: { type: "string", maxLength: 100 },
+    },
+  },
+} as const;
+
+export const deleteTransactionSchema = {
+  params: {
+    type: "object",
+    required: ["id"],
+    properties: {
+      id: { type: "string" },
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    后第 29 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+    },
+  },
+} as const;
+
+// ---- File: server/src/schemas/bills.ts ----
+export const billsListSchema = {
+  querystring: {
+    type: "object",
+    properties: {
+      month: { type: "string", pattern: "^\\d{4}-\\d{2}$" },
+      filterType: { type: "string", enum: ["all", "expense", "income"], default: "all" },
+      query: { type: "string" },
+      cursor: { type: "string" },
+      pageSize: { type: "integer", minimum: 1, maximum: 100, default: 20 },
+    },
+  },
+} as const;
+
+// ---- File: server/src/schemas/stats.ts ----
+export const statsOverviewSchema = {
+  querystring: {
+    type: "object",
+    required: ["month"],
+    properties: {
+      month: { type: "string", pattern: "^\\d{4}-\\d{2}$" },
+      metricType: { type: "string", enum: ["expense", "income"] },
+    },
+  },
+} as const;
+
+// ---- File: server/src/schemas/home.ts ----
+export const homeSummarySchema = {
+  querystring: {
+    type: "object",
+    required: ["month"],
+    properties: {
+      month: { type: "string", pattern: "^\\d{4}-\\d{2}$" },
+    },
+  },
+} as const;
+
+// ---- File: server/src/schemas/export.ts ----
+export const exportDataSchema = {
+  querystring: {
+    type: "object",
+    properties: {
+      startMonth: { type: "string", pattern: "^\\d{4}-\\d{2}$" },
+      endMonth: { type: "string", pattern: "^\\d{4}-\\d{2}$" },
+    },
+  },
+
+------------------------------------------------------------
+
+厘清记账软件 V1.0    后第 30 页
+======================
+(本条共 50 行，每页不超过 50 行)
+
+};
+
+// ---- File: server/src/utils/date.ts ----
+import type { Decimal } from "@prisma/client/runtime/library";
+
+/** 将 month 字符串 "2026-03" 转为当月起止时间 */
+export function monthRange(month: string): { start: Date; end: Date } {
+  const [year, mon] = month.split("-").map(Number);
+  const start = new Date(Date.UTC(year, mon - 1, 1));
+  const end = new Date(Date.UTC(year, mon, 1));
+  return { start, end };
+}
+
+/** Decimal → number */
+export function toNumber(val: Decimal): number {
+  return Number(val);
+}
+
+// ---- File: server/src/utils/default-categories.ts ----
+import type { PrismaClient, TransactionType } from "@prisma/client";
+
+type CategoryTemplate = {
+  id: string;
+  name: string;
+  icon: string;
+  type: TransactionType;
+  sort: number;
+};
+
+export const defaultCategoryTemplates: CategoryTemplate[] = [
+  { id: "tpl_expense_dining", name: "用餐", icon: "a-068_yongcan", type: "expense", sort: 1 },
+  { id: "tpl_expense_transit", name: "公交", icon: "a-068_gongjiao", type: "expense", sort: 2 },
+  { id: "tpl_expense_shopping", name: "购物", icon: "a-068_gouwu", type: "expense", sort: 3 },
+  { id: "tpl_expense_life", name: "生活", icon: "a-068_shenghuo", type: "expense", sort: 4 },
+  { id: "tpl_expense_utilities", name: "水电", icon: "a-068_shuidian", type: "expense", sort: 5 },
+  { id: "tpl_expense_fuel", name: "加油", icon: "a-068_jiayou", type: "expense", sort: 6 },
+  { id: "tpl_expense_travel", name: "旅行", icon: "a-068_lvyou", type: "expense", sort: 7 },
+  { id: "tpl_expense_medical", name: "就医", icon: "a-068_jiuyi", type: "expense", sort: 8 },
+  { id: "tpl_income_salary", name: "工资", icon: "a-068_gongzi", type: "income", sort: 1 },
+  { id: "tpl_income_parttime", name: "兼职", icon: "a-068_jianzhi", type: "income", sort: 2 },
+  { id: "tpl_income_finance", name: "理财", icon: "a-068_licai", type: "income", sort: 3 },
+  { id: "tpl_income_transfer", name: "转账", icon: "a-068_zhuanzhang", type: "income", sort: 4 },
+  { id: "tpl_income_reimbursement", name: "报销", icon: "a-068_baoxiao", type: "income", sort: 5 },
+];
+
+export async function ensureGlobalCategoryTemplates(prisma: PrismaClient) {
+  for (const template of defaultCategoryTemplates) {
+    await prisma.category.upsert({
+      where: { id: template.id },
+      update: {
+
+------------------------------------------------------------
