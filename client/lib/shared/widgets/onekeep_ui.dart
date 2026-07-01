@@ -3,13 +3,20 @@ import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/category_icons.dart';
 import '../../core/theme/onekeep_iconfont.dart';
 
 enum OneKeepPageVariant { auth, home, stats, bills, profile }
+
+// ── Google Fonts 已离线打包 ──
+const _fontFamilyInter = 'Inter';
+const _fontFamilyManrope = 'Manrope';
+const _fontFamilyGrotesk = 'SpaceGrotesk';
+const _fontFamilyMono = 'SpaceMono';
 
 TextStyle oneKeepGrotesk({
   required Color color,
@@ -18,7 +25,8 @@ TextStyle oneKeepGrotesk({
   double? letterSpacing,
   double? height,
 }) {
-  return GoogleFonts.spaceGrotesk(
+  return TextStyle(
+    fontFamily: _fontFamilyGrotesk,
     color: color,
     fontSize: size,
     fontWeight: weight,
@@ -34,7 +42,8 @@ TextStyle oneKeepManrope({
   double? letterSpacing,
   double? height,
 }) {
-  return GoogleFonts.manrope(
+  return TextStyle(
+    fontFamily: _fontFamilyManrope,
     color: color,
     fontSize: size,
     fontWeight: weight,
@@ -50,7 +59,8 @@ TextStyle oneKeepInter({
   double? letterSpacing,
   double? height,
 }) {
-  return GoogleFonts.inter(
+  return TextStyle(
+    fontFamily: _fontFamilyInter,
     color: color,
     fontSize: size,
     fontWeight: weight,
@@ -66,7 +76,8 @@ TextStyle oneKeepMono({
   double? letterSpacing,
   double? height,
 }) {
-  return GoogleFonts.spaceMono(
+  return TextStyle(
+    fontFamily: _fontFamilyMono,
     color: color,
     fontSize: size,
     fontWeight: weight,
@@ -775,6 +786,76 @@ IconData oneKeepCategoryIcon(String title, String category, String fallback) {
   return Icons.receipt_long_rounded;
 }
 
+class OneKeepEmptyState extends StatelessWidget {
+  final IconData icon;
+  final String message;
+  final String? subtitle;
+  final double iconSize;
+
+  const OneKeepEmptyState({
+    super.key,
+    required this.icon,
+    required this.message,
+    this.subtitle,
+    this.iconSize = 40,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 96,
+            height: 96,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.emerald.withValues(alpha: isDark ? 0.25 : 0.15),
+                  AppColors.emerald.withValues(alpha: isDark ? 0.08 : 0.03),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(28),
+            ),
+            child: Center(
+              child: Icon(
+                icon,
+                size: iconSize,
+                color: AppColors.emerald.withValues(alpha: isDark ? 0.5 : 0.35),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            message,
+            style: oneKeepManrope(
+              color: oneKeepTextSecondary(context),
+              size: 15,
+              weight: FontWeight.w600,
+            ),
+          ),
+          if (subtitle != null) ...[
+            const SizedBox(height: 6),
+            Text(
+              subtitle!,
+              style: oneKeepInter(
+                color: oneKeepTextTertiary(context),
+                size: 12,
+                weight: FontWeight.w400,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
 class OneKeepBouncingCard extends StatefulWidget {
   final Widget child;
   final VoidCallback? onTap;
@@ -846,3 +927,309 @@ class _OneKeepBouncingCardState extends State<OneKeepBouncingCard>
   }
 }
 
+/// Custom date picker that opens as a bottom sheet.
+/// Replaces the system [showDatePicker] with an app-styled design.
+Future<DateTime?> showOneKeepDatePicker({
+  required BuildContext context,
+  required DateTime initialDate,
+  required DateTime firstDate,
+  required DateTime lastDate,
+}) {
+  return showModalBottomSheet<DateTime>(
+    context: context,
+    backgroundColor: Colors.transparent,
+    barrierColor: Colors.black.withValues(alpha: 0.3),
+    builder: (_) => _OneKeepDatePickerSheet(
+      initialDate: initialDate,
+      firstDate: firstDate,
+      lastDate: lastDate,
+    ),
+  );
+}
+
+class _OneKeepDatePickerSheet extends StatefulWidget {
+  final DateTime initialDate;
+  final DateTime firstDate;
+  final DateTime lastDate;
+
+  const _OneKeepDatePickerSheet({
+    required this.initialDate,
+    required this.firstDate,
+    required this.lastDate,
+  });
+
+  @override
+  State<_OneKeepDatePickerSheet> createState() =>
+      _OneKeepDatePickerSheetState();
+}
+
+class _OneKeepDatePickerSheetState extends State<_OneKeepDatePickerSheet> {
+  late DateTime _selectedDate;
+  late DateTime _viewMonth;
+  final _now = DateTime.now();
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedDate = widget.initialDate;
+    _viewMonth = DateTime(widget.initialDate.year, widget.initialDate.month, 1);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final daysInMonth = DateTime(_viewMonth.year, _viewMonth.month + 1, 0).day;
+    final firstWeekday = DateTime(_viewMonth.year, _viewMonth.month, 1).weekday % 7;
+    final weekLabels = ['一', '二', '三', '四', '五', '六', '日'];
+
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 32, sigmaY: 32),
+        child: Container(
+          decoration: BoxDecoration(
+            color: isDark
+                ? const Color(0xFF1C1C1E).withValues(alpha: 0.92)
+                : Colors.white.withValues(alpha: 0.95),
+            border: Border(
+              top: BorderSide(
+                color: Colors.white.withValues(alpha: isDark ? 0.08 : 0.6),
+                width: 0.5,
+              ),
+            ),
+          ),
+          child: SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Handle
+                  Container(
+                    width: 32,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: (isDark ? Colors.white : Colors.black)
+                          .withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Year + Month navigation
+                  Row(
+                    children: [
+                      // Previous month
+                      _NavButton(
+                        icon: Icons.chevron_left_rounded,
+                        enabled: _viewMonth.isAfter(
+                          DateTime(widget.firstDate.year, widget.firstDate.month, 1),
+                        ) || _viewMonth == DateTime(widget.firstDate.year, widget.firstDate.month, 1),
+                        onTap: () => setState(() {
+                          _viewMonth = DateTime(_viewMonth.year, _viewMonth.month - 1, 1);
+                        }),
+                        isDark: isDark,
+                      ),
+                      const Spacer(),
+                      Column(
+                        children: [
+                          Text(
+                            '${_viewMonth.year}年',
+                            style: oneKeepManrope(
+                              color: oneKeepTextSecondary(context),
+                              size: 12,
+                              weight: FontWeight.w500,
+                            ),
+                          ),
+                          Text(
+                            DateFormat('M月').format(_viewMonth),
+                            style: oneKeepGrotesk(
+                              color: oneKeepTextPrimary(context),
+                              size: 22,
+                              weight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Spacer(),
+                      // Next month
+                      _NavButton(
+                        icon: Icons.chevron_right_rounded,
+                        enabled: _viewMonth.isBefore(
+                          DateTime(widget.lastDate.year, widget.lastDate.month, 1),
+                        ),
+                        onTap: () => setState(() {
+                          _viewMonth = DateTime(_viewMonth.year, _viewMonth.month + 1, 1);
+                        }),
+                        isDark: isDark,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Weekday headers
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: weekLabels.map((label) {
+                      final isWeekend = label == '六' || label == '日';
+                      return SizedBox(
+                        width: 36,
+                        child: Center(
+                          child: Text(
+                            label,
+                            style: oneKeepInter(
+                              color: isWeekend
+                                  ? AppColors.emerald.withValues(alpha: 0.5)
+                                  : oneKeepTextTertiary(context),
+                              size: 12,
+                              weight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Days grid
+                  GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 7,
+                      mainAxisSpacing: 4,
+                      crossAxisSpacing: 4,
+                      childAspectRatio: 1.0,
+                    ),
+                    itemCount: firstWeekday + daysInMonth,
+                    itemBuilder: (context, index) {
+                      if (index < firstWeekday) {
+                        return const SizedBox();
+                      }
+                      final day = index - firstWeekday + 1;
+                      final date = DateTime(_viewMonth.year, _viewMonth.month, day);
+                      final isSelected = date == _selectedDate;
+                      final isToday = date == DateTime(_now.year, _now.month, _now.day);
+                      final isFuture = date.isAfter(_now);
+                      final isBeforeMin = date.isBefore(widget.firstDate);
+                      final isAfterMax = date.isAfter(widget.lastDate);
+                      final disabled = isFuture || isBeforeMin || isAfterMax;
+
+                      return GestureDetector(
+                        onTap: disabled
+                            ? null
+                            : () {
+                                HapticFeedback.lightImpact();
+                                setState(() => _selectedDate = date);
+                              },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? AppColors.emerald
+                                : isToday
+                                    ? AppColors.emerald.withValues(alpha: 0.12)
+                                    : null,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Center(
+                            child: Text(
+                              '$day',
+                              style: oneKeepInter(
+                                color: disabled
+                                    ? oneKeepTextTertiary(context).withValues(alpha: 0.3)
+                                    : isSelected
+                                        ? Colors.white
+                                        : isToday
+                                            ? AppColors.emerald
+                                            : oneKeepTextPrimary(context),
+                                size: 14,
+                                weight: isSelected || isToday
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Confirm button
+                  OneKeepBouncingCard(
+                    onTap: () => Navigator.pop(context, _selectedDate),
+                    child: Container(
+                      width: double.infinity,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: AppColors.emerald,
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.emerald.withValues(alpha: 0.3),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: Text(
+                          '确认',
+                          style: oneKeepManrope(
+                            color: Colors.white,
+                            size: 15,
+                            weight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _NavButton extends StatelessWidget {
+  final IconData icon;
+  final bool enabled;
+  final VoidCallback onTap;
+  final bool isDark;
+
+  const _NavButton({
+    required this.icon,
+    required this.enabled,
+    required this.onTap,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return OneKeepBouncingCard(
+      onTap: enabled ? onTap : null,
+      child: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.08)
+              : Colors.black.withValues(alpha: 0.04),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(
+          icon,
+          size: 18,
+          color: enabled
+              ? oneKeepTextPrimary(context)
+              : oneKeepTextTertiary(context).withValues(alpha: 0.3),
+        ),
+      ),
+    );
+  }
+}

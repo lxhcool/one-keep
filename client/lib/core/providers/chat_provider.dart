@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/network/api_client.dart';
 import '../../core/providers/api_provider.dart';
 import '../../core/providers/data_providers.dart';
 import '../../core/providers/preferences_provider.dart';
@@ -24,6 +23,23 @@ class ChatMessage {
     required this.timestamp,
     this.transactions,
   });
+
+  ChatMessage copyWith({
+    String? id,
+    String? content,
+    bool? isUser,
+    DateTime? timestamp,
+    List<ParsedTransaction>? transactions,
+    bool clearTransactions = false,
+  }) => ChatMessage(
+    id: id ?? this.id,
+    content: content ?? this.content,
+    isUser: isUser ?? this.isUser,
+    timestamp: timestamp ?? this.timestamp,
+    transactions: clearTransactions
+        ? null
+        : (transactions ?? this.transactions),
+  );
 }
 
 /// AI 解析出的交易记录
@@ -57,23 +73,36 @@ class ChatState {
   final List<ChatMessage> messages;
   final bool isLoading;
   final String? error;
+  final Set<String> confirmingMessageIds;
+  final Set<String> confirmedMessageIds;
 
   const ChatState({
     this.messages = const [],
     this.isLoading = false,
     this.error,
+    this.confirmingMessageIds = const {},
+    this.confirmedMessageIds = const {},
   });
 
   ChatState copyWith({
     List<ChatMessage>? messages,
     bool? isLoading,
     String? error,
-  }) =>
-      ChatState(
-        messages: messages ?? this.messages,
-        isLoading: isLoading ?? this.isLoading,
-        error: error,
-      );
+    Set<String>? confirmingMessageIds,
+    Set<String>? confirmedMessageIds,
+  }) => ChatState(
+    messages: messages ?? this.messages,
+    isLoading: isLoading ?? this.isLoading,
+    error: error,
+    confirmingMessageIds: confirmingMessageIds ?? this.confirmingMessageIds,
+    confirmedMessageIds: confirmedMessageIds ?? this.confirmedMessageIds,
+  );
+
+  bool isTransactionConfirming(String messageId) =>
+      confirmingMessageIds.contains(messageId);
+
+  bool isTransactionConfirmed(String messageId) =>
+      confirmedMessageIds.contains(messageId);
 }
 
 class ChatNotifier extends StateNotifier<ChatState> {
@@ -93,7 +122,11 @@ class ChatNotifier extends StateNotifier<ChatState> {
     );
 
     final updatedMessages = [...state.messages, userMessage];
-    state = state.copyWith(messages: updatedMessages, isLoading: true, error: null);
+    state = state.copyWith(
+      messages: updatedMessages,
+      isLoading: true,
+      error: null,
+    );
 
     try {
       final categories = _ref.read(categoriesProvider).valueOrNull ?? [];
@@ -130,15 +163,42 @@ class ChatNotifier extends StateNotifier<ChatState> {
   }
 
   /// 确认并提交 AI 解析出的交易记录
-  Future<void> confirmTransactions(List<ParsedTransaction> transactions) async {
+  Future<void> confirmTransactions(
+    String messageId,
+    List<ParsedTransaction> transactions,
+  ) async {
+    if (state.isTransactionConfirming(messageId) ||
+        state.isTransactionConfirmed(messageId)) {
+      return;
+    }
+
+    final message = state.messages
+        .where((item) => item.id == messageId)
+        .firstOrNull;
+    if (message == null ||
+        message.transactions == null ||
+        message.transactions!.isEmpty) {
+      return;
+    }
+
+    state = state.copyWith(
+      confirmingMessageIds: {...state.confirmingMessageIds, messageId},
+      error: null,
+    );
+
     final categories = _ref.read(categoriesProvider).valueOrNull ?? [];
+    var createdCount = 0;
 
     for (final tx in transactions) {
       String? categoryId;
       if (tx.categoryName != null) {
-        final match = categories.where(
-          (c) => c.name == tx.categoryName || c.name.contains(tx.categoryName!),
-        ).firstOrNull;
+        final match = categories
+            .where(
+              (c) =>
+                  c.name == tx.categoryName ||
+                  c.name.contains(tx.categoryName!),
+            )
+            .firstOrNull;
         categoryId = match?.id;
       }
       if (categoryId == null) {
@@ -151,14 +211,18 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
       try {
         final api = _ref.read(apiClientProvider);
-        await api.dio.post('/api/transactions', data: {
-          'title': tx.title,
-          'amount': tx.amount,
-          'direction': tx.direction,
-          'categoryId': categoryId,
-          'occurredAt': DateTime.now().toUtc().toIso8601String(),
-          if (tx.note != null) 'note': tx.note,
-        });
+        await api.dio.post(
+          '/api/transactions',
+          data: {
+            'title': tx.title,
+            'amount': tx.amount,
+            'direction': tx.direction,
+            'categoryId': categoryId,
+            'occurredAt': DateTime.now().toUtc().toIso8601String(),
+            if (tx.note != null) 'note': tx.note,
+          },
+        );
+        createdCount += 1;
       } catch (_) {
         // 静默跳过失败的提交
       }
@@ -167,13 +231,34 @@ class ChatNotifier extends StateNotifier<ChatState> {
     _ref.read(homeProvider.notifier).load();
     _ref.read(billsProvider.notifier).load();
 
+    final updatedMessages = createdCount > 0
+        ? state.messages
+              .map(
+                (item) => item.id == messageId
+                    ? item.copyWith(clearTransactions: true)
+                    : item,
+              )
+              .toList()
+        : state.messages;
+
     final confirmMsg = ChatMessage(
       id: _uuid(),
-      content: '已成功记录 ${transactions.length} 笔交易！',
+      content: createdCount > 0
+          ? '已成功记录 $createdCount 笔交易！'
+          : '没有成功记录交易，请稍后再试。',
       isUser: false,
       timestamp: DateTime.now(),
     );
-    state = state.copyWith(messages: [...state.messages, confirmMsg]);
+
+    state = state.copyWith(
+      messages: [...updatedMessages, confirmMsg],
+      confirmingMessageIds: state.confirmingMessageIds
+          .where((id) => id != messageId)
+          .toSet(),
+      confirmedMessageIds: createdCount > 0
+          ? {...state.confirmedMessageIds, messageId}
+          : state.confirmedMessageIds,
+    );
   }
 
   /// 清空聊天记录
@@ -190,15 +275,17 @@ class ChatNotifier extends StateNotifier<ChatState> {
       throw Exception('请先在「我的 → AI 设置」中配置 AI 服务');
     }
 
-    final modelName = prefs.aiModelName.isNotEmpty ? prefs.aiModelName : 'gpt-4o-mini';
+    final modelName = prefs.aiModelName.isNotEmpty
+        ? prefs.aiModelName
+        : 'gpt-4o-mini';
 
     try {
+      final categoryList = categories
+          .map((c) => '  - ${c.name}（${c.type == 'expense' ? '支出' : '收入'}）')
+          .join('\n');
 
-    final categoryList = categories
-        .map((c) => '  - ${c.name}（${c.type == 'expense' ? '支出' : '收入'}）')
-        .join('\n');
-
-    final systemPrompt = '''你是一个智能记账助手。用户会用自然语言描述他们的收支，你需要从中提取出交易信息。
+      final systemPrompt =
+          '''你是一个智能记账助手。用户会用自然语言描述他们的收支，你需要从中提取出交易信息。
 
 用户的分类列表如下：
 $categoryList
@@ -214,77 +301,84 @@ $categoryList
 5. 如果无法理解用户的意图，reply 中说明，transactions 设为空数组
 6. 只输出纯 JSON，不要输出思考过程，不要用markdown代码块包裹''';
 
-    var baseUrl = prefs.aiApiBaseUrl.replaceAll(RegExp(r'/+$'), '');
-    // 如果 baseUrl 以 /v1 结尾，去掉后统一拼接
-    if (baseUrl.endsWith('/v1')) {
-      baseUrl = baseUrl.substring(0, baseUrl.length - 3);
-    }
-
-    final dio = Dio();
-    final response = await dio.post(
-      '$baseUrl/v1/chat/completions',
-      data: {
-        'model': modelName,
-        'messages': [
-          {'role': 'system', 'content': systemPrompt},
-          // 发送完整对话上下文，AI 回复中清理掉 <think/> 等推理标签
-          ...state.messages
-              .take(20)
-              .map((m) => {
-                    'role': m.isUser ? 'user' : 'assistant',
-                    'content': m.isUser ? m.content : _stripThinkTags(m.content),
-                  }),
-        ],
-        'temperature': 0.2,
-      },
-      options: Options(
-        headers: {
-          'Authorization': 'Bearer ${prefs.aiApiKey}',
-          'Content-Type': 'application/json',
-        },
-        sendTimeout: const Duration(seconds: 30),
-        receiveTimeout: const Duration(seconds: 60),
-      ),
-    );
-
-    // 解析 AI 响应
-    final body = response.data as Map<String, dynamic>;
-    final choices = body['choices'] as List<dynamic>?;
-    if (choices == null || choices.isEmpty) {
-      throw Exception('AI 服务返回了空响应');
-    }
-
-    // 检查 finish_reason
-    final finishReason = choices[0]['finish_reason'] as String? ?? 'stop';
-    if (finishReason == 'content_filter' || finishReason == 'length') {
-      throw Exception('AI 响应被截断（$finishReason），请尝试简化输入');
-    }
-
-    var content = choices[0]['message']?['content'] as String?;
-
-    // 处理 content 为 null 的情况（推理模型可能只返回 reasoning_content）
-    if (content == null || content.trim().isEmpty) {
-      final reasoning = choices[0]['message']?['reasoning_content'] as String?;
-      if (reasoning != null && reasoning.trim().isNotEmpty) {
-        // 推理模型只返回了思考过程，没有实际回复内容
-        // 尝试从推理内容中提取 JSON
-        content = reasoning;
-      } else {
-        throw Exception('模型 "$modelName" 返回了空内容，请检查模型是否支持此请求方式，或在「我的 → AI 设置」中更换模型');
+      var baseUrl = prefs.aiApiBaseUrl.replaceAll(RegExp(r'/+$'), '');
+      // 如果 baseUrl 以 /v1 结尾，去掉后统一拼接
+      if (baseUrl.endsWith('/v1')) {
+        baseUrl = baseUrl.substring(0, baseUrl.length - 3);
       }
-    }
 
-    // 尝试解析 JSON，失败则返回原始文本作为回复
-    Map<String, dynamic> result;
-    try {
-      final jsonStr = _extractJson(content);
-      result = jsonDecode(jsonStr) as Map<String, dynamic>;
-    } catch (_) {
-      result = {'reply': content, 'transactions': <dynamic>[]};
-    }
+      final dio = Dio();
+      final response = await dio.post(
+        '$baseUrl/v1/chat/completions',
+        data: {
+          'model': modelName,
+          'messages': [
+            {'role': 'system', 'content': systemPrompt},
+            // 发送完整对话上下文，AI 回复中清理掉 <think/> 等推理标签
+            ...state.messages
+                .take(20)
+                .map(
+                  (m) => {
+                    'role': m.isUser ? 'user' : 'assistant',
+                    'content': m.isUser
+                        ? m.content
+                        : _stripThinkTags(m.content),
+                  },
+                ),
+          ],
+          'temperature': 0.2,
+        },
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer ${prefs.aiApiKey}',
+            'Content-Type': 'application/json',
+          },
+          sendTimeout: const Duration(seconds: 30),
+          receiveTimeout: const Duration(seconds: 60),
+        ),
+      );
 
-    return result;
-  } on DioException catch (e) {
+      // 解析 AI 响应
+      final body = response.data as Map<String, dynamic>;
+      final choices = body['choices'] as List<dynamic>?;
+      if (choices == null || choices.isEmpty) {
+        throw Exception('AI 服务返回了空响应');
+      }
+
+      // 检查 finish_reason
+      final finishReason = choices[0]['finish_reason'] as String? ?? 'stop';
+      if (finishReason == 'content_filter' || finishReason == 'length') {
+        throw Exception('AI 响应被截断（$finishReason），请尝试简化输入');
+      }
+
+      var content = choices[0]['message']?['content'] as String?;
+
+      // 处理 content 为 null 的情况（推理模型可能只返回 reasoning_content）
+      if (content == null || content.trim().isEmpty) {
+        final reasoning =
+            choices[0]['message']?['reasoning_content'] as String?;
+        if (reasoning != null && reasoning.trim().isNotEmpty) {
+          // 推理模型只返回了思考过程，没有实际回复内容
+          // 尝试从推理内容中提取 JSON
+          content = reasoning;
+        } else {
+          throw Exception(
+            '模型 "$modelName" 返回了空内容，请检查模型是否支持此请求方式，或在「我的 → AI 设置」中更换模型',
+          );
+        }
+      }
+
+      // 尝试解析 JSON，失败则返回原始文本作为回复
+      Map<String, dynamic> result;
+      try {
+        final jsonStr = _extractJson(content);
+        result = jsonDecode(jsonStr) as Map<String, dynamic>;
+      } catch (_) {
+        result = {'reply': content, 'transactions': <dynamic>[]};
+      }
+
+      return result;
+    } on DioException catch (e) {
       String errorMsg;
       if (e.type == DioExceptionType.connectionTimeout ||
           e.type == DioExceptionType.sendTimeout ||
@@ -347,7 +441,7 @@ $categoryList
     return cleaned;
   }
 
-  /// 清理 AI 回复中的 <think/> 推理标签，用于构建上下文时保持干净
+  /// 清理 AI 回复中的 `<think/>` 推理标签，用于构建上下文时保持干净
   String _stripThinkTags(String text) {
     var cleaned = text.replaceAll(RegExp(r'<think[\s\S]*?</think\s*>'), '');
     cleaned = cleaned.replaceAll(RegExp(r'<think[\s\S]*'), '');

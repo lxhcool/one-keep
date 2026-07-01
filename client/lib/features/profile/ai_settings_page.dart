@@ -30,7 +30,7 @@ class _AiSettingsPageState extends ConsumerState<AiSettingsPage> {
   static const _presets = [
     ('OpenAI 官方', 'https://api.openai.com/v1', 'gpt-4o-mini'),
     ('硅基流动', 'https://api.siliconflow.cn/v1', 'Qwen/Qwen3-Omni-30B-A3B-Instruct'),
-    ('DeepSeek', 'https://api.deepseek.com/v1', 'deepseek-chat'),
+    ('DeepSeek', 'https://api.deepseek.com/v1', 'deepseek-v4-flash'),
     ('Moonshot', 'https://api.moonshot.cn/v1', 'moonshot-v1-8k'),
     ('GLM (智谱)', 'https://open.bigmodel.cn/api/paas/v4', 'glm-4-flash'),
     ('通义千问', 'https://dashscope.aliyuncs.com/compatible-mode/v1', 'qwen-turbo'),

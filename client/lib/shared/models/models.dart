@@ -66,7 +66,7 @@ class Transaction {
         _readNullableString(json, 'categoryColor') ??
         _readNullableString(json, 'color'),
     occurredAt:
-        DateTime.tryParse(_readString(json, 'occurredAt')) ?? DateTime.now(),
+        (DateTime.tryParse(_readString(json, 'occurredAt')) ?? DateTime.now()).toLocal(),
     amount: _readDouble(json, 'amount'),
     direction: _readString(json, 'direction', fallback: 'expense'),
     note: _readNullableString(json, 'note'),
@@ -133,7 +133,7 @@ class UserInfo {
     name: _readString(
       json,
       'displayName',
-      fallback: _readString(json, 'name', fallback: 'OneKeep 用户'),
+      fallback: _readString(json, 'name', fallback: '厘清用户'),
     ),
     email: _readString(json, 'email'),
   );

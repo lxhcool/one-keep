@@ -1,8 +1,8 @@
-name: one_keep
-description: "OneKeep accounting app client."
+name: liqing
+description: "厘清 — 极简智能记账应用"
 publish_to: 'none'
 
-version: 0.1.0+1
+version: 1.0.0+1
 
 environment:
   sdk: ^3.10.7
@@ -20,7 +20,7 @@ dependencies:
   intl: ^0.19.0
   fl_chart: ^0.70.0
   lucide_icons: ^0.257.0
-  google_fonts: ^6.2.0
+  # google_fonts: 已移除，字体已打包到 assets/fonts
   shimmer: ^3.0.0
   image_picker: ^1.1.2
   speech_to_text: ^7.0.0
@@ -42,17 +42,58 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/app-logo.png
+    - assets/images/login-logo.png
     - assets/category/
   fonts:
     - family: OneKeepIconFont
       fonts:
         - asset: assets/iconfont/iconfont.ttf
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-400.ttf
+          weight: 400
+        - asset: assets/fonts/Inter-500.ttf
+          weight: 500
+        - asset: assets/fonts/Inter-600.ttf
+          weight: 600
+        - asset: assets/fonts/Inter-700.ttf
+          weight: 700
+        - asset: assets/fonts/Inter-800.ttf
+          weight: 800
+        - asset: assets/fonts/Inter-900.ttf
+          weight: 900
+    - family: Manrope
+      fonts:
+        - asset: assets/fonts/Manrope-400.ttf
+          weight: 400
+        - asset: assets/fonts/Manrope-500.ttf
+          weight: 500
+        - asset: assets/fonts/Manrope-600.ttf
+          weight: 600
+        - asset: assets/fonts/Manrope-700.ttf
+          weight: 700
+        - asset: assets/fonts/Manrope-800.ttf
+          weight: 800
+    - family: SpaceGrotesk
+      fonts:
+        - asset: assets/fonts/SpaceGrotesk-400.ttf
+          weight: 400
+        - asset: assets/fonts/SpaceGrotesk-500.ttf
+          weight: 500
+        - asset: assets/fonts/SpaceGrotesk-600.ttf
+          weight: 600
+        - asset: assets/fonts/SpaceGrotesk-700.ttf
+          weight: 700
+    - family: SpaceMono
+      fonts:
+        - asset: assets/fonts/SpaceMono-400.ttf
+          weight: 400
+        - asset: assets/fonts/SpaceMono-700.ttf
+          weight: 700
 
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: assets/images/app-logo.png
+  image_path: assets/images/ic_launcher.png
   min_sdk_android: 21
   remove_alpha_ios: true
-  adaptive_icon_background: "#10B981"
-  adaptive_icon_foreground: assets/images/app-logo.png

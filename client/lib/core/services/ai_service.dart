@@ -11,7 +11,7 @@ class AiService {
   AiService({
     required this.baseUrl,
     required this.apiKey,
-    this.model = 'gpt-4o-mini',
+    this.model = 'deepseek-v4-flash',
   });
 
   /// 发送聊天消息，以流式方式返回 AI 响应

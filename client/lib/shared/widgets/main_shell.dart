@@ -69,7 +69,7 @@ class _MainShellState extends ConsumerState<MainShell> {
         : AppColors.lightTextTertiary;
     final bottomInset = MediaQuery.of(context).padding.bottom;
     const barHeight = 64.0;
-    const fabLift = 46.0;
+    const fabLift = 32.0;
 
     return SizedBox(
       height: barHeight + bottomInset + fabLift,
@@ -131,7 +131,7 @@ class _MainShellState extends ConsumerState<MainShell> {
                               inactiveColor: inactive,
                               onTap: () => _onTap(1),
                             ),
-                            const SizedBox(width: 86),
+                            const SizedBox(width: 76),
                             _NavSlot(
                               icon: oneKeepIconFont('a-064_wenben')!,
                               label: '账单',
@@ -189,16 +189,16 @@ class _MainShellState extends ConsumerState<MainShell> {
         _showManualEntrySheet(context);
       },
       child: Container(
-        width: 86,
-        height: 86,
+        width: 64,
+        height: 64,
         decoration: BoxDecoration(
           color: AppColors.emerald,
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
               color: AppColors.emerald.withValues(alpha: 0.38),
-              blurRadius: 24,
-              offset: const Offset(0, 7),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
             )
           ],
           gradient: const LinearGradient(
@@ -207,7 +207,7 @@ class _MainShellState extends ConsumerState<MainShell> {
             colors: [AppColors.emeraldLight, AppColors.emerald],
           ),
         ),
-        child: const Icon(LucideIcons.mic, color: Colors.white, size: 38),
+        child: const Icon(LucideIcons.mic, color: Colors.white, size: 28),
       ),
     );
   }
@@ -784,13 +784,13 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet>
                     ),
                   ),
 
-                  // Category Horizontal List
-                  SizedBox(
-                    height: 84,
+                  // Category Grid
+                  Container(
+                    constraints: const BoxConstraints(maxHeight: 240),
                     child: ref.watch(categoriesProvider).when(
                       data: (items) {
                         _syncSelectedCategory(items);
-                        return _buildCategoryList(items);
+                        return _buildCategoryGrid(items);
                       },
                       loading: () => const SizedBox(),
                       error: (error, _) => const SizedBox(),
@@ -815,56 +815,68 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet>
     );
   }
 
-  Widget _buildCategoryList(List<Category> items) {
+  Widget _buildCategoryGrid(List<Category> items) {
     final filtered = items.where((item) => item.type == _direction).toList();
     if (filtered.isEmpty) return const SizedBox();
 
-    return ListView.separated(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      scrollDirection: Axis.horizontal,
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    const crossAxisCount = 4;
+
+    return GridView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      physics: const BouncingScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: crossAxisCount,
+        mainAxisSpacing: 4,
+        crossAxisSpacing: 4,
+        childAspectRatio: 1.1,
+      ),
       itemCount: filtered.length,
-      separatorBuilder: (_, __) => const SizedBox(width: 20),
       itemBuilder: (context, index) {
         final item = filtered[index];
         final selected = item.id == _selectedCategoryId;
         final tone = oneKeepCategoryTone(colorHex: item.color, categoryId: item.id, categoryName: item.name, categoryIcon: item.icon);
 
-        return OneKeepBouncingCard(
+        return GestureDetector(
           onTap: () {
             HapticFeedback.lightImpact();
             setState(() => _selectedCategoryId = item.id);
           },
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               AnimatedContainer(
                 duration: const Duration(milliseconds: 250),
-                width: 52,
-                height: 52,
+                width: 46,
+                height: 46,
                 decoration: BoxDecoration(
-                  color: selected ? tone.withValues(alpha: 0.2) : (Theme.of(context).brightness == Brightness.dark ? Colors.white10 : Colors.black.withValues(alpha: 0.05)),
-                  borderRadius: BorderRadius.circular(18),
+                  color: selected ? tone.withValues(alpha: 0.2) : (isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05)),
+                  borderRadius: BorderRadius.circular(14),
                   border: selected ? Border.all(color: tone.withValues(alpha: 0.4), width: 1.5) : null,
                 ),
                 child: Image.asset(
                   resolveCategoryIconAsset(item.icon.isNotEmpty ? item.icon : item.name),
-                  width: 24,
-                  height: 24,
+                  width: 22,
+                  height: 22,
                   errorBuilder: (_, __, ___) => Icon(
                     Icons.receipt_long_rounded,
-                    size: 24,
+                    size: 22,
                     color: selected ? tone : oneKeepTextSecondary(context),
                   ),
                 ),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 4),
               Text(
                 item.name,
                 style: oneKeepInter(
                   color: selected ? tone : oneKeepTextSecondary(context),
-                  size: 11,
+                  size: 10,
                   weight: selected ? FontWeight.w700 : FontWeight.w500,
                 ),
+                maxLines: 1,
+                textAlign: TextAlign.center,
+                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),
@@ -924,17 +936,11 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet>
   }
 
   Future<void> _pickDate() async {
-    final date = await showDatePicker(
+    final date = await showOneKeepDatePicker(
       context: context,
       initialDate: _occurredAt,
       firstDate: DateTime(2000),
       lastDate: DateTime.now(),
-      builder: (context, child) => Theme(
-        data: Theme.of(context).copyWith(
-          colorScheme: ColorScheme.fromSeed(seedColor: AppColors.emerald, primary: AppColors.emerald, surface: oneKeepSurface(context)),
-        ),
-        child: child!,
-      ),
     );
     if (date != null) setState(() => _occurredAt = date);
   }

@@ -4,11 +4,14 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'category_settings_page.dart';
 import 'ai_settings_page.dart';
 import 'export_data_page.dart';
+import '../../core/providers/api_provider.dart';
+import '../../core/network/api_client.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/data_providers.dart';
 import '../../core/providers/preferences_provider.dart';
@@ -63,7 +66,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
     final displayName = preferences.nickname.isNotEmpty
         ? preferences.nickname
-        : (authState.user?.name.isNotEmpty == true ? authState.user!.name : 'OneKeep 用户');
+        : (authState.user?.name.isNotEmpty == true ? authState.user!.name : '厘清用户');
     final username = authState.user?.username?.isNotEmpty == true
         ? '@${authState.user!.username!}' : '';
     final totalExpense = statsOverview?.totalExpense ?? 0;
@@ -151,7 +154,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   const SizedBox(height: 0),
                   _BentoGridMenu(
                     preferences: preferences,
-                    onThemeTap: _showThemePicker,
+                    onThemeTap: () {
+                      final newMode = preferences.themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
+                      ref.read(preferencesProvider.notifier).setThemeMode(newMode);
+                    },
                     onBackgroundTap: _showBackgroundStudio,
                     onAvatarTap: _showAvatarStudio,
                     onNicknameTap: _showNicknameSheet,
@@ -187,6 +193,41 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                               color: const Color(0xFFFF3B30).withValues(alpha: 0.8),
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
+                              letterSpacing: 0.2,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  OneKeepBouncingCard(
+                    onTap: _deleteAccount,
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFFFF3B30).withValues(alpha: 0.04) : const Color(0xFFFF3B30).withValues(alpha: 0.03),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: const Color(0xFFFF3B30).withValues(alpha: 0.06),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.delete_outline_rounded,
+                            size: 18,
+                            color: const Color(0xFFFF3B30).withValues(alpha: 0.5),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '注销账号',
+                            style: TextStyle(
+                              color: const Color(0xFFFF3B30).withValues(alpha: 0.5),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
                               letterSpacing: 0.2,
                             ),
                           ),
@@ -282,11 +323,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                     ),
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Opacity(
-                                    opacity: (1 - t * 0.5).clamp(0.0, 1.0),
-                                    child: Icon(Icons.verified_rounded, size: 18 * (1 - t * 0.2), color: AppColors.teal),
                                   ),
                                 ],
                               ),
@@ -400,43 +436,15 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 6,
-                          height: 6,
-                          decoration: BoxDecoration(
-                            color: AppColors.emerald,
-                            borderRadius: BorderRadius.circular(3),
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          '总余额',
-                          style: TextStyle(
-                            color: subTextColor,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.3,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      isLoading ? '--' : '¥${oneKeepCurrency(balance)}',
-                      style: TextStyle(
-                        color: textColor,
-                        fontSize: 32,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: -1.5,
-                        height: 1.0,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  isLoading ? '--' : '¥${oneKeepCurrency(balance)}',
+                  style: TextStyle(
+                    color: textColor,
+                    fontSize: 32,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -1.5,
+                    height: 1.0,
+                  ),
                 ),
               ),
               Container(
@@ -637,6 +645,49 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     );
   }
 
+  Future<void> _deleteAccount() async {
+    HapticFeedback.heavyImpact();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text('确认注销', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: oneKeepTextPrimary(ctx))),
+        content: Text(
+          '注销后，您的所有数据（交易记录、分类、个人设置）将被永久删除且无法恢复。\n\n确定要注销账号吗？',
+          style: TextStyle(fontSize: 14, height: 1.5, color: oneKeepTextSecondary(ctx)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('取消', style: TextStyle(color: oneKeepTextSecondary(ctx))),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text('确认注销', style: const TextStyle(color: Color(0xFFFF3B30), fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    try {
+      await ref.read(apiClientProvider).dio.delete('/api/auth/account');
+      if (!mounted) return;
+      ref.read(authProvider.notifier).logout();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('账号已注销')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('注销失败：${ApiClient.readableError(e)}')),
+      );
+    }
+  }
+
   Future<void> _showExportSheet() async {
     await showModalBottomSheet<void>(
       context: context,
@@ -647,85 +698,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     );
   }
 
-  Future<void> _showThemePicker() async {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    await showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (sheetContext) {
-        final preferences = ref.watch(preferencesProvider);
-
-        return Container(
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1C1C1F) : Colors.white,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: SafeArea(
-            top: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // 拖拽指示条
-                  Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF3C3C3E) : const Color(0xFFD1D5DB),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  // 标题
-                  Text(
-                    '外观设置',
-                    style: TextStyle(
-                      color: isDark ? Colors.white : const Color(0xFF18181B),
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  // 选项卡片
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _ThemeOptionCard(
-                          icon: Icons.wb_sunny_outlined,
-                          title: '浅色',
-                          subtitle: '明亮清晰',
-                          active: preferences.themeMode == ThemeMode.light,
-                          onTap: () async {
-                            await ref.read(preferencesProvider.notifier).setThemeMode(ThemeMode.light);
-                            if (sheetContext.mounted) Navigator.of(sheetContext).pop();
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _ThemeOptionCard(
-                          icon: Icons.nightlight_round,
-                          title: '深色',
-                          subtitle: '护眼省电',
-                          active: preferences.themeMode == ThemeMode.dark,
-                          onTap: () async {
-                            await ref.read(preferencesProvider.notifier).setThemeMode(ThemeMode.dark);
-                            if (sheetContext.mounted) Navigator.of(sheetContext).pop();
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
 }
 
 // 用户信息卡片 - 沉浸式头部设计
@@ -768,46 +740,18 @@ class _FinanceDashboardCard extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(22, 24, 22, 16),
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            width: 6,
-                            height: 6,
-                            decoration: BoxDecoration(
-                              color: AppColors.emerald,
-                              borderRadius: BorderRadius.circular(3),
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            '账户总余额',
-                            style: TextStyle(
-                              color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF8E8E93),
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 0.4,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        isLoading ? '--' : '¥${oneKeepCurrency(balance)}',
-                        style: TextStyle(
-                          color: isDark ? Colors.white : const Color(0xFF1C1C1E),
-                          fontSize: 36,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: -1.5,
-                          height: 1.0,
-                        ),
-                      ),
-                    ],
+                  child: Text(
+                    isLoading ? '--' : '¥${oneKeepCurrency(balance)}',
+                    style: TextStyle(
+                      color: isDark ? Colors.white : const Color(0xFF1C1C1E),
+                      fontSize: 36,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -1.5,
+                      height: 1.0,
+                    ),
                   ),
                 ),
                 Container(
@@ -1153,17 +1097,7 @@ class _BentoGridMenu extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            isLightMode ? '外观样式' : '主题外观',
-                            style: TextStyle(
-                              color: (isLightMode ? const Color(0xFF92400E) : const Color(0xFFE0E7FF)).withValues(alpha: 0.6),
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 1,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            isLightMode ? '浅色外观\n明亮活跃' : '深色外观\n尊享护眼',
+                            isLightMode ? '明亮清晰' : '护眼省电',
                             style: TextStyle(
                               color: isLightMode ? const Color(0xFF92400E) : const Color(0xFFE0E7FF),
                               fontSize: 18,
@@ -1271,7 +1205,7 @@ class _BentoGridMenu extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: OneKeepBouncingCard(
-                  onTap: () {},
+                  onTap: () => context.push('/about'),
                   child: _BentoBlock(
                     height: 66,
                     color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
@@ -1509,77 +1443,6 @@ class _NicknameSheetState extends State<_NicknameSheet> {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ThemeOptionCard extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final bool active;
-  final VoidCallback onTap;
-
-  const _ThemeOptionCard({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.active,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF2C2C2E) : const Color(0xFFF3F4F6),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: active ? const Color(0xFF2563EB) : Colors.transparent,
-            width: 2,
-          ),
-        ),
-        child: Column(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: active ? const Color(0xFF2563EB).withValues(alpha: 0.15) : (isDark ? const Color(0xFF1C1C1F) : Colors.white),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                icon,
-                size: 24,
-                color: active ? const Color(0xFF2563EB) : (isDark ? const Color(0xFF8E8E93) : const Color(0xFF9CA3AF)),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              title,
-              style: TextStyle(
-                color: isDark ? Colors.white : const Color(0xFF18181B),
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              subtitle,
-              style: TextStyle(
-                color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF9CA3AF),
-                fontSize: 12,
-              ),
-            ),
-          ],
         ),
       ),
     );
@@ -1931,7 +1794,7 @@ class _BackgroundStudioSheet extends ConsumerWidget {
                             child: Padding(
                               padding: const EdgeInsets.only(bottom: 4),
                               child: Text(
-                                preferences.nickname.isNotEmpty ? preferences.nickname : 'OneKeep User',
+                                preferences.nickname.isNotEmpty ? preferences.nickname : '厘清用户',
                                 style: const TextStyle(
                                   color: Colors.white, 
                                   fontSize: 16, 
@@ -2300,15 +2163,6 @@ class _ProfileHeaderDelegate extends SliverPersistentHeaderDelegate {
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            Opacity(
-                              opacity: (1 - t * 0.5).clamp(0.0, 1.0),
-                              child: Icon(
-                                Icons.verified_rounded,
-                                size: 18 * (1 - t * 0.2),
-                                color: AppColors.teal,
                               ),
                             ),
                           ],

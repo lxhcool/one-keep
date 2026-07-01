@@ -13,7 +13,7 @@ class OneKeepApp extends ConsumerWidget {
     final preferences = ref.watch(preferencesProvider);
 
     return MaterialApp.router(
-      title: 'OneKeep',
+      title: '厘清',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,

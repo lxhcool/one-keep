@@ -65,26 +65,10 @@ class _BillsPageState extends ConsumerState<BillsPage> {
                   : state.error != null && state.groups.isEmpty
                   ? Center(child: Text(state.error!))
                   : state.groups.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.receipt_long_rounded,
-                            size: 48,
-                            color: oneKeepTextTertiary(context).withValues(alpha: 0.3),
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            '暂无账单记录',
-                            style: oneKeepManrope(
-                              color: oneKeepTextSecondary(context),
-                              size: 14,
-                              weight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
+                  ? const OneKeepEmptyState(
+                      icon: Icons.receipt_long_rounded,
+                      message: '暂无账单记录',
+                      iconSize: 44,
                     )
                   : ListView.builder(
                       controller: _scrollController,

@@ -30,3 +30,26 @@ export const loginSchema = {
 } as const;
 
 export const meSchema = {} as const;
+
+export const sendCodeSchema = {
+  body: {
+    type: "object",
+    additionalProperties: false,
+    required: ["email"],
+    properties: {
+      email: { type: "string", format: "email" },
+    },
+  },
+} as const;
+
+export const verifyCodeSchema = {
+  body: {
+    type: "object",
+    additionalProperties: false,
+    required: ["email", "code"],
+    properties: {
+      email: { type: "string", format: "email" },
+      code: { type: "string", minLength: 6, maxLength: 6, pattern: "^[0-9]{6}$" },
+    },
+  },
+} as const;

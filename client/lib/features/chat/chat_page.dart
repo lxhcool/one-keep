@@ -192,7 +192,11 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.smart_toy_rounded, size: 16, color: Colors.white),
+                          const Icon(
+                            Icons.smart_toy_rounded,
+                            size: 16,
+                            color: Colors.white,
+                          ),
                           const SizedBox(width: 6),
                           Text(
                             'AI 聊天记账',
@@ -287,11 +291,21 @@ class _ChatPageState extends ConsumerState<ChatPage> {
       itemCount: chatState.messages.length,
       itemBuilder: (context, index) {
         final message = chatState.messages[index];
+        final isConfirming = chatState.isTransactionConfirming(message.id);
+        final isConfirmed = chatState.isTransactionConfirmed(message.id);
         return _ChatBubble(
           message: message,
           isDark: isDark,
-          onConfirm: message.transactions != null && message.transactions!.isNotEmpty
-              ? () => ref.read(chatProvider.notifier).confirmTransactions(message.transactions!)
+          isConfirming: isConfirming,
+          isConfirmed: isConfirmed,
+          onConfirm:
+              message.transactions != null &&
+                  message.transactions!.isNotEmpty &&
+                  !isConfirming &&
+                  !isConfirmed
+              ? () => ref
+                    .read(chatProvider.notifier)
+                    .confirmTransactions(message.id, message.transactions!)
               : null,
         );
       },
@@ -324,7 +338,11 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                   ),
                 ],
               ),
-              child: const Icon(Icons.smart_toy_rounded, color: Colors.white, size: 40),
+              child: const Icon(
+                Icons.smart_toy_rounded,
+                color: Colors.white,
+                size: 40,
+              ),
             ),
             const SizedBox(height: 24),
             Text(
@@ -340,7 +358,9 @@ class _ChatPageState extends ConsumerState<ChatPage> {
               '用自然语言描述，AI 自动识别金额与分类\n长按麦克风即可语音输入',
               textAlign: TextAlign.center,
               style: oneKeepInter(
-                color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                color: isDark
+                    ? AppColors.darkTextSecondary
+                    : AppColors.lightTextSecondary,
                 size: 14,
                 weight: FontWeight.w400,
               ),
@@ -350,41 +370,52 @@ class _ChatPageState extends ConsumerState<ChatPage> {
               spacing: 8,
               runSpacing: 8,
               alignment: WrapAlignment.center,
-              children: suggestions.map((s) => GestureDetector(
-                onTap: () {
-                  _textController.text = s;
-                  setState(() {});
-                  _sendMessage();
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: isDark
-                        ? AppColors.darkSurface
-                        : Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
-                      width: 0.5,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
+              children: suggestions
+                  .map(
+                    (s) => GestureDetector(
+                      onTap: () {
+                        _textController.text = s;
+                        setState(() {});
+                        _sendMessage();
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isDark ? AppColors.darkSurface : Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: isDark
+                                ? AppColors.darkBorder
+                                : AppColors.lightBorder,
+                            width: 0.5,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(
+                                alpha: isDark ? 0.2 : 0.04,
+                              ),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          s,
+                          style: oneKeepInter(
+                            color: isDark
+                                ? AppColors.darkTextSecondary
+                                : AppColors.lightTextSecondary,
+                            size: 13,
+                            weight: FontWeight.w500,
+                          ),
+                        ),
                       ),
-                    ],
-                  ),
-                  child: Text(
-                    s,
-                    style: oneKeepInter(
-                      color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-                      size: 13,
-                      weight: FontWeight.w500,
                     ),
-                  ),
-                ),
-              )).toList(),
+                  )
+                  .toList(),
             ),
           ],
         ),
@@ -447,7 +478,10 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                   SizedBox(
                     width: 18,
                     height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.emerald),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.emerald,
+                    ),
                   )
                 else
                   _buildVoiceWave(),
@@ -458,7 +492,9 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                         ? _partialSpeech
                         : (_isProcessing ? '正在识别语音...' : '松手结束录音...'),
                     style: oneKeepInter(
-                      color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                      color: isDark
+                          ? AppColors.darkTextSecondary
+                          : AppColors.lightTextSecondary,
                       size: 13,
                       weight: FontWeight.w500,
                     ),
@@ -484,17 +520,23 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: isDark ? AppColors.darkSurface : AppColors.lightInputBg,
+                  color: isDark
+                      ? AppColors.darkSurface
+                      : AppColors.lightInputBg,
                   borderRadius: BorderRadius.circular(13),
                   border: Border.all(
-                    color: isDark ? AppColors.darkBorder : AppColors.lightInputBorder,
+                    color: isDark
+                        ? AppColors.darkBorder
+                        : AppColors.lightInputBorder,
                     width: 0.5,
                   ),
                 ),
                 child: Icon(
                   LucideIcons.keyboard,
                   size: 19,
-                  color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                  color: isDark
+                      ? AppColors.darkTextSecondary
+                      : AppColors.lightTextSecondary,
                 ),
               ),
             ),
@@ -571,11 +613,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                           ),
                         ),
                       ] else ...[
-                        Icon(
-                          LucideIcons.mic,
-                          size: 20,
-                          color: Colors.white,
-                        ),
+                        Icon(LucideIcons.mic, size: 20, color: Colors.white),
                         const SizedBox(width: 8),
                         Text(
                           '长按说话',
@@ -615,15 +653,13 @@ class _ChatPageState extends ConsumerState<ChatPage> {
               color: isDark ? AppColors.darkSurface : AppColors.lightInputBg,
               borderRadius: BorderRadius.circular(13),
               border: Border.all(
-                color: isDark ? AppColors.darkBorder : AppColors.lightInputBorder,
+                color: isDark
+                    ? AppColors.darkBorder
+                    : AppColors.lightInputBorder,
                 width: 0.5,
               ),
             ),
-            child: Icon(
-              LucideIcons.mic,
-              size: 19,
-              color: AppColors.emerald,
-            ),
+            child: Icon(LucideIcons.mic, size: 19, color: AppColors.emerald),
           ),
         ),
         const SizedBox(width: 10),
@@ -636,7 +672,9 @@ class _ChatPageState extends ConsumerState<ChatPage> {
               color: isDark ? AppColors.darkSurface : AppColors.lightInputBg,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
-                color: isDark ? AppColors.darkBorder : AppColors.lightInputBorder,
+                color: isDark
+                    ? AppColors.darkBorder
+                    : AppColors.lightInputBorder,
                 width: 0.5,
               ),
             ),
@@ -654,12 +692,17 @@ class _ChatPageState extends ConsumerState<ChatPage> {
               decoration: InputDecoration(
                 hintText: '说点什么，AI 来记账...',
                 hintStyle: oneKeepInter(
-                  color: isDark ? AppColors.darkTextTertiary : AppColors.lightTextTertiary,
+                  color: isDark
+                      ? AppColors.darkTextTertiary
+                      : AppColors.lightTextTertiary,
                   size: 15,
                   weight: FontWeight.w400,
                 ),
                 border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 14,
+                ),
               ),
             ),
           ),
@@ -700,7 +743,10 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                     child: SizedBox(
                       width: 18,
                       height: 18,
-                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
                     ),
                   )
                 : const Icon(LucideIcons.send, color: Colors.white, size: 18),
@@ -790,11 +836,15 @@ class _ChatBubble extends StatelessWidget {
   final ChatMessage message;
   final bool isDark;
   final VoidCallback? onConfirm;
+  final bool isConfirming;
+  final bool isConfirmed;
 
   const _ChatBubble({
     required this.message,
     required this.isDark,
     this.onConfirm,
+    this.isConfirming = false,
+    this.isConfirmed = false,
   });
 
   @override
@@ -802,12 +852,15 @@ class _ChatBubble extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Column(
-        crossAxisAlignment: message.isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        crossAxisAlignment: message.isUser
+            ? CrossAxisAlignment.end
+            : CrossAxisAlignment.start,
         children: [
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
-            mainAxisAlignment:
-                message.isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+            mainAxisAlignment: message.isUser
+                ? MainAxisAlignment.end
+                : MainAxisAlignment.start,
             children: [
               // AI 头像
               if (!message.isUser) ...[
@@ -829,14 +882,21 @@ class _ChatBubble extends StatelessWidget {
                       ),
                     ],
                   ),
-                  child: const Icon(Icons.smart_toy_rounded, color: Colors.white, size: 16),
+                  child: const Icon(
+                    Icons.smart_toy_rounded,
+                    color: Colors.white,
+                    size: 16,
+                  ),
                 ),
                 const SizedBox(width: 10),
               ],
               // 气泡
               Flexible(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
                     gradient: message.isUser
                         ? const LinearGradient(
@@ -857,12 +917,16 @@ class _ChatBubble extends StatelessWidget {
                     border: message.isUser
                         ? null
                         : Border.all(
-                            color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+                            color: isDark
+                                ? AppColors.darkBorder
+                                : AppColors.lightBorder,
                             width: 0.5,
                           ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.05),
+                        color: Colors.black.withValues(
+                          alpha: isDark ? 0.25 : 0.05,
+                        ),
                         blurRadius: 10,
                         offset: const Offset(0, 3),
                       ),
@@ -873,7 +937,9 @@ class _ChatBubble extends StatelessWidget {
                     style: oneKeepInter(
                       color: message.isUser
                           ? Colors.white
-                          : (isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary),
+                          : (isDark
+                                ? AppColors.darkTextPrimary
+                                : AppColors.lightTextPrimary),
                       size: 15,
                       weight: FontWeight.w400,
                     ),
@@ -887,17 +953,23 @@ class _ChatBubble extends StatelessWidget {
                   width: 32,
                   height: 32,
                   decoration: BoxDecoration(
-                    color: isDark ? AppColors.darkSurface : AppColors.lightInputBg,
+                    color: isDark
+                        ? AppColors.darkSurface
+                        : AppColors.lightInputBg,
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                      color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+                      color: isDark
+                          ? AppColors.darkBorder
+                          : AppColors.lightBorder,
                       width: 0.5,
                     ),
                   ),
                   child: Icon(
                     Icons.person_outline_rounded,
                     size: 16,
-                    color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                    color: isDark
+                        ? AppColors.darkTextSecondary
+                        : AppColors.lightTextSecondary,
                   ),
                 ),
               ],
@@ -905,12 +977,15 @@ class _ChatBubble extends StatelessWidget {
           ),
 
           // 交易确认卡片
-          if (message.transactions != null && message.transactions!.isNotEmpty) ...[
+          if (message.transactions != null &&
+              message.transactions!.isNotEmpty) ...[
             const SizedBox(height: 12),
             _TransactionConfirmCard(
               transactions: message.transactions!,
               isDark: isDark,
               onConfirm: onConfirm,
+              isConfirming: isConfirming,
+              isConfirmed: isConfirmed,
             ),
           ],
         ],
@@ -924,11 +999,15 @@ class _TransactionConfirmCard extends StatelessWidget {
   final List<ParsedTransaction> transactions;
   final bool isDark;
   final VoidCallback? onConfirm;
+  final bool isConfirming;
+  final bool isConfirmed;
 
   const _TransactionConfirmCard({
     required this.transactions,
     required this.isDark,
     this.onConfirm,
+    this.isConfirming = false,
+    this.isConfirmed = false,
   });
 
   @override
@@ -958,7 +1037,9 @@ class _TransactionConfirmCard extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
             decoration: BoxDecoration(
               color: AppColors.emerald.withValues(alpha: 0.06),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(18),
+              ),
               border: Border(
                 bottom: BorderSide(
                   color: AppColors.emerald.withValues(alpha: 0.1),
@@ -975,7 +1056,11 @@ class _TransactionConfirmCard extends StatelessWidget {
                     color: AppColors.emerald.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(7),
                   ),
-                  child: const Icon(Icons.receipt_long_rounded, size: 13, color: AppColors.emerald),
+                  child: const Icon(
+                    Icons.receipt_long_rounded,
+                    size: 13,
+                    color: AppColors.emerald,
+                  ),
                 ),
                 const SizedBox(width: 8),
                 Text(
@@ -994,70 +1079,83 @@ class _TransactionConfirmCard extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
             child: Column(
               children: [
-                ...transactions.map((tx) => Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          color: (tx.direction == 'expense' ? AppColors.expense : AppColors.emerald)
-                              .withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(10),
+                ...transactions.map(
+                  (tx) => Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color:
+                                (tx.direction == 'expense'
+                                        ? AppColors.expense
+                                        : AppColors.emerald)
+                                    .withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(
+                            tx.direction == 'expense'
+                                ? Icons.north_east_rounded
+                                : Icons.south_west_rounded,
+                            size: 15,
+                            color: tx.direction == 'expense'
+                                ? AppColors.expense
+                                : AppColors.emerald,
+                          ),
                         ),
-                        child: Icon(
-                          tx.direction == 'expense'
-                              ? Icons.north_east_rounded
-                              : Icons.south_west_rounded,
-                          size: 15,
-                          color: tx.direction == 'expense' ? AppColors.expense : AppColors.emerald,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              tx.title,
-                              style: oneKeepManrope(
-                                color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
-                                size: 14,
-                                weight: FontWeight.w600,
-                              ),
-                            ),
-                            if (tx.categoryName != null) ...[
-                              const SizedBox(height: 2),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
                               Text(
-                                tx.categoryName!,
-                                style: oneKeepInter(
-                                  color: isDark ? AppColors.darkTextTertiary : AppColors.lightTextTertiary,
-                                  size: 11,
-                                  weight: FontWeight.w500,
+                                tx.title,
+                                style: oneKeepManrope(
+                                  color: isDark
+                                      ? AppColors.darkTextPrimary
+                                      : AppColors.lightTextPrimary,
+                                  size: 14,
+                                  weight: FontWeight.w600,
                                 ),
                               ),
+                              if (tx.categoryName != null) ...[
+                                const SizedBox(height: 2),
+                                Text(
+                                  tx.categoryName!,
+                                  style: oneKeepInter(
+                                    color: isDark
+                                        ? AppColors.darkTextTertiary
+                                        : AppColors.lightTextTertiary,
+                                    size: 11,
+                                    weight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
                             ],
-                          ],
+                          ),
                         ),
-                      ),
-                      Text(
-                        '${tx.direction == 'expense' ? '-' : '+'}¥${tx.amount.toStringAsFixed(2)}',
-                        style: oneKeepGrotesk(
-                          color: tx.direction == 'expense' ? AppColors.expense : AppColors.emerald,
-                          size: 16,
-                          weight: FontWeight.w700,
+                        Text(
+                          '${tx.direction == 'expense' ? '-' : '+'}¥${tx.amount.toStringAsFixed(2)}',
+                          style: oneKeepGrotesk(
+                            color: tx.direction == 'expense'
+                                ? AppColors.expense
+                                : AppColors.emerald,
+                            size: 16,
+                            weight: FontWeight.w700,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                )),
+                ),
                 // 确认按钮
                 SizedBox(
                   width: double.infinity,
                   height: 46,
                   child: ElevatedButton(
-                    onPressed: onConfirm,
+                    onPressed: isConfirming || isConfirmed ? null : onConfirm,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.emerald,
                       foregroundColor: Colors.white,
@@ -1067,14 +1165,25 @@ class _TransactionConfirmCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(13),
                       ),
                     ),
-                    child: Text(
-                      '确认记账',
-                      style: oneKeepManrope(
-                        color: Colors.white,
-                        size: 15,
-                        weight: FontWeight.w700,
-                      ),
-                    ),
+                    child: isConfirming
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
+                            ),
+                          )
+                        : Text(
+                            isConfirmed ? '已记账' : '确认记账',
+                            style: oneKeepManrope(
+                              color: Colors.white,
+                              size: 15,
+                              weight: FontWeight.w700,
+                            ),
+                          ),
                   ),
                 ),
               ],
@@ -1100,10 +1209,17 @@ class _VoiceWavePainter extends CustomPainter {
     final bars = 5;
 
     for (var i = 0; i < bars; i++) {
-      final x = center.dx - ((bars - 1) * (barWidth + gap)) / 2 + i * (barWidth + gap);
+      final x =
+          center.dx -
+          ((bars - 1) * (barWidth + gap)) / 2 +
+          i * (barWidth + gap);
       final h = 4.0 + (i % 3) * 3.0 + (i == 2 ? 6.0 : 0.0);
       final rect = RRect.fromRectAndRadius(
-        Rect.fromCenter(center: Offset(x, center.dy), width: barWidth, height: h),
+        Rect.fromCenter(
+          center: Offset(x, center.dy),
+          width: barWidth,
+          height: h,
+        ),
         Radius.circular(barWidth / 2),
       );
       canvas.drawRRect(rect, paint);

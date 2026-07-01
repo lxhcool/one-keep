@@ -38,7 +38,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         ? preferences.nickname
         : (authState.user?.name.isNotEmpty == true
               ? authState.user!.name
-              : 'OneKeep 用户');
+              : '厘清用户');
     final themeLabel = preferences.themeMode == ThemeMode.light
         ? '白天模式'
         : '夜间模式';

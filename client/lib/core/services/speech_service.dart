@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
+import 'package:flutter/foundation.dart' show kIsWeb, kReleaseMode;
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 import 'package:speech_to_text/speech_recognition_error.dart';
@@ -11,6 +11,11 @@ import 'package:speech_to_text/speech_to_text.dart';
 
 import 'permission_helper_stub.dart'
     if (dart.library.io) 'permission_helper_io.dart';
+
+/// Release 模式下不输出 debug 日志
+void _log(String message) {
+  if (!kReleaseMode) _log(message);
+}
 
 /// 语音识别状态
 enum SpeechState {
@@ -120,14 +125,14 @@ class SpeechService {
         );
         if (available) {
           _useSystemSpeech = true;
-          debugPrint('[SpeechService] using system speech recognition');
+          _log('[SpeechService] using system speech recognition');
         } else {
           _systemSpeechFailed = true;
-          debugPrint('[SpeechService] system speech not available, will use Whisper');
+          _log('[SpeechService] system speech not available, will use Whisper');
         }
       } catch (e) {
         _systemSpeechFailed = true;
-        debugPrint('[SpeechService] system speech init failed: $e, will use Whisper');
+        _log('[SpeechService] system speech init failed: $e, will use Whisper');
       }
     }
 
@@ -212,7 +217,7 @@ class SpeechService {
   }
 
   void _onSystemError(SpeechRecognitionError error) {
-    debugPrint('[SpeechService] system error: ${error.errorMsg}, permanent: ${error.permanent}');
+    _log('[SpeechService] system error: ${error.errorMsg}, permanent: ${error.permanent}');
 
     // 如果系统语音彻底不可用，标记降级
     if (error.permanent && error.errorMsg != 'error_no_speech' && error.errorMsg != 'error_no_match') {
@@ -260,9 +265,9 @@ class SpeechService {
         path: _recordingPath!,
       );
 
-      debugPrint('[SpeechService] Whisper recording started');
+      _log('[SpeechService] Whisper recording started');
     } catch (e) {
-      debugPrint('[SpeechService] whisper recording start failed: $e');
+      _log('[SpeechService] whisper recording start failed: $e');
       _errorController.add('录音启动失败：$e');
       _setState(SpeechState.error);
     }
@@ -274,7 +279,7 @@ class SpeechService {
     try {
       // 停止录音
       final path = await _recorder.stop();
-      debugPrint('[SpeechService] recording stopped, path: $path');
+      _log('[SpeechService] recording stopped, path: $path');
 
       _setState(SpeechState.processing);
 
@@ -293,7 +298,7 @@ class SpeechService {
       }
 
       final fileSize = await file.length();
-      debugPrint('[SpeechService] audio file size: $fileSize bytes');
+      _log('[SpeechService] audio file size: $fileSize bytes');
 
       if (fileSize < 100) {
         _errorController.add('录音时间太短，请再说一次');
@@ -317,7 +322,7 @@ class SpeechService {
         baseUrl = baseUrl.substring(0, baseUrl.length - 3);
       }
       final apiUrl = '$baseUrl/v1/audio/transcriptions';
-      debugPrint('[SpeechService] calling API: $apiUrl');
+      _log('[SpeechService] calling API: $apiUrl');
 
       final response = await dio.post(
         apiUrl,
@@ -330,7 +335,7 @@ class SpeechService {
       );
 
       final text = response.data['text'] as String? ?? '';
-      debugPrint('[SpeechService] Whisper result: "$text"');
+      _log('[SpeechService] Whisper result: "$text"');
 
       if (text.trim().isEmpty) {
         _errorController.add('语音识别结果为空，请再试一次');
@@ -341,7 +346,7 @@ class SpeechService {
     } on DioException catch (e) {
       final statusCode = e.response?.statusCode;
       final respBody = e.response?.data?.toString() ?? '';
-      debugPrint('[SpeechService] API error: $statusCode ${e.message}, body: $respBody');
+      _log('[SpeechService] API error: $statusCode ${e.message}, body: $respBody');
       if (statusCode == 404) {
         _errorController.add('语音识别接口不存在(404)，请检查 Base URL 是否正确');
       } else if (statusCode == 401) {
@@ -352,7 +357,7 @@ class SpeechService {
         _errorController.add('语音识别失败($statusCode)：${e.message ?? "网络错误"}');
       }
     } catch (e) {
-      debugPrint('[SpeechService] whisper recognize failed: $e');
+      _log('[SpeechService] whisper recognize failed: $e');
       _errorController.add('语音识别失败：$e');
     }
 

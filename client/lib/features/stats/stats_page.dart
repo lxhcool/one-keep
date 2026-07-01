@@ -575,7 +575,6 @@ class _StatsPageState extends ConsumerState<StatsPage> {
     _ResolvedStats stats,
     Map<String, String?> categoryColors,
   ) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final ranks = stats.categoryRanks.take(5).toList();
     final totalAmount = ranks.isEmpty
         ? 0.0
@@ -596,37 +595,11 @@ class _StatsPageState extends ConsumerState<StatsPage> {
         ),
         const SizedBox(height: 18),
         if (ranks.isEmpty)
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 40),
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: isDark ? Colors.black.withValues(alpha: 0.2) : Colors.black.withValues(alpha: 0.04),
-                  blurRadius: 16,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                Icon(
-                  Icons.pie_chart_outline_rounded,
-                  size: 40,
-                  color: oneKeepTextTertiary(context).withValues(alpha: 0.3),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  '暂无数据',
-                  style: oneKeepManrope(
-                    color: oneKeepTextSecondary(context),
-                    size: 14,
-                    weight: FontWeight.w500,
-                  ),
-                ),
-              ],
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 24),
+            child: OneKeepEmptyState(
+              icon: Icons.pie_chart_outline_rounded,
+              message: '暂无数据',
             ),
           )
         else
@@ -995,17 +968,11 @@ class _TrendBars extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (points.isEmpty) {
-      return SizedBox(
+      return const SizedBox(
         height: 184,
-        child: Center(
-          child: Text(
-            '暂无数据',
-            style: oneKeepInter(
-              color: oneKeepTextSecondary(context),
-              size: 13,
-              weight: FontWeight.w400,
-            ),
-          ),
+        child: OneKeepEmptyState(
+          icon: Icons.bar_chart,
+          message: '暂无数据',
         ),
       );
     }

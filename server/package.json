@@ -1,8 +1,8 @@
 {
-  "name": "one-keep-server",
-  "version": "0.1.0",
+  "name": "liqing-server",
+  "version": "1.0.0",
   "private": true,
-  "description": "OneKeep API server — Fastify + Prisma + MySQL",
+  "description": "厘清 API server — Fastify + Prisma + MySQL",
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
@@ -16,14 +16,17 @@
   },
   "dependencies": {
     "@fastify/cors": "^10.0.0",
+    "@fastify/helmet": "^13.0.2",
     "@fastify/jwt": "^9.0.0",
+    "@fastify/rate-limit": "^11.1.0",
     "@fastify/swagger": "^9.0.0",
     "@fastify/swagger-ui": "^5.0.0",
     "@prisma/client": "^6.0.0",
     "bcryptjs": "^2.4.3",
     "exceljs": "^4.4.0",
     "fastify": "^5.0.0",
-    "fastify-plugin": "^5.0.0"
+    "fastify-plugin": "^5.0.0",
+    "resend": "^6.16.0"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

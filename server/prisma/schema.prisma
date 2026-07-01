@@ -59,6 +59,19 @@ model Transaction {
   @@map("transactions")
 }
 
+model VerificationCode {
+  id        String   @id @default(cuid())
+  email     String
+  code      String
+  expiresAt DateTime @map("expires_at")
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([email, code])
+  @@index([email])
+  @@map("verification_codes")
+}
+
 enum TransactionType {
   expense
   income

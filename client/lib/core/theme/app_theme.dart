@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'app_colors.dart';
 
@@ -232,10 +231,17 @@ class AppTheme {
         ? AppColors.darkTextTertiary
         : AppColors.lightTextTertiary;
 
-    return GoogleFonts.manropeTextTheme(
-          isDark ? ThemeData.dark().textTheme : ThemeData.light().textTheme,
+    // Use Manrope as the base font (offline, bundled in assets)
+    final base = brightness == Brightness.dark
+        ? ThemeData.dark().textTheme
+        : ThemeData.light().textTheme;
+
+    return base
+        .apply(
+          fontFamily: 'Manrope',
+          bodyColor: primary,
+          displayColor: primary,
         )
-        .apply(bodyColor: primary, displayColor: primary)
         .copyWith(
           displayLarge: TextStyle(color: primary, fontWeight: FontWeight.w700),
           displayMedium: TextStyle(color: primary, fontWeight: FontWeight.w700),

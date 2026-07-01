@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+import '../constants/ai_defaults.dart';
 import 'auth_provider.dart';
 
 const _noPreferenceChange = Object();
@@ -23,9 +24,9 @@ class PreferencesState {
     this.avatarIndex = 0,
     this.avatarImageData,
     this.profileBackgroundImageData,
-    this.aiApiBaseUrl = '',
-    this.aiApiKey = '',
-    this.aiModelName = '',
+    this.aiApiBaseUrl = AiDefaults.baseUrl,
+    this.aiApiKey = AiDefaults.apiKey,
+    this.aiModelName = AiDefaults.modelName,
     this.isLoaded = false,
   });
 
@@ -129,9 +130,9 @@ class PreferencesNotifier extends StateNotifier<PreferencesState> {
       avatarIndex: int.tryParse(avatarValue ?? '') ?? 0,
       avatarImageData: avatarImageValue,
       profileBackgroundImageData: profileBackgroundImageValue,
-      aiApiBaseUrl: aiApiBaseUrlValue ?? '',
-      aiApiKey: aiApiKeyValue ?? '',
-      aiModelName: aiModelNameValue ?? '',
+      aiApiBaseUrl: aiApiBaseUrlValue ?? AiDefaults.baseUrl,
+      aiApiKey: aiApiKeyValue ?? AiDefaults.apiKey,
+      aiModelName: aiModelNameValue ?? AiDefaults.modelName,
       isLoaded: true,
     );
   }
@@ -199,7 +200,11 @@ class PreferencesNotifier extends StateNotifier<PreferencesState> {
   }
 
   Future<void> clearAiConfig() async {
-    state = state.copyWith(aiApiBaseUrl: '', aiApiKey: '', aiModelName: '');
+    state = state.copyWith(
+      aiApiBaseUrl: AiDefaults.baseUrl,
+      aiApiKey: AiDefaults.apiKey,
+      aiModelName: AiDefaults.modelName,
+    );
     await _deleteScopedValue(_aiApiBaseUrlKey);
     await _deleteScopedValue(_aiApiKeyKey);
     await _deleteScopedValue(_aiModelNameKey);

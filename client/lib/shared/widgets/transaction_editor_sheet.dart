@@ -69,7 +69,7 @@ class _OneKeepTransactionEditorSheetState
     _noteController = TextEditingController(
       text: widget.transaction.note ?? '',
     );
-    _occurredAt = widget.transaction.occurredAt;
+    _occurredAt = widget.transaction.occurredAt.toLocal();
     _selectedCategoryId = widget.transaction.categoryId.isNotEmpty
         ? widget.transaction.categoryId
         : null;
@@ -294,9 +294,11 @@ class _OneKeepTransactionEditorSheetState
 
   Future<void> _pickDate() async {
     HapticFeedback.lightImpact();
-    final picked = await showDatePicker(
-      context: context, initialDate: _occurredAt, firstDate: DateTime(2020), lastDate: DateTime.now().add(const Duration(days: 365)),
-      builder: (context, child) => Theme(data: Theme.of(context).copyWith(colorScheme: ColorScheme.fromSeed(seedColor: AppColors.emerald, primary: AppColors.emerald, surface: oneKeepSurface(context))), child: child!),
+    final picked = await showOneKeepDatePicker(
+      context: context,
+      initialDate: _occurredAt,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
     );
     if (picked == null || !mounted) return;
     setState(() { _occurredAt = DateTime(picked.year, picked.month, picked.day, _occurredAt.hour, _occurredAt.minute); });
@@ -344,31 +346,35 @@ class _CategoryGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    // 改进未选中态颜色：更有质感的石板灰/半透白
-    final unselectedColor = isDark ? Colors.white.withValues(alpha: 0.4) : const Color(0xFF64748B);
-    final unselectedBg = isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.04);
+    const crossAxisCount = 4;
 
     return Container(
-      height: 100,
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: categories.length,
+      constraints: const BoxConstraints(maxHeight: 200),
+      child: GridView.builder(
         padding: const EdgeInsets.symmetric(horizontal: 4),
-        separatorBuilder: (_, __) => const SizedBox(width: 16),
+        physics: const BouncingScrollPhysics(),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: crossAxisCount,
+          mainAxisSpacing: 4,
+          crossAxisSpacing: 4,
+          childAspectRatio: 1.0,
+        ),
+        itemCount: categories.length,
         itemBuilder: (context, index) {
           final item = categories[index];
           final selected = item.id == selectedCategoryId;
           return GestureDetector(
             onTap: () { HapticFeedback.lightImpact(); onSelect(item.id); },
             child: Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 AnimatedContainer(
                   duration: const Duration(milliseconds: 250),
-                  width: 48, height: 48,
+                  width: 44, height: 44,
                   decoration: BoxDecoration(
-                    color: selected ? tone.withValues(alpha: 0.15) : unselectedBg,
-                    borderRadius: BorderRadius.circular(16),
+                    color: selected ? tone.withValues(alpha: 0.15) : (isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.04)),
+                    borderRadius: BorderRadius.circular(14),
                     border: selected ? Border.all(color: tone.withValues(alpha: 0.4), width: 1.5) : null,
                   ),
                   child: Image.asset(
@@ -378,18 +384,21 @@ class _CategoryGrid extends StatelessWidget {
                     errorBuilder: (_, __, ___) => Icon(
                       Icons.receipt_long_rounded,
                       size: 22,
-                      color: selected ? tone : unselectedColor,
+                      color: selected ? tone : (isDark ? Colors.white.withValues(alpha: 0.4) : const Color(0xFF64748B)),
                     ),
                   ),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 4),
                 Text(
-                  item.name, 
+                  item.name,
                   style: oneKeepInter(
-                    color: selected ? tone : unselectedColor, 
-                    size: 11, 
+                    color: selected ? tone : (isDark ? Colors.white.withValues(alpha: 0.4) : const Color(0xFF64748B)),
+                    size: 10,
                     weight: selected ? FontWeight.w700 : FontWeight.w500,
                   ),
+                  maxLines: 1,
+                  textAlign: TextAlign.center,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),

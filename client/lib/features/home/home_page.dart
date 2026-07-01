@@ -229,7 +229,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         ? preferences.nickname
         : (summary?.user.name.isNotEmpty == true
               ? summary!.user.name
-              : 'OneKeep 用户');
+              : '厘清用户');
 
     // Avatar: 54 → 36
     final avatarSize = 54.0 - 18.0 * progress;
@@ -246,9 +246,6 @@ class _HomePageState extends ConsumerState<HomePage> {
     final bgOpacity = progress;
     // Blur
     final blur = 24.0 * progress;
-    // Notification button: 44 → 36
-    final buttonSize = 44.0 - 8.0 * progress;
-    final buttonIconSize = 20.0 - 2.0 * progress;
 
     return Positioned(
       top: 0,
@@ -325,23 +322,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                       ],
                     ),
                   ),
-                  Container(
-                    width: buttonSize,
-                    height: buttonSize,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.12 + 0.03 * progress),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.2 * (1 - progress * 0.5)),
-                        width: 0.5,
-                      ),
-                    ),
-                    child: Icon(
-                      Icons.notifications_none_rounded,
-                      size: buttonIconSize,
-                      color: Colors.white.withValues(alpha: 0.9),
-                    ),
-                  ),
+                  const SizedBox(width: 0),
                 ],
               ),
             ),
@@ -371,7 +352,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               ? summary!.user.name
               : (authUserName?.isNotEmpty == true
                     ? authUserName!
-                    : 'OneKeep 用户'));
+                    : '厘清用户'));
     return SizedBox(
       height: heroHeight,
       child: Stack(
@@ -661,30 +642,13 @@ class _HomePageState extends ConsumerState<HomePage> {
         ),
         const SizedBox(height: 14),
         if (items.isEmpty)
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 40),
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Column(
-              children: [
-                Icon(
-                  Icons.receipt_long_rounded,
-                  size: 36,
-                  color: palette.listSecondaryText.withValues(alpha: 0.4),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  '暂无记录',
-                  style: oneKeepManrope(
-                    color: palette.listSecondaryText,
-                    size: 13,
-                    weight: FontWeight.w500,
-                  ),
-                ),
-              ],
+          SizedBox(
+            height: MediaQuery.of(context).size.height * 0.35,
+            child: const Center(
+              child: OneKeepEmptyState(
+                icon: Icons.receipt_long_rounded,
+                message: '快去记一笔吧',
+              ),
             ),
           )
         else

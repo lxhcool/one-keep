@@ -13,7 +13,7 @@ export default fp(async function authPlugin(app: FastifyInstance) {
 
   app.addHook("onRequest", async (request, reply) => {
     // 跳过不需要认证的路由
-    const publicRoutes = ["/api/auth/login", "/api/auth/register", "/api/health", "/docs"];
+    const publicRoutes = ["/api/auth/login", "/api/auth/register", "/api/auth/send-code", "/api/auth/verify-code", "/api/health", "/docs"];
     const isPublic = publicRoutes.some((r) => request.url.startsWith(r));
     if (isPublic) return;
 
