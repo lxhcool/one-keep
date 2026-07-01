@@ -9,29 +9,35 @@ import 'api_provider.dart';
 /// 认证状态
 enum AuthStatus { unknown, authenticated, unauthenticated }
 
+const Object _unset = Object();
+
 class AuthState {
   final AuthStatus status;
   final UserInfo? user;
   final bool isLoading;
+  final bool isSendingCode;
   final String? error;
 
   const AuthState({
     this.status = AuthStatus.unknown,
     this.user,
     this.isLoading = false,
+    this.isSendingCode = false,
     this.error,
   });
 
   AuthState copyWith({
     AuthStatus? status,
-    UserInfo? user,
+    Object? user = _unset,
     bool? isLoading,
-    String? error,
+    bool? isSendingCode,
+    Object? error = _unset,
   }) => AuthState(
     status: status ?? this.status,
-    user: user ?? this.user,
+    user: identical(user, _unset) ? this.user : user as UserInfo?,
     isLoading: isLoading ?? this.isLoading,
-    error: error,
+    isSendingCode: isSendingCode ?? this.isSendingCode,
+    error: identical(error, _unset) ? this.error : error as String?,
   );
 }
 
@@ -59,17 +65,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
         Map<String, dynamic>.from(data['user'] as Map<String, dynamic>),
       );
       await _writeStoredUser(user);
-      state = state.copyWith(
-        status: AuthStatus.authenticated,
-        user: user,
-      );
+      state = state.copyWith(status: AuthStatus.authenticated, user: user);
     } catch (_) {
       await ApiClient.clearToken();
       await _storage.delete(key: _currentUserKey);
-      state = state.copyWith(
-        status: AuthStatus.unauthenticated,
-        user: null,
-      );
+      state = state.copyWith(status: AuthStatus.unauthenticated, user: null);
     }
   }
 
@@ -139,6 +139,51 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  /// 发送邮箱验证码
+  Future<bool> sendCode(String email) async {
+    state = state.copyWith(isSendingCode: true, error: null);
+    try {
+      await _api.dio.post('/api/auth/send-code', data: {'email': email});
+      state = state.copyWith(isSendingCode: false);
+      return true;
+    } catch (e) {
+      state = state.copyWith(
+        isSendingCode: false,
+        error: ApiClient.readableError(e, fallback: '发送验证码失败'),
+      );
+      return false;
+    }
+  }
+
+  /// 验证邮箱验证码并登录/自动注册
+  Future<void> verifyCode(String email, String code) async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final res = await _api.dio.post(
+        '/api/auth/verify-code',
+        data: {'email': email, 'code': code},
+      );
+      final data = res.data as Map<String, dynamic>;
+      final user = Map<String, dynamic>.from(
+        data['user'] as Map<String, dynamic>,
+      );
+      user['name'] ??= user['displayName'];
+      final userInfo = UserInfo.fromJson(user);
+      await ApiClient.saveToken(data['token'] as String);
+      await _writeStoredUser(userInfo);
+      state = state.copyWith(
+        status: AuthStatus.authenticated,
+        user: userInfo,
+        isLoading: false,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: ApiClient.readableError(e, fallback: '验证失败'),
+      );
+    }
+  }
+
   Future<void> logout() async {
     await ApiClient.clearToken();
     await _storage.delete(key: _currentUserKey);
@@ -156,6 +201,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = state.copyWith(error: null);
   }
 
+  void setError(String message) {
+    state = state.copyWith(error: message);
+  }
+
   Future<void> _writeStoredUser(UserInfo user) {
     return _storage.write(
       key: _currentUserKey,
@@ -167,7 +216,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
       }),
     );
   }
-
 }
 
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
