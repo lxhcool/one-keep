@@ -26,7 +26,10 @@ export default fp(async function corePlugins(app: FastifyInstance) {
   await app.register(cors, {
     origin: isDev
       ? true
-      : (process.env.CORS_ORIGIN || "https://onekeep.lxhcoool.cn").split(","),
+      : (
+          process.env.CORS_ORIGIN ||
+          "https://liqing.lxhcoool.cn,https://onekeep.lxhcoool.cn"
+        ).split(","),
   });
 
   // JWT — 生产环境必须设置 JWT_SECRET
