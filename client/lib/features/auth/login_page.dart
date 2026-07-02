@@ -141,6 +141,17 @@ class _LoginPageState extends ConsumerState<LoginPage>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _BrandHeader(isDark: isDark),
+                            const SizedBox(height: 10),
+                            const _SectionDivider(),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 22),
                       ClipRRect(
                         borderRadius: BorderRadius.circular(32),
                         child: BackdropFilter(
@@ -175,17 +186,6 @@ class _LoginPageState extends ConsumerState<LoginPage>
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Center(
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      _BrandHeader(isDark: isDark),
-                                      const SizedBox(height: 8),
-                                      const _SectionDivider(),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(height: 24),
                                 if (state.error != null) ...[
                                   _AuthErrorBanner(message: state.error!),
                                   const SizedBox(height: 16),

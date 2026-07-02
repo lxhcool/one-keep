@@ -14,6 +14,12 @@ val keystorePropertiesFile = rootProject.file("key.properties")
 if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
+val releaseStoreFilePath = keystoreProperties["storeFile"]?.toString()
+val releaseStoreFile =
+    releaseStoreFilePath
+        ?.takeIf { it.isNotBlank() }
+        ?.let { rootProject.file(it) }
+val hasReleaseKeystore = releaseStoreFile?.exists() == true
 
 android {
     namespace = "com.lxhcoool.liqing"
@@ -38,18 +44,24 @@ android {
     }
 
     signingConfigs {
-        create("release") {
-            val props = keystoreProperties
-            keyAlias = props["keyAlias"].toString()
-            keyPassword = props["keyPassword"].toString()
-            storeFile = rootProject.file(props["storeFile"].toString())
-            storePassword = props["storePassword"].toString()
+        if (hasReleaseKeystore) {
+            create("release") {
+                val props = keystoreProperties
+                keyAlias = props["keyAlias"].toString()
+                keyPassword = props["keyPassword"].toString()
+                storeFile = releaseStoreFile
+                storePassword = props["storePassword"].toString()
+            }
         }
     }
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("release")
+            signingConfig = if (hasReleaseKeystore) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
@@ -58,6 +70,10 @@ android {
             )
         }
     }
+}
+
+dependencies {
+    implementation("com.google.android.play:core:1.10.3")
 }
 
 flutter {

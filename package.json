@@ -9,6 +9,8 @@
     "dev:client:web-local": "cd client && flutter run -d chrome --dart-define=API_BASE_URL=http://127.0.0.1:3002",
     "analyze:client": "cd client && flutter analyze",
     "test:client": "cd client && flutter test",
+    "deploy:client:prod": "bash ./scripts/deploy-client.sh",
+    "deploy:server:prod": "bash ./scripts/deploy-server.sh",
     "dev:server": "cd server && npm run dev",
     "dev:server:3002": "cd server && PORT=3002 HOST=0.0.0.0 npm run dev",
     "deploy:server": "cd server && npm run deploy",

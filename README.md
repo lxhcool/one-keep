@@ -483,6 +483,57 @@ cd server
 npm run deploy
 ```
 
+### 当前服务器的一键更新
+
+当前实际线上环境：
+
+- 服务器：`119.45.243.103`
+- 站点目录：`/www/wwwroot/liqing.lxhcoool.cn/client`
+- 服务端目录：`/www/wwwroot/liqing.lxhcoool.cn/server`
+- PM2 进程名：`one-keep-server`
+- 线上域名：`https://liqing.lxhcoool.cn`
+
+本项目已经提供两个本地脚本：
+
+```bash
+# 前端：本地打包并上传 web 静态文件
+npm run deploy:client:prod
+
+# 后端：同步 server/，在服务器上 npm ci、build、pm2 restart
+npm run deploy:server:prod
+```
+
+如果服务器还没配 SSH key，可以临时带密码执行：
+
+```bash
+SERVER_PASSWORD='你的服务器密码' npm run deploy:client:prod
+SERVER_PASSWORD='你的服务器密码' npm run deploy:server:prod
+```
+
+如果后端改了 Prisma schema，需要把 `db push` 一起执行：
+
+```bash
+DB_PUSH=1 SERVER_PASSWORD='你的服务器密码' npm run deploy:server:prod
+```
+
+脚本默认使用这些环境变量，必要时可以覆盖：
+
+```bash
+SERVER_USER=root
+SERVER_HOST=119.45.243.103
+API_BASE_URL=https://liqing.lxhcoool.cn
+SERVER_PATH=/www/wwwroot/liqing.lxhcoool.cn/client/
+PM2_APP_NAME=one-keep-server
+```
+
+部署后建议检查：
+
+```bash
+curl https://liqing.lxhcoool.cn/api/health
+```
+
+注意：当前这台 CentOS 7 服务器上默认 `node` 可能有兼容问题，脚本已经强制使用 `/usr/local/nodejs20/bin`，不要手工依赖系统默认 `node`。
+
 ### 常用排查命令
 
 ```bash
