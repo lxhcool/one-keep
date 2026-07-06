@@ -1,4 +1,4 @@
-﻿import 'dart:ui';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -47,7 +47,8 @@ class _BillsPageState extends ConsumerState<BillsPage> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(billsProvider);
-    final categories = ref.watch(categoriesProvider).valueOrNull ?? const <Category>[];
+    final categories =
+        ref.watch(categoriesProvider).valueOrNull ?? const <Category>[];
     final categoryColors = <String, String?>{
       for (final item in categories) item.id: item.color,
     };
@@ -60,36 +61,43 @@ class _BillsPageState extends ConsumerState<BillsPage> {
           _buildGradientHeader(isDark),
           const SizedBox(height: 16),
           Expanded(
-              child: state.isLoading && state.groups.isEmpty
-                  ? const Center(child: CircularProgressIndicator())
-                  : state.error != null && state.groups.isEmpty
-                  ? Center(child: Text(state.error!))
-                  : state.groups.isEmpty
-                  ? const OneKeepEmptyState(
-                      icon: Icons.receipt_long_rounded,
-                      message: '暂无账单记录',
-                      iconSize: 44,
-                    )
-                  : ListView.builder(
-                      controller: _scrollController,
-                      padding: EdgeInsets.fromLTRB(16, 0, 16, MediaQuery.paddingOf(context).bottom + 24),
-                      itemCount:
-                          state.groups.length + (state.isLoading ? 1 : 0),
-                      itemBuilder: (context, index) {
-                        if (index >= state.groups.length) {
-                          return const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 16),
-                            child: Center(child: CircularProgressIndicator()),
-                          );
-                        }
-                        return Padding(
-                          padding: EdgeInsets.only(
-                            bottom: index == state.groups.length - 1 ? 0 : 20,
-                          ),
-                          child: _buildDateGroup(state.groups[index], categoryColors),
-                        );
-                      },
+            child: state.isLoading && state.groups.isEmpty
+                ? const Center(child: CircularProgressIndicator())
+                : state.error != null && state.groups.isEmpty
+                ? Center(child: Text(state.error!))
+                : state.groups.isEmpty
+                ? const OneKeepEmptyState(
+                    icon: Icons.receipt_long_rounded,
+                    message: '暂无账单记录',
+                    iconSize: 44,
+                  )
+                : ListView.builder(
+                    controller: _scrollController,
+                    padding: EdgeInsets.fromLTRB(
+                      16,
+                      0,
+                      16,
+                      MediaQuery.paddingOf(context).bottom + 24,
                     ),
+                    itemCount: state.groups.length + (state.isLoading ? 1 : 0),
+                    itemBuilder: (context, index) {
+                      if (index >= state.groups.length) {
+                        return const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 16),
+                          child: Center(child: CircularProgressIndicator()),
+                        );
+                      }
+                      return Padding(
+                        padding: EdgeInsets.only(
+                          bottom: index == state.groups.length - 1 ? 0 : 20,
+                        ),
+                        child: _buildDateGroup(
+                          state.groups[index],
+                          categoryColors,
+                        ),
+                      );
+                    },
+                  ),
           ),
         ],
       ),
@@ -127,7 +135,10 @@ class _BillsPageState extends ConsumerState<BillsPage> {
                 GestureDetector(
                   onTap: _showMonthPicker,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(14),
@@ -140,7 +151,10 @@ class _BillsPageState extends ConsumerState<BillsPage> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          [_selectedMonth.year, _selectedMonth.month.toString().padLeft(2, '0')].join('/'),
+                          [
+                            _selectedMonth.year,
+                            _selectedMonth.month.toString().padLeft(2, '0'),
+                          ].join('/'),
                           style: oneKeepInter(
                             color: Colors.white.withValues(alpha: 0.9),
                             size: 13,
@@ -211,7 +225,10 @@ class _BillsPageState extends ConsumerState<BillsPage> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  [_selectedMonth.year, _selectedMonth.month.toString().padLeft(2, '0')].join('/'),
+                  [
+                    _selectedMonth.year,
+                    _selectedMonth.month.toString().padLeft(2, '0'),
+                  ].join('/'),
                   style: oneKeepInter(
                     color: oneKeepTextSecondary(context),
                     size: 13,
@@ -286,7 +303,9 @@ class _BillsPageState extends ConsumerState<BillsPage> {
                 ),
               if (group.incomeTotal > 0)
                 Padding(
-                  padding: EdgeInsets.only(left: group.expenseTotal > 0 ? 10 : 0),
+                  padding: EdgeInsets.only(
+                    left: group.expenseTotal > 0 ? 10 : 0,
+                  ),
                   child: Text(
                     '收入 ¥${oneKeepCurrency(group.incomeTotal)}',
                     style: oneKeepInter(
@@ -301,10 +320,12 @@ class _BillsPageState extends ConsumerState<BillsPage> {
         ),
         Column(
           children: [
-            for (int i = 0; i < items.length; i++) 
+            for (int i = 0; i < items.length; i++)
               _BillRow(
                 transaction: items[i],
-                categoryColor: categoryColors[items[i].categoryId] ?? items[i].categoryColor,
+                categoryColor:
+                    categoryColors[items[i].categoryId] ??
+                    items[i].categoryColor,
                 onTap: () => _showDetailSheet(
                   items[i],
                   categoryColors[items[i].categoryId] ?? items[i].categoryColor,
@@ -320,10 +341,7 @@ class _BillsPageState extends ConsumerState<BillsPage> {
   void _reload() {
     ref
         .read(billsProvider.notifier)
-        .load(
-          month: _monthKey,
-          filterType: _filterType,
-        );
+        .load(month: _monthKey, filterType: _filterType);
   }
 
   void _onScroll() {
@@ -331,10 +349,7 @@ class _BillsPageState extends ConsumerState<BillsPage> {
         _scrollController.position.maxScrollExtent - 200) {
       ref
           .read(billsProvider.notifier)
-          .loadMore(
-            month: _monthKey,
-            filterType: _filterType,
-          );
+          .loadMore(month: _monthKey, filterType: _filterType);
     }
   }
 
@@ -368,16 +383,23 @@ class _BillsPageState extends ConsumerState<BillsPage> {
                         width: 36,
                         height: 4,
                         decoration: BoxDecoration(
-                          color: oneKeepTextTertiary(context).withValues(alpha: 0.2),
+                          color: oneKeepTextTertiary(
+                            context,
+                          ).withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
                       const SizedBox(height: 20),
                       // Year navigator
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
-                          color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
+                          color: isDark
+                              ? Colors.white.withValues(alpha: 0.05)
+                              : Colors.black.withValues(alpha: 0.03),
                           borderRadius: BorderRadius.circular(14),
                         ),
                         child: Row(
@@ -387,7 +409,8 @@ class _BillsPageState extends ConsumerState<BillsPage> {
                               icon: Icons.chevron_left_rounded,
                               enabled: true,
                               isDark: isDark,
-                              onTap: () => setModalState(() => displayYear -= 1),
+                              onTap: () =>
+                                  setModalState(() => displayYear -= 1),
                             ),
                             const Spacer(),
                             Text(
@@ -417,26 +440,32 @@ class _BillsPageState extends ConsumerState<BillsPage> {
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         itemCount: 12,
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 4,
-                          crossAxisSpacing: 10,
-                          mainAxisSpacing: 10,
-                          mainAxisExtent: 48,
-                        ),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 4,
+                              crossAxisSpacing: 10,
+                              mainAxisSpacing: 10,
+                              mainAxisExtent: 48,
+                            ),
                         itemBuilder: (context, index) {
                           final month = index + 1;
-                          final disabled = displayYear == now.year && month > now.month;
+                          final disabled =
+                              displayYear == now.year && month > now.month;
                           final selected =
                               displayYear == _selectedMonth.year &&
                               month == _selectedMonth.month;
-                          final isCurrent = displayYear == now.year && month == now.month;
+                          final isCurrent =
+                              displayYear == now.year && month == now.month;
 
                           return GestureDetector(
                             onTap: disabled
                                 ? null
                                 : () {
                                     setState(() {
-                                      _selectedMonth = DateTime(displayYear, month);
+                                      _selectedMonth = DateTime(
+                                        displayYear,
+                                        month,
+                                      );
                                     });
                                     Navigator.pop(context);
                                     _reload();
@@ -447,10 +476,19 @@ class _BillsPageState extends ConsumerState<BillsPage> {
                               decoration: BoxDecoration(
                                 color: selected
                                     ? AppColors.teal
-                                    : (isDark ? Colors.white.withValues(alpha: 0.04) : Colors.black.withValues(alpha: 0.02)),
+                                    : (isDark
+                                          ? Colors.white.withValues(alpha: 0.04)
+                                          : Colors.black.withValues(
+                                              alpha: 0.02,
+                                            )),
                                 borderRadius: BorderRadius.circular(14),
                                 border: isCurrent && !selected
-                                    ? Border.all(color: AppColors.teal.withValues(alpha: 0.4), width: 1.5)
+                                    ? Border.all(
+                                        color: AppColors.teal.withValues(
+                                          alpha: 0.4,
+                                        ),
+                                        width: 1.5,
+                                      )
                                     : null,
                               ),
                               alignment: Alignment.center,
@@ -460,10 +498,14 @@ class _BillsPageState extends ConsumerState<BillsPage> {
                                   color: selected
                                       ? Colors.white
                                       : disabled
-                                      ? oneKeepTextTertiary(context).withValues(alpha: 0.3)
+                                      ? oneKeepTextTertiary(
+                                          context,
+                                        ).withValues(alpha: 0.3)
                                       : oneKeepTextPrimary(context),
                                   size: 15,
-                                  weight: selected ? FontWeight.w700 : FontWeight.w500,
+                                  weight: selected
+                                      ? FontWeight.w700
+                                      : FontWeight.w500,
                                 ),
                               ),
                             ),
@@ -498,13 +540,15 @@ class _BillsPageState extends ConsumerState<BillsPage> {
               ? (isDark ? Colors.white.withValues(alpha: 0.08) : Colors.white)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
-          boxShadow: enabled && !isDark ? [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 4,
-              offset: const Offset(0, 1),
-            ),
-          ] : null,
+          boxShadow: enabled && !isDark
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                  ),
+                ]
+              : null,
         ),
         child: Icon(
           icon,
@@ -522,10 +566,8 @@ class _BillsPageState extends ConsumerState<BillsPage> {
       context: context,
       backgroundColor: Colors.transparent,
       barrierColor: oneKeepDimOverlay(context),
-      builder: (_) => _BillDetailSheet(
-        transaction: tx,
-        categoryColor: categoryColor,
-      ),
+      builder: (_) =>
+          _BillDetailSheet(transaction: tx, categoryColor: categoryColor),
     );
     if (!mounted || action == null) return;
 
@@ -556,15 +598,17 @@ class _BillsPageState extends ConsumerState<BillsPage> {
       ref.read(homeProvider.notifier).load();
       ref.read(statsProvider.notifier).load();
       if (!mounted) return;
-      ScaffoldMessenger.of(
+      showOneKeepToast(
         context,
-      ).showSnackBar(const SnackBar(content: Text('账单已更新')));
+        message: '账单已更新',
+        type: OneKeepToastType.success,
+      );
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(ApiClient.readableError(error, fallback: '更新失败')),
-        ),
+      showOneKeepToast(
+        context,
+        message: ApiClient.readableError(error, fallback: '更新失败'),
+        type: OneKeepToastType.error,
       );
     }
   }
@@ -628,15 +672,17 @@ class _BillsPageState extends ConsumerState<BillsPage> {
       ref.read(homeProvider.notifier).load();
       ref.read(statsProvider.notifier).load();
       if (!mounted) return;
-      ScaffoldMessenger.of(
+      showOneKeepToast(
         context,
-      ).showSnackBar(const SnackBar(content: Text('账单已删除')));
+        message: '账单已删除',
+        type: OneKeepToastType.success,
+      );
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(ApiClient.readableError(error, fallback: '删除失败')),
-        ),
+      showOneKeepToast(
+        context,
+        message: ApiClient.readableError(error, fallback: '删除失败'),
+        type: OneKeepToastType.error,
       );
     }
   }
@@ -671,12 +717,10 @@ class _FilterChip extends StatelessWidget {
           color: active
               ? AppColors.teal.withValues(alpha: 0.15)
               : (Theme.of(context).brightness == Brightness.dark
-                  ? AppColors.darkElevated
-                  : AppColors.lightBgSecondary),
+                    ? AppColors.darkElevated
+                    : AppColors.lightBgSecondary),
           borderRadius: BorderRadius.circular(20),
-          border: active
-              ? Border.all(color: AppColors.teal, width: 1.5)
-              : null,
+          border: active ? Border.all(color: AppColors.teal, width: 1.5) : null,
         ),
         child: Text(
           label,
@@ -720,9 +764,7 @@ class _GradientFilterChip extends StatelessWidget {
         child: Text(
           label,
           style: oneKeepInter(
-            color: active
-                ? Colors.white
-                : Colors.white.withValues(alpha: 0.6),
+            color: active ? Colors.white : Colors.white.withValues(alpha: 0.6),
             size: 12,
             weight: active ? FontWeight.w600 : FontWeight.w400,
           ),
@@ -760,11 +802,14 @@ class _BillRow extends StatelessWidget {
     final normalizedCategory = transaction.categoryName.trim();
     final subtitleParts = <String>[
       DateFormat('HH:mm').format(transaction.occurredAt),
-      if (normalizedCategory.isNotEmpty && normalizedCategory != normalizedTitle)
+      if (normalizedCategory.isNotEmpty &&
+          normalizedCategory != normalizedTitle)
         normalizedCategory,
     ];
     final rowColor = isEven
-        ? (isDark ? Colors.white.withValues(alpha: 0.03) : Colors.black.withValues(alpha: 0.02))
+        ? (isDark
+              ? Colors.white.withValues(alpha: 0.03)
+              : Colors.black.withValues(alpha: 0.02))
         : Colors.transparent;
 
     return GestureDetector(

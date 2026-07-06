@@ -42,6 +42,13 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/login-logo.png
+    - assets/images/default-avatar.png
+    - assets/images/profile-bg-1.png
+    - assets/images/profile-bg-2.png
+    - assets/images/profile-bg-3.png
+    - assets/images/profile-bg-4.png
+    - assets/images/profile-bg-5.png
+    - assets/images/profile-bg-6.png
     - assets/category/
   fonts:
     - family: OneKeepIconFont

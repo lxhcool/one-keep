@@ -12,6 +12,8 @@ import '../../core/theme/onekeep_iconfont.dart';
 
 enum OneKeepPageVariant { auth, home, stats, bills, profile }
 
+enum OneKeepToastType { success, error, info }
+
 // ── Google Fonts 已离线打包 ──
 const _fontFamilyInter = 'Inter';
 const _fontFamilyManrope = 'Manrope';
@@ -86,6 +88,106 @@ TextStyle oneKeepMono({
   );
 }
 
+void showOneKeepToast(
+  BuildContext context, {
+  required String message,
+  OneKeepToastType type = OneKeepToastType.info,
+  Duration duration = const Duration(seconds: 2),
+}) {
+  final messenger = ScaffoldMessenger.of(context);
+  messenger.hideCurrentSnackBar();
+  messenger.showSnackBar(
+    SnackBar(
+      content: OneKeepToast(message: message, type: type),
+      behavior: SnackBarBehavior.floating,
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 88),
+      padding: EdgeInsets.zero,
+      duration: duration,
+      dismissDirection: DismissDirection.down,
+    ),
+  );
+}
+
+class OneKeepToast extends StatelessWidget {
+  final String message;
+  final OneKeepToastType type;
+
+  const OneKeepToast({
+    super.key,
+    required this.message,
+    this.type = OneKeepToastType.info,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final color = switch (type) {
+      OneKeepToastType.success => AppColors.success,
+      OneKeepToastType.error => AppColors.error,
+      OneKeepToastType.info => AppColors.info,
+    };
+    final icon = switch (type) {
+      OneKeepToastType.success => Icons.check_rounded,
+      OneKeepToastType.error => Icons.close_rounded,
+      OneKeepToastType.info => Icons.info_outline_rounded,
+    };
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF151B1B) : Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.08)
+              : Colors.black.withValues(alpha: 0.05),
+          width: 0.8,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.32 : 0.10),
+            blurRadius: 22,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        child: Row(
+          children: [
+            Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(9),
+              ),
+              child: Icon(icon, color: color, size: 17),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                message,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: oneKeepInter(
+                  color: isDark
+                      ? AppColors.darkTextPrimary
+                      : AppColors.lightTextPrimary,
+                  size: 13,
+                  weight: FontWeight.w700,
+                  height: 1.25,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 const List<Color> oneKeepCategoryColorPresets = <Color>[
   Color(0xFFFF8A65),
   Color(0xFFFFB74D),
@@ -122,7 +224,8 @@ Color oneKeepCategoryTone({
   final explicit = oneKeepParseHexColor(colorHex);
   if (explicit != null) return explicit;
 
-  final seed = '${categoryId ?? ''}|${categoryName ?? ''}|${categoryIcon ?? ''}';
+  final seed =
+      '${categoryId ?? ''}|${categoryName ?? ''}|${categoryIcon ?? ''}';
   var hash = 0;
   for (final codeUnit in seed.codeUnits) {
     hash = (hash * 31 + codeUnit) & 0x7fffffff;
@@ -160,7 +263,9 @@ class OneKeepCategoryBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final assetPath = resolveCategoryIconAsset(categoryIcon.isNotEmpty ? categoryIcon : categoryName);
+    final assetPath = resolveCategoryIconAsset(
+      categoryIcon.isNotEmpty ? categoryIcon : categoryName,
+    );
     const uniformBg = Color(0xFFF0F0F0);
 
     return Container(
@@ -604,6 +709,8 @@ const oneKeepAvatarPresets = <OneKeepAvatarPreset>[
   ),
 ];
 
+const oneKeepDefaultAvatarAsset = 'assets/images/default-avatar.png';
+
 class OneKeepAvatar extends StatefulWidget {
   final int avatarIndex;
   final double size;
@@ -646,7 +753,8 @@ class _OneKeepAvatarState extends State<OneKeepAvatar> {
     final preset =
         oneKeepAvatarPresets[widget.avatarIndex % oneKeepAvatarPresets.length];
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final showPresetStyle = widget.usePresetStyleWhenNoImage && _avatarProvider == null;
+    final showPresetStyle =
+        widget.usePresetStyleWhenNoImage && _avatarProvider == null;
     final decoration = BoxDecoration(
       shape: BoxShape.circle,
       color: showPresetStyle
@@ -672,13 +780,9 @@ class _OneKeepAvatarState extends State<OneKeepAvatar> {
                 fit: BoxFit.cover,
                 gaplessPlayback: true,
               )
-            : Icon(
-                showPresetStyle
-                    ? preset.icon
-                    : Icons.person_outline_rounded,
-                size: widget.iconSize,
-                color: Colors.white,
-              ),
+            : showPresetStyle
+            ? Icon(preset.icon, size: widget.iconSize, color: Colors.white)
+            : Image.asset(oneKeepDefaultAvatarAsset, fit: BoxFit.cover),
       ),
     );
   }
@@ -883,8 +987,10 @@ class _OneKeepBouncingCardState extends State<OneKeepBouncingCard>
   void initState() {
     super.initState();
     _controller = AnimationController(vsync: this, duration: widget.duration);
-    _scaleAnimation = Tween<double>(begin: 1.0, end: widget.scaleFactor)
-        .animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: widget.scaleFactor,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
   }
 
   @override
@@ -917,10 +1023,8 @@ class _OneKeepBouncingCardState extends State<OneKeepBouncingCard>
       onTapCancel: _onTapCancel,
       child: AnimatedBuilder(
         animation: _scaleAnimation,
-        builder: (context, child) => Transform.scale(
-          scale: _scaleAnimation.value,
-          child: child,
-        ),
+        builder: (context, child) =>
+            Transform.scale(scale: _scaleAnimation.value, child: child),
         child: widget.child,
       ),
     );
@@ -979,7 +1083,8 @@ class _OneKeepDatePickerSheetState extends State<_OneKeepDatePickerSheet> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final daysInMonth = DateTime(_viewMonth.year, _viewMonth.month + 1, 0).day;
-    final firstWeekday = DateTime(_viewMonth.year, _viewMonth.month, 1).weekday % 7;
+    final firstWeekday =
+        DateTime(_viewMonth.year, _viewMonth.month, 1).weekday % 7;
     final weekLabels = ['一', '二', '三', '四', '五', '六', '日'];
 
     return ClipRRect(
@@ -1010,8 +1115,9 @@ class _OneKeepDatePickerSheetState extends State<_OneKeepDatePickerSheet> {
                     width: 32,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: (isDark ? Colors.white : Colors.black)
-                          .withValues(alpha: 0.1),
+                      color: (isDark ? Colors.white : Colors.black).withValues(
+                        alpha: 0.1,
+                      ),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -1023,11 +1129,26 @@ class _OneKeepDatePickerSheetState extends State<_OneKeepDatePickerSheet> {
                       // Previous month
                       _NavButton(
                         icon: Icons.chevron_left_rounded,
-                        enabled: _viewMonth.isAfter(
-                          DateTime(widget.firstDate.year, widget.firstDate.month, 1),
-                        ) || _viewMonth == DateTime(widget.firstDate.year, widget.firstDate.month, 1),
+                        enabled:
+                            _viewMonth.isAfter(
+                              DateTime(
+                                widget.firstDate.year,
+                                widget.firstDate.month,
+                                1,
+                              ),
+                            ) ||
+                            _viewMonth ==
+                                DateTime(
+                                  widget.firstDate.year,
+                                  widget.firstDate.month,
+                                  1,
+                                ),
                         onTap: () => setState(() {
-                          _viewMonth = DateTime(_viewMonth.year, _viewMonth.month - 1, 1);
+                          _viewMonth = DateTime(
+                            _viewMonth.year,
+                            _viewMonth.month - 1,
+                            1,
+                          );
                         }),
                         isDark: isDark,
                       ),
@@ -1057,10 +1178,18 @@ class _OneKeepDatePickerSheetState extends State<_OneKeepDatePickerSheet> {
                       _NavButton(
                         icon: Icons.chevron_right_rounded,
                         enabled: _viewMonth.isBefore(
-                          DateTime(widget.lastDate.year, widget.lastDate.month, 1),
+                          DateTime(
+                            widget.lastDate.year,
+                            widget.lastDate.month,
+                            1,
+                          ),
                         ),
                         onTap: () => setState(() {
-                          _viewMonth = DateTime(_viewMonth.year, _viewMonth.month + 1, 1);
+                          _viewMonth = DateTime(
+                            _viewMonth.year,
+                            _viewMonth.month + 1,
+                            1,
+                          );
                         }),
                         isDark: isDark,
                       ),
@@ -1096,21 +1225,27 @@ class _OneKeepDatePickerSheetState extends State<_OneKeepDatePickerSheet> {
                   GridView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 7,
-                      mainAxisSpacing: 4,
-                      crossAxisSpacing: 4,
-                      childAspectRatio: 1.0,
-                    ),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 7,
+                          mainAxisSpacing: 4,
+                          crossAxisSpacing: 4,
+                          childAspectRatio: 1.0,
+                        ),
                     itemCount: firstWeekday + daysInMonth,
                     itemBuilder: (context, index) {
                       if (index < firstWeekday) {
                         return const SizedBox();
                       }
                       final day = index - firstWeekday + 1;
-                      final date = DateTime(_viewMonth.year, _viewMonth.month, day);
+                      final date = DateTime(
+                        _viewMonth.year,
+                        _viewMonth.month,
+                        day,
+                      );
                       final isSelected = date == _selectedDate;
-                      final isToday = date == DateTime(_now.year, _now.month, _now.day);
+                      final isToday =
+                          date == DateTime(_now.year, _now.month, _now.day);
                       final isFuture = date.isAfter(_now);
                       final isBeforeMin = date.isBefore(widget.firstDate);
                       final isAfterMax = date.isAfter(widget.lastDate);
@@ -1129,8 +1264,8 @@ class _OneKeepDatePickerSheetState extends State<_OneKeepDatePickerSheet> {
                             color: isSelected
                                 ? AppColors.emerald
                                 : isToday
-                                    ? AppColors.emerald.withValues(alpha: 0.12)
-                                    : null,
+                                ? AppColors.emerald.withValues(alpha: 0.12)
+                                : null,
                             shape: BoxShape.circle,
                           ),
                           child: Center(
@@ -1138,12 +1273,14 @@ class _OneKeepDatePickerSheetState extends State<_OneKeepDatePickerSheet> {
                               '$day',
                               style: oneKeepInter(
                                 color: disabled
-                                    ? oneKeepTextTertiary(context).withValues(alpha: 0.3)
+                                    ? oneKeepTextTertiary(
+                                        context,
+                                      ).withValues(alpha: 0.3)
                                     : isSelected
-                                        ? Colors.white
-                                        : isToday
-                                            ? AppColors.emerald
-                                            : oneKeepTextPrimary(context),
+                                    ? Colors.white
+                                    : isToday
+                                    ? AppColors.emerald
+                                    : oneKeepTextPrimary(context),
                                 size: 14,
                                 weight: isSelected || isToday
                                     ? FontWeight.w700

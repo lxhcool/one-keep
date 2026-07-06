@@ -73,13 +73,16 @@ class _ChatPageState extends ConsumerState<ChatPage> {
 
     _errorSub = _speech.onError.listen((msg) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(msg),
-          behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 3),
-          backgroundColor: Colors.red.shade700,
-        ),
+      setState(() {
+        _isListening = false;
+        _isProcessing = false;
+        _partialSpeech = '';
+      });
+      showOneKeepToast(
+        context,
+        message: msg,
+        type: OneKeepToastType.error,
+        duration: const Duration(seconds: 3),
       );
     });
   }
@@ -431,14 +434,9 @@ class _ChatPageState extends ConsumerState<ChatPage> {
         filter: ImageFilter.blur(sigmaX: 32, sigmaY: 32),
         child: Container(
           decoration: BoxDecoration(
-            color: isDark
-                ? AppColors.darkBg.withValues(alpha: 0.85)
-                : AppColors.lightSurface.withValues(alpha: 0.9),
+            color: Colors.transparent,
             border: Border(
-              top: BorderSide(
-                color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
-                width: 0.5,
-              ),
+              top: BorderSide(color: Colors.transparent, width: 0),
             ),
           ),
           padding: EdgeInsets.fromLTRB(16, 14, 16, 14 + bottomInset),
@@ -699,6 +697,9 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                   weight: FontWeight.w400,
                 ),
                 border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                filled: false,
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 14,
                   vertical: 14,
@@ -782,26 +783,35 @@ class _ChatPageState extends ConsumerState<ChatPage> {
       final granted = await _speech.requestPermission();
       if (!granted) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('需要麦克风权限才能使用语音记账，请在设置中开启'),
-            behavior: SnackBarBehavior.floating,
-            duration: Duration(seconds: 3),
-          ),
+        showOneKeepToast(
+          context,
+          message: '需要麦克风权限才能使用语音记账，请在设置中开启',
+          type: OneKeepToastType.error,
+          duration: const Duration(seconds: 3),
         );
         return;
       }
+      if (!mounted) return;
+      setState(() {
+        _isListening = false;
+        _isProcessing = false;
+        _partialSpeech = '';
+      });
+      showOneKeepToast(
+        context,
+        message: '麦克风权限已开启，请重新长按说话',
+        type: OneKeepToastType.success,
+      );
+      return;
     }
 
     final available = await _speech.isAvailable;
     if (!available) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('语音识别不可用，请检查设备是否支持'),
-          behavior: SnackBarBehavior.floating,
-          duration: Duration(seconds: 2),
-        ),
+      showOneKeepToast(
+        context,
+        message: '语音识别不可用，请检查设备是否支持',
+        type: OneKeepToastType.error,
       );
       return;
     }
@@ -813,12 +823,10 @@ class _ChatPageState extends ConsumerState<ChatPage> {
 
     if (!mounted) return;
     if (_speech.state != SpeechState.listening) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('语音识别启动失败，请重试'),
-          behavior: SnackBarBehavior.floating,
-          duration: Duration(seconds: 2),
-        ),
+      showOneKeepToast(
+        context,
+        message: '语音识别启动失败，请重试',
+        type: OneKeepToastType.error,
       );
     }
   }

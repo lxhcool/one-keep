@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart' show kIsWeb, kReleaseMode;
+import 'package:flutter/foundation.dart' show debugPrint, kIsWeb, kReleaseMode;
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 import 'package:speech_to_text/speech_recognition_error.dart';
@@ -14,7 +14,7 @@ import 'permission_helper_stub.dart'
 
 /// Release 模式下不输出 debug 日志
 void _log(String message) {
-  if (!kReleaseMode) _log(message);
+  if (!kReleaseMode) debugPrint(message);
 }
 
 /// 语音识别状态
@@ -80,23 +80,25 @@ class SpeechService {
     _aiApiKey = apiKey;
   }
 
-  /// 检查是否可用（只检查 Whisper 是否已配置，不再依赖系统语音初始化）
+  /// 检查是否可用：系统语音可用，或已配置音频转写 API。
   Future<bool> get isAvailable async {
     // 移动端检查权限
     if (!kIsWeb) {
       final micGranted = await hasPermission;
       if (!micGranted) return false;
     }
-    // 只要配置了 AI 服务，就可以用 Whisper 降级
-    if (_aiBaseUrl != null && _aiBaseUrl!.isNotEmpty && _aiApiKey != null && _aiApiKey!.isNotEmpty) {
-      return true;
+    if (!_triedSystemSpeech) {
+      await _initializeSystemSpeech();
     }
-    return false;
+    return (_useSystemSpeech && !_systemSpeechFailed) ||
+        (_hasWhisperConfig && _supportsAudioTranscription);
   }
 
   /// 开始录音识别
   Future<void> startListening({String localeId = 'zh_CN'}) async {
-    if (_state == SpeechState.listening || _state == SpeechState.processing) return;
+    if (_state == SpeechState.listening || _state == SpeechState.processing) {
+      return;
+    }
 
     // 移动端检查权限
     if (!kIsWeb) {
@@ -114,26 +116,8 @@ class SpeechService {
     _lastRecognized = '';
     _partialResult = '';
 
-    // 如果还没尝试过系统语音，先试试
     if (!_triedSystemSpeech) {
-      _triedSystemSpeech = true;
-      try {
-        final available = await _speech.initialize(
-          onError: _onSystemError,
-          onStatus: _onSystemStatus,
-          debugLogging: false,
-        );
-        if (available) {
-          _useSystemSpeech = true;
-          _log('[SpeechService] using system speech recognition');
-        } else {
-          _systemSpeechFailed = true;
-          _log('[SpeechService] system speech not available, will use Whisper');
-        }
-      } catch (e) {
-        _systemSpeechFailed = true;
-        _log('[SpeechService] system speech init failed: $e, will use Whisper');
-      }
+      await _initializeSystemSpeech();
     }
 
     if (_useSystemSpeech && !_systemSpeechFailed) {
@@ -161,7 +145,9 @@ class SpeechService {
       await _speech.cancel();
     } else {
       if (_state != SpeechState.listening) return;
-      try { await _recorder.stop(); } catch (_) {}
+      try {
+        await _recorder.stop();
+      } catch (_) {}
     }
     _lastRecognized = '';
     _partialResult = '';
@@ -170,18 +156,67 @@ class SpeechService {
 
   // ==================== 系统语音识别 ====================
 
+  bool get _hasWhisperConfig =>
+      _aiBaseUrl != null &&
+      _aiBaseUrl!.isNotEmpty &&
+      _aiApiKey != null &&
+      _aiApiKey!.isNotEmpty;
+
+  bool get _supportsAudioTranscription {
+    final baseUrl = (_aiBaseUrl ?? '').toLowerCase();
+    if (baseUrl.contains('deepseek.com')) return false;
+    return true;
+  }
+
+  String get _transcriptionModel {
+    final baseUrl = (_aiBaseUrl ?? '').toLowerCase();
+    if (baseUrl.contains('openai.com')) return 'whisper-1';
+    return 'FunAudioLLM/SenseVoiceSmall';
+  }
+
+  Future<void> _initializeSystemSpeech() async {
+    _triedSystemSpeech = true;
+    try {
+      final available = await _speech.initialize(
+        onError: _onSystemError,
+        onStatus: _onSystemStatus,
+        debugLogging: false,
+      );
+      if (available) {
+        _useSystemSpeech = true;
+        _systemSpeechFailed = false;
+        _log('[SpeechService] using system speech recognition');
+      } else {
+        _systemSpeechFailed = true;
+        _log('[SpeechService] system speech not available, will use Whisper');
+      }
+    } catch (e) {
+      _systemSpeechFailed = true;
+      _log('[SpeechService] system speech init failed: $e, will use Whisper');
+    }
+  }
+
   Future<void> _startSystemListening(String localeId) async {
     _setState(SpeechState.listening);
 
-    await _speech.listen(
-      onResult: _onSystemSpeechResult,
-      localeId: localeId,
-      pauseFor: const Duration(seconds: 3),
-      listenFor: const Duration(seconds: 30),
-      partialResults: true,
-      cancelOnError: true,
-      listenMode: ListenMode.dictation,
-    );
+    try {
+      await _speech.listen(
+        onResult: _onSystemSpeechResult,
+        localeId: localeId,
+        pauseFor: const Duration(seconds: 3),
+        listenFor: const Duration(seconds: 30),
+        partialResults: true,
+        cancelOnError: true,
+        listenMode: ListenMode.dictation,
+      );
+
+      if (!_speech.isListening) {
+        await _fallbackToWhisperOrError('系统语音未能开始监听');
+      }
+    } catch (e) {
+      _log('[SpeechService] system listen failed: $e');
+      await _fallbackToWhisperOrError('系统语音启动失败');
+    }
   }
 
   void _onSystemSpeechResult(SpeechRecognitionResult result) {
@@ -217,12 +252,22 @@ class SpeechService {
   }
 
   void _onSystemError(SpeechRecognitionError error) {
-    _log('[SpeechService] system error: ${error.errorMsg}, permanent: ${error.permanent}');
+    _log(
+      '[SpeechService] system error: ${error.errorMsg}, permanent: ${error.permanent}',
+    );
 
-    // 如果系统语音彻底不可用，标记降级
-    if (error.permanent && error.errorMsg != 'error_no_speech' && error.errorMsg != 'error_no_match') {
+    final canFallback =
+        error.permanent &&
+        error.errorMsg != 'error_no_speech' &&
+        error.errorMsg != 'error_no_match';
+
+    if (canFallback) {
       _systemSpeechFailed = true;
       _useSystemSpeech = false;
+      if (_hasWhisperConfig) {
+        unawaited(_startWhisperRecording());
+        return;
+      }
     }
 
     final msg = _friendlyErrorMsg(error.errorMsg);
@@ -235,11 +280,34 @@ class SpeechService {
     }
   }
 
+  Future<void> _fallbackToWhisperOrError(String reason) async {
+    _systemSpeechFailed = true;
+    _useSystemSpeech = false;
+    _log('[SpeechService] $reason, will use Whisper if configured');
+    if (_hasWhisperConfig) {
+      await _startWhisperRecording();
+      return;
+    }
+    _errorController.add('$reason，请检查设备语音服务或在 AI 设置中配置支持音频转写的服务');
+    _setState(SpeechState.error);
+  }
+
   // ==================== Whisper API 识别 ====================
 
   Future<void> _startWhisperRecording() async {
-    if (_aiBaseUrl == null || _aiBaseUrl!.isEmpty || _aiApiKey == null || _aiApiKey!.isEmpty) {
+    if (_aiBaseUrl == null ||
+        _aiBaseUrl!.isEmpty ||
+        _aiApiKey == null ||
+        _aiApiKey!.isEmpty) {
       _errorController.add('未配置 AI 服务，无法使用语音输入');
+      _setState(SpeechState.error);
+      return;
+    }
+
+    if (!_supportsAudioTranscription) {
+      _errorController.add(
+        '当前 AI 服务不支持语音转写，请在 AI 设置切换到硅基流动或 OpenAI 等支持音频转写的服务',
+      );
       _setState(SpeechState.error);
       return;
     }
@@ -313,7 +381,7 @@ class SpeechService {
 
       final formData = FormData.fromMap({
         'file': await MultipartFile.fromFile(path, filename: 'audio.m4a'),
-        'model': 'FunAudioLLM/SenseVoiceSmall',
+        'model': _transcriptionModel,
       });
 
       // 拼接 URL，避免重复 /v1
@@ -327,11 +395,7 @@ class SpeechService {
       final response = await dio.post(
         apiUrl,
         data: formData,
-        options: Options(
-          headers: {
-            'Authorization': 'Bearer $_aiApiKey',
-          },
-        ),
+        options: Options(headers: {'Authorization': 'Bearer $_aiApiKey'}),
       );
 
       final text = response.data['text'] as String? ?? '';
@@ -346,9 +410,11 @@ class SpeechService {
     } on DioException catch (e) {
       final statusCode = e.response?.statusCode;
       final respBody = e.response?.data?.toString() ?? '';
-      _log('[SpeechService] API error: $statusCode ${e.message}, body: $respBody');
+      _log(
+        '[SpeechService] API error: $statusCode ${e.message}, body: $respBody',
+      );
       if (statusCode == 404) {
-        _errorController.add('语音识别接口不存在(404)，请检查 Base URL 是否正确');
+        _errorController.add('语音识别接口不存在(404)，请确认 AI Base URL 是否为支持音频转写的服务');
       } else if (statusCode == 401) {
         _errorController.add('API Key 无效(401)，请检查 AI 设置');
       } else if (statusCode == 400) {

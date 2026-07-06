@@ -25,6 +25,47 @@ class ProfilePage extends ConsumerStatefulWidget {
   ConsumerState<ProfilePage> createState() => _ProfilePageState();
 }
 
+const _defaultAvatarAsset = 'assets/images/default-avatar.png';
+const _profileBackgroundPresetAssets = <String>[
+  'assets/images/profile-bg-1.png',
+  'assets/images/profile-bg-2.png',
+  'assets/images/profile-bg-3.png',
+  'assets/images/profile-bg-4.png',
+  'assets/images/profile-bg-5.png',
+  'assets/images/profile-bg-6.png',
+];
+
+int _stableProfileSeed(AuthState authState) {
+  final user = authState.user;
+  final source = [
+    user?.id,
+    user?.email,
+    user?.username,
+    user?.name,
+  ].whereType<String>().where((value) => value.isNotEmpty).join('|');
+  final text = source.isEmpty ? 'one-keep-default-profile' : source;
+  var hash = 0;
+  for (final codeUnit in text.codeUnits) {
+    hash = (hash * 31 + codeUnit) & 0x7fffffff;
+  }
+  return hash;
+}
+
+class _DefaultProfileBackground extends StatelessWidget {
+  final int index;
+  final bool isDark;
+
+  const _DefaultProfileBackground({required this.index, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    final asset =
+        _profileBackgroundPresetAssets[index %
+            _profileBackgroundPresetAssets.length];
+    return Image.asset(asset, fit: BoxFit.cover, alignment: Alignment.center);
+  }
+}
+
 class _ProfilePageState extends ConsumerState<ProfilePage> {
   late final ScrollController _scrollController;
   double _scrollOffset = 0.0;
@@ -66,24 +107,30 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
     final displayName = preferences.nickname.isNotEmpty
         ? preferences.nickname
-        : (authState.user?.name.isNotEmpty == true ? authState.user!.name : '厘清用户');
-    final username = authState.user?.username?.isNotEmpty == true
-        ? '@${authState.user!.username!}' : '';
+        : (authState.user?.name.isNotEmpty == true
+              ? authState.user!.name
+              : '厘清用户');
+    final profileSeed = _stableProfileSeed(authState);
+    final defaultBackgroundIndex =
+        profileSeed % _profileBackgroundPresetAssets.length;
     final totalExpense = statsOverview?.totalExpense ?? 0;
     final totalIncome = statsOverview?.totalIncome ?? 0;
     final balance = totalIncome - totalExpense;
 
-    // Only re-decode when the source data actually changes (not on scroll rebuilds)
     final backgroundImageData = preferences.profileBackgroundImageData;
     if (backgroundImageData != _lastBgData) {
       _lastBgData = backgroundImageData;
       if (backgroundImageData != null && backgroundImageData.isNotEmpty) {
         try {
           final normalized = backgroundImageData.contains(',')
-              ? backgroundImageData.substring(backgroundImageData.indexOf(',') + 1)
+              ? backgroundImageData.substring(
+                  backgroundImageData.indexOf(',') + 1,
+                )
               : backgroundImageData;
           _backgroundBytes = base64Decode(normalized);
-        } catch (_) { _backgroundBytes = null; }
+        } catch (_) {
+          _backgroundBytes = null;
+        }
       } else {
         _backgroundBytes = null;
       }
@@ -98,7 +145,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               ? avatarImageData.substring(avatarImageData.indexOf(',') + 1)
               : avatarImageData;
           _avatarBytes = base64Decode(normalized);
-        } catch (_) { _avatarBytes = null; }
+        } catch (_) {
+          _avatarBytes = null;
+        }
       } else {
         _avatarBytes = null;
       }
@@ -112,136 +161,95 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     final avatarSize = baseAvatarSize - (baseAvatarSize - minAvatarSize) * t;
     final fontSize = 28.0 - 8.0 * t;
     final profileBlockOffsetY = 6.0 * (1 - t);
-    final usernameVisibility = (1 - t).clamp(0.0, 1.0);
-    final hasBackground = _backgroundBytes != null;
-    final actualScrollOffset = _scrollController.hasClients ? _scrollController.offset.clamp(0.0, double.infinity) : 0.0;
-    final avatarTop = (bgHeight - avatarSize - 44 - actualScrollOffset).clamp(topPadding + 12.0, double.infinity);
+    final actualScrollOffset = _scrollController.hasClients
+        ? _scrollController.offset.clamp(0.0, double.infinity)
+        : 0.0;
+    final avatarTop = (bgHeight - avatarSize - 44 - actualScrollOffset).clamp(
+      topPadding + 20.0,
+      double.infinity,
+    );
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF000000) : const Color(0xFFF2F2F7),
+      backgroundColor: isDark
+          ? const Color(0xFF000000)
+          : const Color(0xFFF2F2F7),
       body: Stack(
         children: [
           CustomScrollView(
             controller: _scrollController,
-            physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+            physics: const ClampingScrollPhysics(),
             slivers: [
               SliverToBoxAdapter(
                 child: _buildHeroSection(
                   t: t,
                   isDark: isDark,
+                  defaultBackgroundIndex: defaultBackgroundIndex,
                 ),
               ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Placeholder shortened to match overlay offset (-25px)
-                  Transform.translate(
-                    offset: const Offset(0, -21),
-                    child: Opacity(
-                      opacity: 0,
-                      child: _buildFinanceOverview(
-                        isDark: isDark,
-                        totalExpense: totalExpense,
-                        totalIncome: totalIncome,
-                        balance: balance,
-                        isLoading: statsState.isLoading && statsOverview == null,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 0),
-                  _BentoGridMenu(
-                    preferences: preferences,
-                    onThemeTap: () {
-                      final newMode = preferences.themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
-                      ref.read(preferencesProvider.notifier).setThemeMode(newMode);
-                    },
-                    onBackgroundTap: _showBackgroundStudio,
-                    onAvatarTap: _showAvatarStudio,
-                    onNicknameTap: _showNicknameSheet,
-                    onCategoryTap: _openCategorySettings,
-                    onAiTap: _openAiSettings,
-                    onExportTap: _showExportSheet,
-                  ),
-                  const SizedBox(height: 28),
-                  OneKeepBouncingCard(
-                    onTap: () => ref.read(authProvider.notifier).logout(),
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFFFF3B30).withValues(alpha: 0.08) : const Color(0xFFFF3B30).withValues(alpha: 0.05),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: const Color(0xFFFF3B30).withValues(alpha: 0.1),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Placeholder shortened to match overlay offset (-25px)
+                      Transform.translate(
+                        offset: const Offset(0, -21),
+                        child: Opacity(
+                          opacity: 0,
+                          child: _buildFinanceOverview(
+                            isDark: isDark,
+                            totalExpense: totalExpense,
+                            totalIncome: totalIncome,
+                            balance: balance,
+                            isLoading:
+                                statsState.isLoading && statsOverview == null,
+                          ),
                         ),
                       ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.power_settings_new_rounded,
-                            size: 18,
-                            color: const Color(0xFFFF3B30).withValues(alpha: 0.7),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            '退出登录',
-                            style: TextStyle(
-                              color: const Color(0xFFFF3B30).withValues(alpha: 0.8),
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 0.2,
-                            ),
-                          ),
-                        ],
+                      const SizedBox(height: 0),
+                      _BentoGridMenu(
+                        preferences: preferences,
+                        onThemeTap: () {
+                          final newMode =
+                              preferences.themeMode == ThemeMode.dark
+                              ? ThemeMode.light
+                              : ThemeMode.dark;
+                          ref
+                              .read(preferencesProvider.notifier)
+                              .setThemeMode(newMode);
+                        },
+                        onBackgroundTap: _showBackgroundStudio,
+                        onAvatarTap: _showAvatarStudio,
+                        onNicknameTap: _showNicknameSheet,
+                        onCategoryTap: _openCategorySettings,
+                        onAiTap: _openAiSettings,
+                        onExportTap: _showExportSheet,
+                        onAccountTap: _showAccountSheet,
                       ),
-                    ),
+                      const SizedBox(height: 28),
+                      const SizedBox(height: 120),
+                    ],
                   ),
-                  const SizedBox(height: 12),
-                  OneKeepBouncingCard(
-                    onTap: _deleteAccount,
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFFFF3B30).withValues(alpha: 0.04) : const Color(0xFFFF3B30).withValues(alpha: 0.03),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: const Color(0xFFFF3B30).withValues(alpha: 0.06),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.delete_outline_rounded,
-                            size: 18,
-                            color: const Color(0xFFFF3B30).withValues(alpha: 0.5),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            '注销账号',
-                            style: TextStyle(
-                              color: const Color(0xFFFF3B30).withValues(alpha: 0.5),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              letterSpacing: 0.2,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 120),
-                ],
+                ),
+              ),
+            ],
+          ),
+          // ── Finance Card overlay ───────────────
+          Positioned(
+            top: bgHeight - 25 - actualScrollOffset + 4,
+            left: 16,
+            right: 16,
+            child: IgnorePointer(
+              child: _buildFinanceOverview(
+                isDark: isDark,
+                totalExpense: totalExpense,
+                totalIncome: totalIncome,
+                balance: balance,
+                isLoading: statsState.isLoading && statsOverview == null,
               ),
             ),
           ),
-        ],
-      ),
           // ── Avatar & Nickname (fixed overlay, never enters status bar) ──
           Positioned(
             top: avatarTop,
@@ -261,30 +269,24 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: (0.25 * (1 - t * 0.5)).clamp(0, 0.25)),
+                            color: Colors.black.withValues(
+                              alpha: (0.25 * (1 - t * 0.5)).clamp(0, 0.25),
+                            ),
                             blurRadius: 25 * (1 - t * 0.3),
                             offset: Offset(0, 12 * (1 - t * 0.5)),
                           ),
                         ],
                         border: Border.all(
-                          color: hasBackground
-                              ? Colors.white.withValues(alpha: 0.9)
-                              : (isDark ? const Color(0xFF3C3C3E) : Colors.white),
+                          color: Colors.white.withValues(alpha: 0.9),
                           width: (3.5 - 1.5 * t).clamp(1.0, 3.5),
                         ),
                       ),
                       child: ClipOval(
                         child: _avatarBytes != null
                             ? Image.memory(_avatarBytes!, fit: BoxFit.cover)
-                            : Container(
-                                color: isDark ? const Color(0xFF2C2C2E) : Colors.white,
-                                child: Center(
-                                  child: Icon(
-                                    oneKeepAvatarPresets[preferences.avatarIndex.clamp(0, oneKeepAvatarPresets.length - 1)].icon,
-                                    size: avatarSize * 0.45,
-                                    color: AppColors.teal,
-                                  ),
-                                ),
+                            : Image.asset(
+                                _defaultAvatarAsset,
+                                fit: BoxFit.cover,
                               ),
                       ),
                     ),
@@ -311,14 +313,23 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                                     child: Text(
                                       displayName,
                                       style: TextStyle(
-                                        color: hasBackground || isDark ? Colors.white : const Color(0xFF1C1C1E),
+                                        color: Colors.white,
                                         fontSize: fontSize,
                                         fontWeight: FontWeight.w900,
                                         letterSpacing: -0.8,
                                         height: 1.1,
-                                        shadows: hasBackground
-                                            ? [Shadow(color: Colors.black.withValues(alpha: (0.3 * (1 - t)).clamp(0, 0.3)), blurRadius: 10, offset: const Offset(0, 2))]
-                                            : null,
+                                        shadows: [
+                                          Shadow(
+                                            color: Colors.black.withValues(
+                                              alpha: (0.3 * (1 - t)).clamp(
+                                                0,
+                                                0.3,
+                                              ),
+                                            ),
+                                            blurRadius: 10,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ],
                                       ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
@@ -327,36 +338,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                                 ],
                               ),
                             ),
-                            if (username.isNotEmpty)
-                              ClipRect(
-                                child: Align(
-                                  alignment: Alignment.topLeft,
-                                  heightFactor: usernameVisibility,
-                                  child: Opacity(
-                                    opacity: usernameVisibility,
-                                    child: Padding(
-                                      padding: EdgeInsets.only(top: 10 * usernameVisibility),
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                        decoration: BoxDecoration(
-                                          color: (hasBackground || isDark ? Colors.white : Colors.black).withValues(alpha: 0.08),
-                                          borderRadius: BorderRadius.circular(8),
-                                          border: Border.all(color: (hasBackground || isDark ? Colors.white : Colors.black).withValues(alpha: 0.05)),
-                                        ),
-                                        child: Text(
-                                          username,
-                                          style: TextStyle(
-                                            color: (hasBackground || isDark ? Colors.white : const Color(0xFF1C1C1E)).withValues(alpha: 0.6),
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w700,
-                                            letterSpacing: 0.5,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
                           ],
                         ),
                       ),
@@ -364,21 +345,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   ),
                 ),
               ],
-            ),
-          ),
-          // ── Finance Card overlay ───────────────
-          Positioned(
-            top: bgHeight - 25 - actualScrollOffset + 4,
-            left: 16,
-            right: 16,
-            child: IgnorePointer(
-              child: _buildFinanceOverview(
-                isDark: isDark,
-                totalExpense: totalExpense,
-                totalIncome: totalIncome,
-                balance: balance,
-                isLoading: statsState.isLoading && statsOverview == null,
-              ),
             ),
           ),
         ],
@@ -409,7 +375,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     required bool isLoading,
   }) {
     final textColor = isDark ? Colors.white : const Color(0xFF1C1C1E);
-    final subTextColor = isDark ? const Color(0xFF8E8E93) : const Color(0xFF8E8E93);
+    final subTextColor = isDark
+        ? const Color(0xFF8E8E93)
+        : const Color(0xFF8E8E93);
     final cardBg = isDark ? const Color(0xFF1C1C1E) : Colors.white;
 
     return Container(
@@ -419,13 +387,17 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: isDark ? Colors.black.withValues(alpha: 0.2) : Colors.black.withValues(alpha: 0.04),
-            blurRadius: 20,
-            offset: const Offset(0, 6),
+            color: isDark
+                ? Colors.black.withValues(alpha: 0.1)
+                : Colors.black.withValues(alpha: 0.02),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
         border: Border.all(
-          color: isDark ? Colors.white.withValues(alpha: 0.04) : Colors.black.withValues(alpha: 0.03),
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.04)
+              : Colors.black.withValues(alpha: 0.03),
         ),
       ),
       child: Column(
@@ -451,7 +423,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 width: 42,
                 height: 42,
                 decoration: BoxDecoration(
-                  color: AppColors.emerald.withValues(alpha: isDark ? 0.12 : 0.08),
+                  color: AppColors.emerald.withValues(
+                    alpha: isDark ? 0.12 : 0.08,
+                  ),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: const Icon(
@@ -470,7 +444,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               gradient: LinearGradient(
                 colors: [
                   Colors.transparent,
-                  isDark ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.05),
+                  isDark
+                      ? Colors.white.withValues(alpha: 0.06)
+                      : Colors.black.withValues(alpha: 0.05),
                   Colors.transparent,
                 ],
               ),
@@ -511,11 +487,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   Widget _buildHeroSection({
     required double t,
     required bool isDark,
+    required int defaultBackgroundIndex,
   }) {
     final topPadding = MediaQuery.of(context).padding.top;
     final bgHeight = 320.0 + topPadding;
-    final hasBackground = _backgroundBytes != null;
-
     return SizedBox(
       width: double.infinity,
       height: bgHeight,
@@ -524,23 +499,19 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         children: [
           // ── Background ────────────────────────────────────────────
           Positioned(
-            top: 0, left: 0, right: 0, height: bgHeight,
+            top: 0,
+            left: 0,
+            right: 0,
+            height: bgHeight,
             child: Stack(
               fit: StackFit.expand,
               children: [
                 if (_backgroundBytes != null)
                   Image.memory(_backgroundBytes!, fit: BoxFit.cover)
                 else
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: isDark
-                            ? [const Color(0xFF121214), const Color(0xFF1C1C1E)]
-                            : [const Color(0xFFE2E2E7), const Color(0xFFF2F2F7)],
-                      ),
-                    ),
+                  _DefaultProfileBackground(
+                    index: defaultBackgroundIndex,
+                    isDark: isDark,
                   ),
                 Container(
                   decoration: BoxDecoration(
@@ -548,12 +519,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        hasBackground ? Colors.black.withValues(alpha: 0.0) : Colors.transparent,
-                        hasBackground
-                            ? Colors.black.withValues(alpha: 0.55)
-                            : (isDark ? const Color(0xFF000000) : const Color(0xFFF2F2F7)),
+                        Colors.black.withValues(alpha: 0.0),
+                        Colors.black.withValues(alpha: 0.55),
                       ],
-                      stops: hasBackground ? const [0.4, 1.0] : null,
+                      stops: const [0.4, 1.0],
                     ),
                   ),
                 ),
@@ -578,9 +547,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       builder: (_) => _AvatarStudioSheet(
         avatarIndex: preferences.avatarIndex,
         avatarImageData: preferences.avatarImageData,
-        onSelectPreset: (index) {
-          ref.read(preferencesProvider.notifier).setAvatarIndex(index);
-        },
         onSelectImage: (bytes) {
           final base64Str = base64Encode(bytes);
           ref.read(preferencesProvider.notifier).setAvatarImageData(base64Str);
@@ -600,10 +566,14 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         imageData: preferences.profileBackgroundImageData,
         onSelectImage: (bytes) {
           final base64Str = base64Encode(bytes);
-          ref.read(preferencesProvider.notifier).setProfileBackgroundImageData(base64Str);
+          ref
+              .read(preferencesProvider.notifier)
+              .setProfileBackgroundImageData(base64Str);
         },
         onClear: () {
-          ref.read(preferencesProvider.notifier).clearProfileBackgroundImageData();
+          ref
+              .read(preferencesProvider.notifier)
+              .clearProfileBackgroundImageData();
         },
       ),
     );
@@ -615,9 +585,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     final current = preferences.nickname.isNotEmpty
         ? preferences.nickname
         : (authState.user?.name ?? '');
-    
+
     final controller = TextEditingController(text: current);
-    
+
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -640,9 +610,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   }
 
   void _openAiSettings() {
-    Navigator.of(context, rootNavigator: true).push(
-      MaterialPageRoute(builder: (context) => const AiSettingsPage()),
-    );
+    Navigator.of(
+      context,
+      rootNavigator: true,
+    ).push(MaterialPageRoute(builder: (context) => const AiSettingsPage()));
   }
 
   Future<void> _deleteAccount() async {
@@ -653,19 +624,39 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       builder: (ctx) => AlertDialog(
         backgroundColor: isDark ? const Color(0xFF1C1C1E) : Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('确认注销', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: oneKeepTextPrimary(ctx))),
+        title: Text(
+          '确认注销',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: oneKeepTextPrimary(ctx),
+          ),
+        ),
         content: Text(
           '注销后，您的所有数据（交易记录、分类、个人设置）将被永久删除且无法恢复。\n\n确定要注销账号吗？',
-          style: TextStyle(fontSize: 14, height: 1.5, color: oneKeepTextSecondary(ctx)),
+          style: TextStyle(
+            fontSize: 14,
+            height: 1.5,
+            color: oneKeepTextSecondary(ctx),
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text('取消', style: TextStyle(color: oneKeepTextSecondary(ctx))),
+            child: Text(
+              '取消',
+              style: TextStyle(color: oneKeepTextSecondary(ctx)),
+            ),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text('确认注销', style: const TextStyle(color: Color(0xFFFF3B30), fontWeight: FontWeight.w700)),
+            child: Text(
+              '确认注销',
+              style: const TextStyle(
+                color: Color(0xFFFF3B30),
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ),
         ],
       ),
@@ -677,15 +668,38 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       if (!mounted) return;
       ref.read(authProvider.notifier).logout();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('账号已注销')),
+      showOneKeepToast(
+        context,
+        message: '账号已注销',
+        type: OneKeepToastType.success,
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('注销失败：${ApiClient.readableError(e)}')),
+      showOneKeepToast(
+        context,
+        message: '注销失败：${ApiClient.readableError(e)}',
+        type: OneKeepToastType.error,
       );
     }
+  }
+
+  Future<void> _showAccountSheet() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.25),
+      builder: (_) => _AccountActionsSheet(
+        onLogout: () {
+          Navigator.of(context).pop();
+          ref.read(authProvider.notifier).logout();
+        },
+        onDeleteAccount: () {
+          Navigator.of(context).pop();
+          _deleteAccount();
+        },
+      ),
+    );
   }
 
   Future<void> _showExportSheet() async {
@@ -697,7 +711,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       builder: (_) => const ExportDataSheet(),
     );
   }
-
 }
 
 // 用户信息卡片 - 沉浸式头部设计
@@ -728,9 +741,11 @@ class _FinanceDashboardCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: isDark ? Colors.black.withValues(alpha: 0.45) : Colors.black.withValues(alpha: 0.07),
-            blurRadius: 32,
-            offset: const Offset(0, 12),
+            color: isDark
+                ? Colors.black.withValues(alpha: 0.16)
+                : Colors.black.withValues(alpha: 0.025),
+            blurRadius: 16,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
@@ -758,7 +773,9 @@ class _FinanceDashboardCard extends StatelessWidget {
                   width: 46,
                   height: 46,
                   decoration: BoxDecoration(
-                    color: AppColors.emerald.withValues(alpha: isDark ? 0.15 : 0.1),
+                    color: AppColors.emerald.withValues(
+                      alpha: isDark ? 0.15 : 0.1,
+                    ),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: const Icon(
@@ -788,7 +805,9 @@ class _FinanceDashboardCard extends StatelessWidget {
                       Text(
                         '本月支出',
                         style: TextStyle(
-                          color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF8E8E93),
+                          color: isDark
+                              ? const Color(0xFF8E8E93)
+                              : const Color(0xFF8E8E93),
                           fontSize: 11,
                           fontWeight: FontWeight.w500,
                           letterSpacing: 0.2,
@@ -805,7 +824,11 @@ class _FinanceDashboardCard extends StatelessWidget {
                               color: AppColors.expense.withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(7),
                             ),
-                            child: const Icon(Icons.arrow_upward_rounded, size: 13, color: AppColors.expense),
+                            child: const Icon(
+                              Icons.arrow_upward_rounded,
+                              size: 13,
+                              color: AppColors.expense,
+                            ),
                           ),
                           const SizedBox(width: 8),
                           Expanded(
@@ -814,7 +837,9 @@ class _FinanceDashboardCard extends StatelessWidget {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                color: isDark ? Colors.white : const Color(0xFF1D1D1F),
+                                color: isDark
+                                    ? Colors.white
+                                    : const Color(0xFF1D1D1F),
                                 fontSize: 16,
                                 fontWeight: FontWeight.w700,
                                 letterSpacing: -0.4,
@@ -837,7 +862,9 @@ class _FinanceDashboardCard extends StatelessWidget {
                       end: Alignment.bottomCenter,
                       colors: [
                         Colors.transparent,
-                        isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08),
+                        isDark
+                            ? Colors.white.withValues(alpha: 0.1)
+                            : Colors.black.withValues(alpha: 0.08),
                         Colors.transparent,
                       ],
                     ),
@@ -851,7 +878,9 @@ class _FinanceDashboardCard extends StatelessWidget {
                       Text(
                         '本月收入',
                         style: TextStyle(
-                          color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF8E8E93),
+                          color: isDark
+                              ? const Color(0xFF8E8E93)
+                              : const Color(0xFF8E8E93),
                           fontSize: 11,
                           fontWeight: FontWeight.w500,
                           letterSpacing: 0.2,
@@ -868,7 +897,11 @@ class _FinanceDashboardCard extends StatelessWidget {
                               color: AppColors.emerald.withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(7),
                             ),
-                            child: const Icon(Icons.arrow_downward_rounded, size: 13, color: AppColors.emerald),
+                            child: const Icon(
+                              Icons.arrow_downward_rounded,
+                              size: 13,
+                              color: AppColors.emerald,
+                            ),
                           ),
                           const SizedBox(width: 8),
                           Expanded(
@@ -877,7 +910,9 @@ class _FinanceDashboardCard extends StatelessWidget {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                color: isDark ? Colors.white : const Color(0xFF1D1D1F),
+                                color: isDark
+                                    ? Colors.white
+                                    : const Color(0xFF1D1D1F),
                                 fontSize: 16,
                                 fontWeight: FontWeight.w700,
                                 letterSpacing: -0.4,
@@ -930,14 +965,16 @@ class _FinanceItemModern extends StatelessWidget {
               decoration: BoxDecoration(
                 color: color.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(6),
-            ),
+              ),
               child: Icon(icon, size: 12, color: color),
             ),
             const SizedBox(width: 8),
             Text(
               label,
               style: TextStyle(
-                color: isDark ? const Color(0xFFA1A1AA) : const Color(0xFF8E8E93),
+                color: isDark
+                    ? const Color(0xFFA1A1AA)
+                    : const Color(0xFF8E8E93),
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
               ),
@@ -982,7 +1019,9 @@ class _FinanceMiniItem extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withValues(alpha: 0.04) : Colors.black.withValues(alpha: 0.025),
+        color: isDark
+            ? Colors.white.withValues(alpha: 0.04)
+            : Colors.black.withValues(alpha: 0.025),
         borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
@@ -1004,7 +1043,9 @@ class _FinanceMiniItem extends StatelessWidget {
                 Text(
                   label,
                   style: TextStyle(
-                    color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF8E8E93),
+                    color: isDark
+                        ? const Color(0xFF8E8E93)
+                        : const Color(0xFF8E8E93),
                     fontSize: 10,
                     fontWeight: FontWeight.w500,
                   ),
@@ -1039,6 +1080,7 @@ class _BentoGridMenu extends StatelessWidget {
   final VoidCallback onCategoryTap;
   final VoidCallback onAiTap;
   final VoidCallback onExportTap;
+  final VoidCallback onAccountTap;
 
   const _BentoGridMenu({
     required this.preferences,
@@ -1049,6 +1091,7 @@ class _BentoGridMenu extends StatelessWidget {
     required this.onCategoryTap,
     required this.onAiTap,
     required this.onExportTap,
+    required this.onAccountTap,
   });
 
   @override
@@ -1062,55 +1105,82 @@ class _BentoGridMenu extends StatelessWidget {
           children: [
             Expanded(
               flex: 1,
-              child: OneKeepBouncingCard(
-                onTap: onThemeTap,
-                child: _BentoBlock(
-                  height: 148,
-                  gradient: isLightMode 
-                      ? const LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [Color(0xFFFEF3C7), Color(0xFFFBBF24)],
-                        )
-                      : const LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [Color(0xFF3730A3), Color(0xFF1E1B4B)],
-                        ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          isLightMode ? Icons.wb_sunny_rounded : Icons.nightlight_round,
-                          size: 28,
-                          color: isLightMode ? const Color(0xFFD97706) : const Color(0xFFA5B4FC),
-                        ),
-                      ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+              child: Column(
+                children: [
+                  OneKeepBouncingCard(
+                    onTap: onThemeTap,
+                    child: _BentoBlock(
+                      height: 66,
+                      color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+                      child: Row(
                         children: [
-                          Text(
-                            isLightMode ? '明亮清晰' : '护眼省电',
-                            style: TextStyle(
-                              color: isLightMode ? const Color(0xFF92400E) : const Color(0xFFE0E7FF),
-                              fontSize: 18,
-                              fontWeight: FontWeight.w900,
-                              height: 1.2,
-                              letterSpacing: -0.5,
+                          Container(
+                            width: 38,
+                            height: 38,
+                            decoration: BoxDecoration(
+                              color:
+                                  (isLightMode
+                                          ? const Color(0xFFF59E0B)
+                                          : const Color(0xFF6366F1))
+                                      .withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(11),
+                            ),
+                            child: Icon(
+                              isLightMode
+                                  ? Icons.wb_sunny_rounded
+                                  : Icons.nightlight_round,
+                              color: isLightMode
+                                  ? const Color(0xFFF59E0B)
+                                  : const Color(0xFF6366F1),
+                              size: 18,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              isLightMode ? '明亮模式' : '深色模式',
+                              style: _bentoTitleStyle(isDark),
                             ),
                           ),
                         ],
-                      )
-                    ],
+                      ),
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 12),
+                  OneKeepBouncingCard(
+                    onTap: onAccountTap,
+                    child: _BentoBlock(
+                      height: 66,
+                      color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 38,
+                            height: 38,
+                            decoration: BoxDecoration(
+                              color: const Color(
+                                0xFFFF3B30,
+                              ).withValues(alpha: 0.09),
+                              borderRadius: BorderRadius.circular(11),
+                            ),
+                            child: const Icon(
+                              Icons.manage_accounts_rounded,
+                              color: Color(0xFFFF3B30),
+                              size: 18,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              '账号管理',
+                              style: _bentoTitleStyle(isDark),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(width: 12),
@@ -1132,12 +1202,19 @@ class _BentoGridMenu extends StatelessWidget {
                               color: AppColors.teal.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(11),
                             ),
-                            child: const Icon(Icons.grid_view_rounded, color: AppColors.teal, size: 18),
+                            child: const Icon(
+                              Icons.grid_view_rounded,
+                              color: AppColors.teal,
+                              size: 18,
+                            ),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
-                            child: Text('分类管理', style: _bentoTitleStyle(isDark)),
-                          )
+                            child: Text(
+                              '分类管理',
+                              style: _bentoTitleStyle(isDark),
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -1154,21 +1231,30 @@ class _BentoGridMenu extends StatelessWidget {
                             width: 38,
                             height: 38,
                             decoration: BoxDecoration(
-                              color: const Color(0xFF8B5CF6).withValues(alpha: 0.1),
+                              color: const Color(
+                                0xFF8B5CF6,
+                              ).withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(11),
                             ),
-                            child: const Icon(Icons.style_rounded, color: Color(0xFF8B5CF6), size: 18),
+                            child: const Icon(
+                              Icons.style_rounded,
+                              color: Color(0xFF8B5CF6),
+                              size: 18,
+                            ),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
-                            child: Text('卡片背景', style: _bentoTitleStyle(isDark)),
-                          )
+                            child: Text(
+                              '头部背景',
+                              style: _bentoTitleStyle(isDark),
+                            ),
+                          ),
                         ],
                       ),
                     ),
                   ),
                 ],
-              )
+              ),
             ),
           ],
         ),
@@ -1191,14 +1277,18 @@ class _BentoGridMenu extends StatelessWidget {
                             color: AppColors.emerald.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(11),
                           ),
-                          child: const Icon(Icons.smart_toy_rounded, color: AppColors.emerald, size: 18),
+                          child: const Icon(
+                            Icons.smart_toy_rounded,
+                            color: AppColors.emerald,
+                            size: 18,
+                          ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text('AI 设置', style: _bentoTitleStyle(isDark)),
                         ),
                       ],
-                    )
+                    ),
                   ),
                 ),
               ),
@@ -1215,17 +1305,23 @@ class _BentoGridMenu extends StatelessWidget {
                           width: 38,
                           height: 38,
                           decoration: BoxDecoration(
-                            color: const Color(0xFF6B7280).withValues(alpha: 0.08),
+                            color: const Color(
+                              0xFF6B7280,
+                            ).withValues(alpha: 0.08),
                             borderRadius: BorderRadius.circular(11),
                           ),
-                          child: const Icon(Icons.info_outline_rounded, color: Color(0xFF6B7280), size: 18),
+                          child: const Icon(
+                            Icons.info_outline_rounded,
+                            color: Color(0xFF6B7280),
+                            size: 18,
+                          ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text('关于系统', style: _bentoTitleStyle(isDark)),
                         ),
                       ],
-                    )
+                    ),
                   ),
                 ),
               ),
@@ -1248,7 +1344,11 @@ class _BentoGridMenu extends StatelessWidget {
                       color: const Color(0xFF0EA5E9).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(11),
                     ),
-                    child: const Icon(Icons.file_download_outlined, color: Color(0xFF0EA5E9), size: 18),
+                    child: const Icon(
+                      Icons.file_download_outlined,
+                      color: Color(0xFF0EA5E9),
+                      size: 18,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -1257,7 +1357,9 @@ class _BentoGridMenu extends StatelessWidget {
                   Icon(
                     Icons.chevron_right_rounded,
                     size: 20,
-                    color: isDark ? const Color(0xFF48484A) : const Color(0xFFD1D5DB),
+                    color: isDark
+                        ? const Color(0xFF48484A)
+                        : const Color(0xFFD1D5DB),
                   ),
                 ],
               ),
@@ -1279,7 +1381,9 @@ class _BentoGridMenu extends StatelessWidget {
 
   TextStyle _bentoTipStyle(bool isDark) {
     return TextStyle(
-      color: isDark ? const Color(0xFF8E8E93).withValues(alpha: 0.6) : const Color(0xFF8E8E93),
+      color: isDark
+          ? const Color(0xFF8E8E93).withValues(alpha: 0.6)
+          : const Color(0xFF8E8E93),
       fontSize: 12,
       fontWeight: FontWeight.w500,
     );
@@ -1298,14 +1402,8 @@ class _BentoBlock extends StatelessWidget {
   final Widget child;
   final double height;
   final Color? color;
-  final Gradient? gradient;
 
-  const _BentoBlock({
-    required this.child,
-    required this.height,
-    this.color,
-    this.gradient,
-  });
+  const _BentoBlock({required this.child, required this.height, this.color});
 
   @override
   Widget build(BuildContext context) {
@@ -1316,18 +1414,90 @@ class _BentoBlock extends StatelessWidget {
       padding: EdgeInsets.all(height <= 80 ? 14 : 20),
       decoration: BoxDecoration(
         color: color,
-        gradient: gradient,
         borderRadius: BorderRadius.circular(height <= 80 ? 20 : 28),
         boxShadow: [
           if (color != null)
             BoxShadow(
-              color: isDark ? Colors.black.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.04),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
+              color: isDark
+                  ? Colors.black.withValues(alpha: 0.06)
+                  : Colors.black.withValues(alpha: 0.02),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
             ),
         ],
       ),
       child: child,
+    );
+  }
+}
+
+class _AccountActionsSheet extends StatelessWidget {
+  final VoidCallback onLogout;
+  final VoidCallback onDeleteAccount;
+
+  const _AccountActionsSheet({
+    required this.onLogout,
+    required this.onDeleteAccount,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return OneKeepGlassSheet(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? const Color(0xFF3C3C3E)
+                      : const Color(0xFFD1D5DB),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              '账号管理',
+              style: TextStyle(
+                color: isDark ? Colors.white : const Color(0xFF18181B),
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.3,
+              ),
+            ),
+            const SizedBox(height: 18),
+            Row(
+              children: [
+                Expanded(
+                  child: _ActionCard(
+                    icon: Icons.power_settings_new_rounded,
+                    label: '退出登录',
+                    color: const Color(0xFFFF3B30),
+                    onTap: onLogout,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: _ActionCard(
+                    icon: Icons.delete_outline_rounded,
+                    label: '注销账号',
+                    color: const Color(0xFFDC2626),
+                    onTap: onDeleteAccount,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -1337,10 +1507,7 @@ class _NicknameSheet extends StatefulWidget {
   final TextEditingController controller;
   final ValueChanged<String> onSave;
 
-  const _NicknameSheet({
-    required this.controller,
-    required this.onSave,
-  });
+  const _NicknameSheet({required this.controller, required this.onSave});
 
   @override
   State<_NicknameSheet> createState() => _NicknameSheetState();
@@ -1374,13 +1541,17 @@ class _NicknameSheetState extends State<_NicknameSheet> {
                       width: 32,
                       height: 32,
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF2C2C2E) : const Color(0xFFF3F4F6),
+                        color: isDark
+                            ? const Color(0xFF2C2C2E)
+                            : const Color(0xFFF3F4F6),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(
                         Icons.close,
                         size: 18,
-                        color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF6B7280),
+                        color: isDark
+                            ? const Color(0xFF8E8E93)
+                            : const Color(0xFF6B7280),
                       ),
                     ),
                   ),
@@ -1401,7 +1572,10 @@ class _NicknameSheetState extends State<_NicknameSheet> {
                       Navigator.pop(context);
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFF2563EB),
                         borderRadius: BorderRadius.circular(8),
@@ -1430,15 +1604,22 @@ class _NicknameSheetState extends State<_NicknameSheet> {
                 decoration: InputDecoration(
                   hintText: '输入昵称',
                   hintStyle: TextStyle(
-                    color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF9CA3AF),
+                    color: isDark
+                        ? const Color(0xFF8E8E93)
+                        : const Color(0xFF9CA3AF),
                   ),
                   filled: true,
-                  fillColor: isDark ? const Color(0xFF2C2C2E) : const Color(0xFFF3F4F6),
+                  fillColor: isDark
+                      ? const Color(0xFF2C2C2E)
+                      : const Color(0xFFF3F4F6),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none,
                   ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
                 ),
               ),
             ],
@@ -1452,13 +1633,11 @@ class _NicknameSheetState extends State<_NicknameSheet> {
 class _AvatarStudioSheet extends ConsumerWidget {
   final int avatarIndex;
   final String? avatarImageData;
-  final ValueChanged<int> onSelectPreset;
   final ValueChanged<Uint8List> onSelectImage;
 
   const _AvatarStudioSheet({
     required this.avatarIndex,
     required this.avatarImageData,
-    required this.onSelectPreset,
     required this.onSelectImage,
   });
 
@@ -1466,7 +1645,9 @@ class _AvatarStudioSheet extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final preferences = ref.watch(preferencesProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final hasCustomImage = preferences.avatarImageData != null && preferences.avatarImageData!.isNotEmpty;
+    final hasCustomImage =
+        preferences.avatarImageData != null &&
+        preferences.avatarImageData!.isNotEmpty;
 
     return OneKeepGlassSheet(
       child: Padding(
@@ -1480,7 +1661,9 @@ class _AvatarStudioSheet extends ConsumerWidget {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF3C3C3E) : const Color(0xFFD1D5DB),
+                color: isDark
+                    ? const Color(0xFF3C3C3E)
+                    : const Color(0xFFD1D5DB),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -1493,34 +1676,32 @@ class _AvatarStudioSheet extends ConsumerWidget {
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: (hasCustomImage ? Colors.white : AppColors.teal).withValues(alpha: isDark ? 0.3 : 0.15),
-                    blurRadius: 32,
-                    offset: const Offset(0, 8),
-                  )
+                    color: (hasCustomImage ? Colors.white : AppColors.teal)
+                        .withValues(alpha: isDark ? 0.16 : 0.08),
+                    blurRadius: 18,
+                    offset: const Offset(0, 5),
+                  ),
                 ],
                 border: Border.all(
-                  color: isDark ? Colors.white.withValues(alpha: 0.2) : Colors.white,
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.2)
+                      : Colors.white,
                   width: 3,
                 ),
               ),
               child: ClipOval(
                 child: hasCustomImage
                     ? Image.memory(
-                        base64Decode(preferences.avatarImageData!.contains(',')
-                            ? preferences.avatarImageData!.substring(preferences.avatarImageData!.indexOf(',') + 1)
-                            : preferences.avatarImageData!),
+                        base64Decode(
+                          preferences.avatarImageData!.contains(',')
+                              ? preferences.avatarImageData!.substring(
+                                  preferences.avatarImageData!.indexOf(',') + 1,
+                                )
+                              : preferences.avatarImageData!,
+                        ),
                         fit: BoxFit.cover,
                       )
-                    : Container(
-                        color: isDark ? const Color(0xFF2C2C2E) : Colors.white,
-                        child: Center(
-                          child: Icon(
-                            oneKeepAvatarPresets[preferences.avatarIndex.clamp(0, oneKeepAvatarPresets.length - 1)].icon,
-                            size: 40,
-                            color: AppColors.teal,
-                          ),
-                        ),
-                      ),
+                    : Image.asset(_defaultAvatarAsset, fit: BoxFit.cover),
               ),
             ),
             const SizedBox(height: 24),
@@ -1533,7 +1714,7 @@ class _AvatarStudioSheet extends ConsumerWidget {
                 letterSpacing: 0.5,
               ),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 28),
             // 操作按钮
             Row(
               children: [
@@ -1566,10 +1747,14 @@ class _AvatarStudioSheet extends ConsumerWidget {
                       label: '重置为默认',
                       color: AppColors.expense,
                       onTap: () async {
-                        await ref.read(preferencesProvider.notifier).clearAvatarImageData();
+                        await ref
+                            .read(preferencesProvider.notifier)
+                            .clearAvatarImageData();
                         if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('已恢复默认头像')),
+                          showOneKeepToast(
+                            context,
+                            message: '已恢复默认头像',
+                            type: OneKeepToastType.success,
                           );
                           Navigator.of(context).pop();
                         }
@@ -1578,65 +1763,6 @@ class _AvatarStudioSheet extends ConsumerWidget {
                   ),
                 ],
               ],
-            ),
-            const SizedBox(height: 32),
-            // 预设头像矩阵
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                '探索基础风格',
-                style: TextStyle(
-                  color: isDark ? const Color(0xFFA1A1AA) : const Color(0xFF6B7280),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.5,
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              height: 72,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: oneKeepAvatarPresets.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 16),
-                itemBuilder: (context, index) {
-                  final selected = preferences.avatarImageData == null && preferences.avatarIndex == index;
-                  return OneKeepBouncingCard(
-                    onTap: () {
-                      onSelectPreset(index);
-                      if (context.mounted) Navigator.of(context).pop();
-                    },
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 250),
-                      curve: Curves.easeOutBack,
-                      width: 72,
-                      decoration: BoxDecoration(
-                        color: selected 
-                            ? const Color(0xFF2563EB).withValues(alpha: isDark ? 0.2 : 0.1) 
-                            : (isDark ? const Color(0xFF2C2C2E).withValues(alpha: 0.5) : Colors.white.withValues(alpha: 0.5)),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: selected ? const Color(0xFF2563EB) : Colors.transparent,
-                          width: 2,
-                        ),
-                      ),
-                      child: Center(
-                        child: AnimatedScale(
-                          scale: selected ? 1.15 : 1.0,
-                          duration: const Duration(milliseconds: 250),
-                          curve: Curves.easeOutBack,
-                          child: Icon(
-                            oneKeepAvatarPresets[index].icon,
-                            size: 28,
-                            color: selected ? const Color(0xFF2563EB) : AppColors.teal.withValues(alpha: 0.8),
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
             ),
           ],
         ),
@@ -1664,7 +1790,9 @@ class _BackgroundStudioSheet extends ConsumerWidget {
     Uint8List? previewBytes;
     if (preferences.profileBackgroundImageData != null) {
       final data = preferences.profileBackgroundImageData!;
-      final normalized = data.contains(',') ? data.substring(data.indexOf(',') + 1) : data;
+      final normalized = data.contains(',')
+          ? data.substring(data.indexOf(',') + 1)
+          : data;
       try {
         previewBytes = base64Decode(normalized);
       } catch (_) {
@@ -1684,14 +1812,16 @@ class _BackgroundStudioSheet extends ConsumerWidget {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF3C3C3E) : const Color(0xFFD1D5DB),
+                color: isDark
+                    ? const Color(0xFF3C3C3E)
+                    : const Color(0xFFD1D5DB),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
             const SizedBox(height: 32),
             // 沉浸式标题
             Text(
-              '更换背景图片',
+              '更换头部背景',
               style: TextStyle(
                 color: isDark ? Colors.white : const Color(0xFF18181B),
                 fontSize: 18,
@@ -1707,15 +1837,17 @@ class _BackgroundStudioSheet extends ConsumerWidget {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
-                  color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.1)
+                      : Colors.black.withValues(alpha: 0.05),
                   width: 1,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.08),
-                    blurRadius: 16,
-                    offset: const Offset(0, 8),
-                  )
+                    color: Colors.black.withValues(alpha: 0.035),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
                 ],
               ),
               child: ClipRRect(
@@ -1725,95 +1857,138 @@ class _BackgroundStudioSheet extends ConsumerWidget {
                   children: [
                     // Background Image
                     if (previewBytes != null)
-                      Image.memory(previewBytes, fit: BoxFit.cover, alignment: Alignment.topCenter)
+                      Image.memory(
+                        previewBytes,
+                        fit: BoxFit.cover,
+                        alignment: Alignment.topCenter,
+                      )
                     else
-                      Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: isDark
-                                ? [const Color(0xFF121214), const Color(0xFF1C1C1E)]
-                                : [const Color(0xFFE2E2E7), const Color(0xFFF2F2F7)],
-                          ),
-                        ),
+                      Image.asset(
+                        _profileBackgroundPresetAssets.first,
+                        fit: BoxFit.cover,
+                        alignment: Alignment.center,
                       ),
-                      
+
                     // Mock Gradient for Text Readability
                     Container(
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
                           colors: [
-                            Colors.transparent,
-                            Colors.black.withValues(alpha: 0.7),
+                            Colors.black.withValues(alpha: 0.26),
+                            Colors.black.withValues(alpha: 0.48),
                           ],
-                          stops: const [0.3, 1.0],
                         ),
                       ),
                     ),
 
-                    // Mini Avatar & Name
                     Positioned(
-                      left: 20, bottom: 24, right: 20,
+                      left: 20,
+                      right: 20,
+                      bottom: 22,
                       child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.end,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           Container(
-                            width: 36, height: 36,
+                            width: 42,
+                            height: 42,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white.withValues(alpha: 0.8), width: 1.5),
-                              boxShadow: const [
-                                BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 2))
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.85),
+                                width: 1.5,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.20),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 3),
+                                ),
                               ],
                             ),
                             child: ClipOval(
-                              child: preferences.avatarImageData != null && preferences.avatarImageData!.isNotEmpty
-                                ? Image.memory(
-                                    base64Decode(preferences.avatarImageData!.contains(',')
-                                        ? preferences.avatarImageData!.substring(preferences.avatarImageData!.indexOf(',') + 1)
-                                        : preferences.avatarImageData!),
-                                    fit: BoxFit.cover,
-                                  )
-                                : Container(
-                                    color: isDark ? const Color(0xFF2C2C2E) : Colors.white,
-                                    child: Center(
-                                      child: Icon(
-                                        oneKeepAvatarPresets[preferences.avatarIndex.clamp(0, oneKeepAvatarPresets.length - 1)].icon,
-                                        size: 20,
-                                        color: AppColors.teal,
-                                      ),
-                                    ),
-                                  ),
+                              child: Image.asset(
+                                _defaultAvatarAsset,
+                                fit: BoxFit.cover,
+                              ),
                             ),
                           ),
                           const SizedBox(width: 12),
-                          Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.only(bottom: 4),
-                              child: Text(
-                                preferences.nickname.isNotEmpty ? preferences.nickname : '厘清用户',
-                                style: const TextStyle(
-                                  color: Colors.white, 
-                                  fontSize: 16, 
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: -0.2,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                          const Expanded(
+                            child: Text(
+                              '厘清用户',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 17,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: -0.4,
                               ),
                             ),
-                          )
+                          ),
                         ],
                       ),
-                    )
+                    ),
                   ],
                 ),
               ),
             ),
             const SizedBox(height: 32),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                '预设背景',
+                style: TextStyle(
+                  color: isDark
+                      ? const Color(0xFFA1A1AA)
+                      : const Color(0xFF6B7280),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 74,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: _profileBackgroundPresetAssets.length,
+                separatorBuilder: (context, index) => const SizedBox(width: 12),
+                itemBuilder: (context, index) {
+                  final asset = _profileBackgroundPresetAssets[index];
+                  return OneKeepBouncingCard(
+                    onTap: () async {
+                      final data = await rootBundle.load(asset);
+                      onSelectImage(
+                        data.buffer.asUint8List(
+                          data.offsetInBytes,
+                          data.lengthInBytes,
+                        ),
+                      );
+                      if (context.mounted) Navigator.of(context).pop();
+                    },
+                    child: Container(
+                      width: 112,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.18),
+                          width: 1,
+                        ),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(18),
+                        child: Image.asset(asset, fit: BoxFit.cover),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 28),
             // 操作按钮
             Row(
               children: [
@@ -1846,7 +2021,9 @@ class _BackgroundStudioSheet extends ConsumerWidget {
                       label: '恢复极简纯净',
                       color: AppColors.expense,
                       onTap: () async {
-                        await ref.read(preferencesProvider.notifier).clearProfileBackgroundImageData();
+                        await ref
+                            .read(preferencesProvider.notifier)
+                            .clearProfileBackgroundImageData();
                         if (context.mounted) Navigator.of(context).pop();
                       },
                     ),
@@ -1886,14 +2063,16 @@ class _ActionCard extends StatelessWidget {
           color: isDark ? const Color(0xFF2C2C2E) : Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.04),
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.1)
+                : Colors.black.withValues(alpha: 0.04),
             width: 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.04),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
+              color: Colors.black.withValues(alpha: isDark ? 0.12 : 0.02),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
             ),
           ],
         ),
@@ -1912,7 +2091,9 @@ class _ActionCard extends StatelessWidget {
             Text(
               label,
               style: TextStyle(
-                color: isDark ? Colors.white.withValues(alpha: 0.95) : const Color(0xFF18181B),
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.95)
+                    : const Color(0xFF18181B),
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.2,
@@ -1941,8 +2122,8 @@ class OneKeepGlassSheet extends StatelessWidget {
         filter: ImageFilter.blur(sigmaX: 32, sigmaY: 32),
         child: Container(
           decoration: BoxDecoration(
-            color: isDark 
-                ? const Color(0xFF1C1C1E).withValues(alpha: 0.75) 
+            color: isDark
+                ? const Color(0xFF1C1C1E).withValues(alpha: 0.75)
                 : Colors.white.withValues(alpha: 0.8),
             border: Border(
               top: BorderSide(
@@ -1951,16 +2132,12 @@ class OneKeepGlassSheet extends StatelessWidget {
               ),
             ),
           ),
-          child: SafeArea(
-            top: false,
-            child: child,
-          ),
+          child: SafeArea(top: false, child: child),
         ),
       ),
     );
   }
 }
-
 
 class _ProfileHeaderDelegate extends SliverPersistentHeaderDelegate {
   final double totalExpense;
@@ -2005,20 +2182,26 @@ class _ProfileHeaderDelegate extends SliverPersistentHeaderDelegate {
   bool shouldRebuild(covariant _ProfileHeaderDelegate oldDelegate) => true;
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
     final t = (shrinkOffset / (maxExtent - minExtent)).clamp(0.0, 1.0);
-    
+
     // Layout Metrics
     const baseAvatarSize = 88.0;
     const minAvatarSize = 54.0;
-    final currentAvatarSize = baseAvatarSize - (baseAvatarSize - minAvatarSize) * t;
-    
+    final currentAvatarSize =
+        baseAvatarSize - (baseAvatarSize - minAvatarSize) * t;
+
     const baseFontSize = 28.0;
     const minFontSize = 20.0;
     final currentFontSize = baseFontSize - (baseFontSize - minFontSize) * t;
-    
-    final backgroundImageData = preferences.profileBackgroundImageData;
-    final hasBackground = backgroundImageData != null && backgroundImageData.isNotEmpty;
+
+    final profileSeed = _stableProfileSeed(authState);
+    final defaultBackgroundIndex =
+        profileSeed % _profileBackgroundPresetAssets.length;
 
     // The visible header height shrinks from maxExtent(500) to minExtent(140).
     // The BACKGROUND is always anchored at top=0, height=280.
@@ -2042,19 +2225,10 @@ class _ProfileHeaderDelegate extends SliverPersistentHeaderDelegate {
             children: [
               if (backgroundBytes != null)
                 Image.memory(backgroundBytes!, fit: BoxFit.cover)
-              else if (hasBackground)
-                const SizedBox.shrink()
               else
-                Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: isDark
-                          ? [const Color(0xFF121214), const Color(0xFF1C1C1E)]
-                          : [const Color(0xFFE2E2E7), const Color(0xFFF2F2F7)],
-                    ),
-                  ),
+                _DefaultProfileBackground(
+                  index: defaultBackgroundIndex,
+                  isDark: isDark,
                 ),
               Container(
                 decoration: BoxDecoration(
@@ -2062,11 +2236,10 @@ class _ProfileHeaderDelegate extends SliverPersistentHeaderDelegate {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      if (hasBackground) Colors.black.withValues(alpha: 0.0) else Colors.transparent,
-                      if (hasBackground) Colors.black.withValues(alpha: 0.55)
-                      else (isDark ? const Color(0xFF000000) : const Color(0xFFF2F2F7)),
+                      Colors.black.withValues(alpha: 0.0),
+                      Colors.black.withValues(alpha: 0.55),
                     ],
-                    stops: hasBackground ? const [0.4, 1.0] : null,
+                    stops: const [0.4, 1.0],
                   ),
                 ),
               ),
@@ -2079,140 +2252,98 @@ class _ProfileHeaderDelegate extends SliverPersistentHeaderDelegate {
           top: avatarTop,
           left: 20,
           right: 20,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                OneKeepBouncingCard(
-                  onTap: onAvatarTap,
-                  child: Hero(
-                    tag: 'profile_avatar',
-                    child: Container(
-                      width: currentAvatarSize,
-                      height: currentAvatarSize,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: (0.25 * (1 - t * 0.5)).clamp(0.0, 0.25)),
-                            blurRadius: 25 * (1 - t * 0.3),
-                            offset: Offset(0, 12 * (1 - t * 0.5)),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              OneKeepBouncingCard(
+                onTap: onAvatarTap,
+                child: Hero(
+                  tag: 'profile_avatar',
+                  child: Container(
+                    width: currentAvatarSize,
+                    height: currentAvatarSize,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(
+                            alpha: (0.25 * (1 - t * 0.5)).clamp(0.0, 0.25),
                           ),
-                          if (!isDark && !hasBackground)
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.05),
-                              blurRadius: 2,
-                              offset: const Offset(0, 1),
-                            ),
-                        ],
-                        border: Border.all(
-                          color: hasBackground 
-                              ? Colors.white.withValues(alpha: 0.9)
-                              : (isDark ? const Color(0xFF3C3C3E) : Colors.white),
-                          width: (3.5 - (1.5 * t)).clamp(1.0, 3.5),
+                          blurRadius: 25 * (1 - t * 0.3),
+                          offset: Offset(0, 12 * (1 - t * 0.5)),
                         ),
+                      ],
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.9),
+                        width: (3.5 - (1.5 * t)).clamp(1.0, 3.5),
                       ),
-                      child: ClipOval(
-                        child: avatarBytes != null
-                            ? Image.memory(
-                                avatarBytes!,
-                                fit: BoxFit.cover,
-                              )
-                            : (preferences.avatarImageData != null && preferences.avatarImageData!.isNotEmpty)
-                                ? const SizedBox.shrink()
-                                : Container(
-                                color: isDark ? const Color(0xFF2C2C2E) : Colors.white,
-                                child: Center(
-                                  child: Icon(
-                                    oneKeepAvatarPresets[preferences.avatarIndex.clamp(0, oneKeepAvatarPresets.length - 1)].icon,
-                                    size: currentAvatarSize * 0.45,
-                                    color: AppColors.teal,
-                                  ),
-                                ),
-                              ),
-                      ),
+                    ),
+                    child: ClipOval(
+                      child: avatarBytes != null
+                          ? Image.memory(avatarBytes!, fit: BoxFit.cover)
+                          : (preferences.avatarImageData != null &&
+                                preferences.avatarImageData!.isNotEmpty)
+                          ? const SizedBox.shrink()
+                          : Image.asset(_defaultAvatarAsset, fit: BoxFit.cover),
                     ),
                   ),
                 ),
-                SizedBox(width: (20 - (4 * t)).clamp(12.0, 20.0)),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      OneKeepBouncingCard(
-                        onTap: onNicknameTap,
-                        child: Row(
-                          children: [
-                            Flexible(
-                              child: Text(
-                                displayName,
-                                style: TextStyle(
-                                  color: (hasBackground || isDark ? Colors.white : const Color(0xFF1C1C1E)),
-                                  fontSize: currentFontSize,
-                                  fontWeight: FontWeight.w900,
-                                  letterSpacing: -0.8,
-                                  height: 1.1,
-                                  shadows: [
-                                    if (hasBackground)
-                                      Shadow(
-                                        color: Colors.black.withValues(alpha: (0.3 * (1-t)).clamp(0.0, 0.3)),
-                                        blurRadius: 10,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                  ],
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+              ),
+              SizedBox(width: (20 - (4 * t)).clamp(12.0, 20.0)),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    OneKeepBouncingCard(
+                      onTap: onNicknameTap,
+                      child: Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              displayName,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: currentFontSize,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: -0.8,
+                                height: 1.1,
+                                shadows: [
+                                  Shadow(
+                                    color: Colors.black.withValues(
+                                      alpha: (0.3 * (1 - t)).clamp(0.0, 0.3),
+                                    ),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      if (username.isNotEmpty)
-                        Opacity(
-                          opacity: (1 - t).clamp(0.0, 1.0),
-                          child: Padding(
-                            padding: const EdgeInsets.only(top: 8),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: (hasBackground || isDark ? Colors.white : Colors.black).withValues(alpha: 0.08),
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: (hasBackground || isDark ? Colors.white : Colors.black).withValues(alpha: 0.05),
-                                ),
-                              ),
-                              child: Text(
-                                '@$username',
-                                style: TextStyle(
-                                  color: (hasBackground || isDark ? Colors.white : const Color(0xFF1C1C1E)).withValues(alpha: 0.6),
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                        ),
-                    ],
-                  ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-          // Finance card sits on top of background, inside the Stack
-          Positioned(
-            top: 256, // backgroundHeight(280) - 24 overlap
-            left: 20,
-            right: 20,
-            child: _FinanceDashboardCard(
-              expense: totalExpense,
-              income: totalIncome,
-              balance: balance,
-              isLoading: isLoading,
-            ),
+        ),
+        // Finance card sits on top of background, inside the Stack
+        Positioned(
+          top: 256, // backgroundHeight(280) - 24 overlap
+          left: 20,
+          right: 20,
+          child: _FinanceDashboardCard(
+            expense: totalExpense,
+            income: totalIncome,
+            balance: balance,
+            isLoading: isLoading,
           ),
-        ],
+        ),
+      ],
     );
   }
 }

@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(find:*)",
-      "Bash(sort:*)"
+      "Bash(sort:*)",
+      "Bash(openssl s_client -connect liqing.lxhcoool.cn:443 -servername liqing.lxhcoool.cn)",
+      "Bash(openssl x509 -noout -subject -issuer -dates)"
     ]
   }
 }

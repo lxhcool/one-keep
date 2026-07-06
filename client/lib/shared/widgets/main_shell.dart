@@ -90,7 +90,7 @@ class _MainShellState extends ConsumerState<MainShell> {
                     color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 20,
                     offset: const Offset(0, -4),
-                  )
+                  ),
                 ],
               ),
               child: ClipRect(
@@ -98,12 +98,14 @@ class _MainShellState extends ConsumerState<MainShell> {
                   filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
                   child: Container(
                     decoration: BoxDecoration(
-                      color: isDark 
-                          ? AppColors.darkBg.withValues(alpha: 0.8) 
+                      color: isDark
+                          ? AppColors.darkBg.withValues(alpha: 0.8)
                           : AppColors.lightSurface.withValues(alpha: 0.85),
                       border: Border(
                         top: BorderSide(
-                          color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+                          color: isDark
+                              ? AppColors.darkBorder
+                              : AppColors.lightBorder,
                           width: 0.5,
                         ),
                       ),
@@ -111,7 +113,10 @@ class _MainShellState extends ConsumerState<MainShell> {
                     child: SafeArea(
                       top: false,
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 8,
+                        ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -157,10 +162,7 @@ class _MainShellState extends ConsumerState<MainShell> {
               ),
             ),
           ),
-          Positioned(
-            top: 0,
-            child: _buildFabItem(isDark),
-          ),
+          Positioned(top: 0, child: _buildFabItem(isDark)),
         ],
       ),
     );
@@ -177,37 +179,38 @@ class _MainShellState extends ConsumerState<MainShell> {
   }
 
   Widget _buildFabItem(bool isDark) {
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.lightImpact();
-        Navigator.of(context, rootNavigator: true).push(
-          MaterialPageRoute(builder: (_) => const ChatPage()),
-        );
-      },
-      onLongPress: () {
-        HapticFeedback.mediumImpact();
-        _showManualEntrySheet(context);
-      },
-      child: Container(
-        width: 64,
-        height: 64,
-        decoration: BoxDecoration(
-          color: AppColors.emerald,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.emerald.withValues(alpha: 0.38),
-              blurRadius: 16,
-              offset: const Offset(0, 4),
-            )
-          ],
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [AppColors.emeraldLight, AppColors.emerald],
+    return Tooltip(
+      message: '选择记账方式',
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.lightImpact();
+          _showAddMethodSheet(context);
+        },
+        onLongPress: () {
+          HapticFeedback.mediumImpact();
+          _showManualEntrySheet(context);
+        },
+        child: Container(
+          width: 64,
+          height: 64,
+          decoration: BoxDecoration(
+            color: AppColors.emerald,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.emerald.withValues(alpha: 0.28),
+                blurRadius: 14,
+                offset: const Offset(0, 4),
+              ),
+            ],
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [AppColors.emeraldLight, AppColors.emerald],
+            ),
           ),
+          child: const Icon(LucideIcons.plus, color: Colors.white, size: 30),
         ),
-        child: const Icon(LucideIcons.mic, color: Colors.white, size: 28),
       ),
     );
   }
@@ -259,7 +262,9 @@ class _AddMethodSheet extends ConsumerWidget {
                     width: 32,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.1),
+                      color: (isDark ? Colors.white : Colors.black).withValues(
+                        alpha: 0.1,
+                      ),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -275,7 +280,10 @@ class _AddMethodSheet extends ConsumerWidget {
                     },
                     child: Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 20),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 22,
+                        vertical: 20,
+                      ),
                       decoration: BoxDecoration(
                         gradient: prefs.hasAiConfigured
                             ? const LinearGradient(
@@ -286,18 +294,23 @@ class _AddMethodSheet extends ConsumerWidget {
                             : null,
                         color: prefs.hasAiConfigured
                             ? null
-                            : (isDark ? const Color(0xFF2C2C2E) : const Color(0xFFF3F4F6)),
+                            : (isDark
+                                  ? const Color(0xFF2C2C2E)
+                                  : const Color(0xFFF3F4F6)),
                         borderRadius: BorderRadius.circular(20),
                         border: prefs.hasAiConfigured
                             ? null
                             : Border.all(
-                                color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.06),
+                                color: (isDark ? Colors.white : Colors.black)
+                                    .withValues(alpha: 0.06),
                                 width: 0.5,
                               ),
                         boxShadow: prefs.hasAiConfigured
                             ? [
                                 BoxShadow(
-                                  color: AppColors.emerald.withValues(alpha: 0.28),
+                                  color: AppColors.emerald.withValues(
+                                    alpha: 0.28,
+                                  ),
                                   blurRadius: 20,
                                   offset: const Offset(0, 8),
                                 ),
@@ -374,7 +387,8 @@ class _AddMethodSheet extends ConsumerWidget {
                       Expanded(
                         child: Container(
                           height: 0.5,
-                          color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.07),
+                          color: (isDark ? Colors.white : Colors.black)
+                              .withValues(alpha: 0.07),
                         ),
                       ),
                       Padding(
@@ -391,7 +405,8 @@ class _AddMethodSheet extends ConsumerWidget {
                       Expanded(
                         child: Container(
                           height: 0.5,
-                          color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.07),
+                          color: (isDark ? Colors.white : Colors.black)
+                              .withValues(alpha: 0.07),
                         ),
                       ),
                     ],
@@ -413,14 +428,18 @@ class _AddMethodSheet extends ConsumerWidget {
                     },
                     child: Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 14,
+                      ),
                       decoration: BoxDecoration(
                         color: isDark
                             ? Colors.white.withValues(alpha: 0.05)
                             : Colors.black.withValues(alpha: 0.03),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.06),
+                          color: (isDark ? Colors.white : Colors.black)
+                              .withValues(alpha: 0.06),
                           width: 0.5,
                         ),
                       ),
@@ -549,15 +568,25 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet>
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final categories = ref.watch(categoriesProvider).valueOrNull ?? [];
-    
-    final selectedCategory = categories.where((c) => c.id == _selectedCategoryId).firstOrNull;
-    final categoryColor = selectedCategory != null 
-        ? oneKeepCategoryTone(colorHex: selectedCategory.color, categoryId: selectedCategory.id, categoryName: selectedCategory.name, categoryIcon: selectedCategory.icon)
+
+    final selectedCategory = categories
+        .where((c) => c.id == _selectedCategoryId)
+        .firstOrNull;
+    final categoryColor = selectedCategory != null
+        ? oneKeepCategoryTone(
+            colorHex: selectedCategory.color,
+            categoryId: selectedCategory.id,
+            categoryName: selectedCategory.name,
+            categoryIcon: selectedCategory.icon,
+          )
         : null;
-    
-    final accentColor = categoryColor ?? (_direction == 'expense' ? AppColors.expense : AppColors.emerald);
+
+    final accentColor =
+        categoryColor ??
+        (_direction == 'expense' ? AppColors.expense : AppColors.emerald);
     final currentAmountValue = _evaluateAmount();
-    final canSubmit = currentAmountValue > 0 && _selectedCategoryId != null && !_isSubmitting;
+    final canSubmit =
+        currentAmountValue > 0 && _selectedCategoryId != null && !_isSubmitting;
 
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
@@ -565,8 +594,8 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet>
         filter: ImageFilter.blur(sigmaX: 32, sigmaY: 32),
         child: Container(
           decoration: BoxDecoration(
-            color: isDark 
-                ? const Color(0xFF1C1C1E).withValues(alpha: 0.75) 
+            color: isDark
+                ? const Color(0xFF1C1C1E).withValues(alpha: 0.75)
                 : Colors.white.withValues(alpha: 0.8),
             border: Border(
               top: BorderSide(
@@ -587,7 +616,9 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet>
                     width: 32,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.1),
+                      color: (isDark ? Colors.white : Colors.black).withValues(
+                        alpha: 0.1,
+                      ),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -613,7 +644,9 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet>
                                     child: Text(
                                       '¥',
                                       style: oneKeepGrotesk(
-                                        color: accentColor.withValues(alpha: 0.5),
+                                        color: accentColor.withValues(
+                                          alpha: 0.5,
+                                        ),
                                         size: 26,
                                         weight: FontWeight.w600,
                                       ),
@@ -622,18 +655,30 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet>
                                   const SizedBox(width: 8),
                                   AnimatedSwitcher(
                                     duration: const Duration(milliseconds: 150),
-                                    transitionBuilder: (Widget child, Animation<double> animation) {
-                                      return FadeTransition(opacity: animation, child: child);
-                                    },
+                                    transitionBuilder:
+                                        (
+                                          Widget child,
+                                          Animation<double> animation,
+                                        ) {
+                                          return FadeTransition(
+                                            opacity: animation,
+                                            child: child,
+                                          );
+                                        },
                                     child: OneKeepGradientText(
-                                      key: ValueKey<String>(_amount.isEmpty ? '0.00' : _amount),
+                                      key: ValueKey<String>(
+                                        _amount.isEmpty ? '0.00' : _amount,
+                                      ),
                                       text: _amount.isEmpty ? '0.00' : _amount,
                                       gradient: LinearGradient(
                                         begin: Alignment.topCenter,
                                         end: Alignment.bottomCenter,
                                         colors: isDark
                                             ? [Colors.white, accentColor]
-                                            : [AppColors.lightTextPrimary, accentColor],
+                                            : [
+                                                AppColors.lightTextPrimary,
+                                                accentColor,
+                                              ],
                                       ),
                                       style: oneKeepGrotesk(
                                         color: oneKeepTextPrimary(context),
@@ -648,13 +693,21 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet>
                                     builder: (context, child) {
                                       return Opacity(
                                         opacity: _cursorController.value,
-                                        child: Container(
-                                          margin: const EdgeInsets.only(left: 4, bottom: 6),
-                                          width: 2.5,
-                                          height: 42,
-                                          decoration: BoxDecoration(
-                                            color: accentColor,
-                                            borderRadius: BorderRadius.circular(2),
+                                        child: SizedBox(
+                                          height: 56,
+                                          child: Center(
+                                            child: Container(
+                                              margin: const EdgeInsets.only(
+                                                left: 4,
+                                              ),
+                                              width: 2.5,
+                                              height: 48,
+                                              decoration: BoxDecoration(
+                                                color: accentColor,
+                                                borderRadius:
+                                                    BorderRadius.circular(2),
+                                              ),
+                                            ),
                                           ),
                                         ),
                                       );
@@ -667,7 +720,13 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet>
                                   right: 0,
                                   child: OneKeepBouncingCard(
                                     onTap: () => setState(() => _amount = ''),
-                                    child: Icon(Icons.backspace_rounded, size: 18, color: oneKeepTextTertiary(context).withValues(alpha: 0.4)),
+                                    child: Icon(
+                                      Icons.backspace_rounded,
+                                      size: 18,
+                                      color: oneKeepTextTertiary(
+                                        context,
+                                      ).withValues(alpha: 0.4),
+                                    ),
                                   ),
                                 ),
                             ],
@@ -679,7 +738,8 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet>
                           height: 38,
                           padding: const EdgeInsets.all(2),
                           decoration: BoxDecoration(
-                            color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.05),
+                            color: (isDark ? Colors.white : Colors.black)
+                                .withValues(alpha: 0.05),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Row(
@@ -691,7 +751,10 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet>
                                   activeColor: AppColors.expense,
                                   onTap: () {
                                     HapticFeedback.selectionClick();
-                                    setState(() { _direction = 'expense'; _selectedCategoryId = null; });
+                                    setState(() {
+                                      _direction = 'expense';
+                                      _selectedCategoryId = null;
+                                    });
                                   },
                                 ),
                               ),
@@ -702,7 +765,10 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet>
                                   activeColor: AppColors.emerald,
                                   onTap: () {
                                     HapticFeedback.selectionClick();
-                                    setState(() { _direction = 'income'; _selectedCategoryId = null; });
+                                    setState(() {
+                                      _direction = 'income';
+                                      _selectedCategoryId = null;
+                                    });
                                   },
                                 ),
                               ),
@@ -717,30 +783,47 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet>
                             Expanded(
                               child: Container(
                                 height: 44,
-                                padding: const EdgeInsets.symmetric(horizontal: 14),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: isDark ? const Color(0xFF2C2C2E) : Colors.white,
+                                  color: isDark
+                                      ? const Color(0xFF2C2C2E)
+                                      : Colors.white,
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
-                                    color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.05),
+                                    color:
+                                        (isDark ? Colors.white : Colors.black)
+                                            .withValues(alpha: 0.05),
                                     width: 0.5,
                                   ),
                                 ),
                                 child: Row(
                                   children: [
-                                    Icon(LucideIcons.pencil, size: 14, color: accentColor.withValues(alpha: 0.5)),
+                                    Icon(
+                                      LucideIcons.pencil,
+                                      size: 14,
+                                      color: accentColor.withValues(alpha: 0.5),
+                                    ),
                                     const SizedBox(width: 10),
                                     Expanded(
                                       child: TextField(
                                         onChanged: (v) => _remark = v,
-                                        style: oneKeepInter(color: oneKeepTextPrimary(context), size: 14),
+                                        style: oneKeepInter(
+                                          color: oneKeepTextPrimary(context),
+                                          size: 14,
+                                        ),
                                         decoration: const InputDecoration(
                                           hintText: '备注...',
-                                          hintStyle: TextStyle(fontSize: 14, color: Colors.grey),
+                                          hintStyle: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.grey,
+                                          ),
                                           border: InputBorder.none,
                                           enabledBorder: InputBorder.none,
                                           focusedBorder: InputBorder.none,
-                                          filled: false, // Ensure no grey background
+                                          filled:
+                                              false, // Ensure no grey background
                                           isDense: true,
                                           contentPadding: EdgeInsets.zero,
                                         ),
@@ -755,23 +838,37 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet>
                               onTap: _pickDate,
                               child: Container(
                                 height: 44,
-                                padding: const EdgeInsets.symmetric(horizontal: 14),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: isDark ? const Color(0xFF2C2C2E) : Colors.white,
+                                  color: isDark
+                                      ? const Color(0xFF2C2C2E)
+                                      : Colors.white,
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
-                                    color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.05),
+                                    color:
+                                        (isDark ? Colors.white : Colors.black)
+                                            .withValues(alpha: 0.05),
                                     width: 0.5,
                                   ),
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Icon(LucideIcons.calendar, size: 14, color: accentColor.withValues(alpha: 0.5)),
+                                    Icon(
+                                      LucideIcons.calendar,
+                                      size: 14,
+                                      color: accentColor.withValues(alpha: 0.5),
+                                    ),
                                     const SizedBox(width: 8),
                                     Text(
                                       DateFormat('MM-dd').format(_occurredAt),
-                                      style: oneKeepInter(color: oneKeepTextSecondary(context), size: 14, weight: FontWeight.w600),
+                                      style: oneKeepInter(
+                                        color: oneKeepTextSecondary(context),
+                                        size: 14,
+                                        weight: FontWeight.w600,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -787,14 +884,16 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet>
                   // Category Grid
                   Container(
                     constraints: const BoxConstraints(maxHeight: 240),
-                    child: ref.watch(categoriesProvider).when(
-                      data: (items) {
-                        _syncSelectedCategory(items);
-                        return _buildCategoryGrid(items);
-                      },
-                      loading: () => const SizedBox(),
-                      error: (error, _) => const SizedBox(),
-                    ),
+                    child: ref
+                        .watch(categoriesProvider)
+                        .when(
+                          data: (items) {
+                            _syncSelectedCategory(items);
+                            return _buildCategoryGrid(items);
+                          },
+                          loading: () => const SizedBox(),
+                          error: (error, _) => const SizedBox(),
+                        ),
                   ),
                   const SizedBox(height: 8),
 
@@ -835,7 +934,12 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet>
       itemBuilder: (context, index) {
         final item = filtered[index];
         final selected = item.id == _selectedCategoryId;
-        final tone = oneKeepCategoryTone(colorHex: item.color, categoryId: item.id, categoryName: item.name, categoryIcon: item.icon);
+        final tone = oneKeepCategoryTone(
+          colorHex: item.color,
+          categoryId: item.id,
+          categoryName: item.name,
+          categoryIcon: item.icon,
+        );
 
         return GestureDetector(
           onTap: () {
@@ -851,12 +955,23 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet>
                 width: 46,
                 height: 46,
                 decoration: BoxDecoration(
-                  color: selected ? tone.withValues(alpha: 0.2) : (isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05)),
+                  color: selected
+                      ? tone.withValues(alpha: 0.2)
+                      : (isDark
+                            ? Colors.white10
+                            : Colors.black.withValues(alpha: 0.05)),
                   borderRadius: BorderRadius.circular(14),
-                  border: selected ? Border.all(color: tone.withValues(alpha: 0.4), width: 1.5) : null,
+                  border: selected
+                      ? Border.all(
+                          color: tone.withValues(alpha: 0.4),
+                          width: 1.5,
+                        )
+                      : null,
                 ),
                 child: Image.asset(
-                  resolveCategoryIconAsset(item.icon.isNotEmpty ? item.icon : item.name),
+                  resolveCategoryIconAsset(
+                    item.icon.isNotEmpty ? item.icon : item.name,
+                  ),
                   width: 22,
                   height: 22,
                   errorBuilder: (_, __, ___) => Icon(
@@ -887,7 +1002,10 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet>
 
   void _syncSelectedCategory(List<Category> items) {
     final filtered = items.where((item) => item.type == _direction).toList();
-    if (filtered.isEmpty) { _selectedCategoryId = null; return; }
+    if (filtered.isEmpty) {
+      _selectedCategoryId = null;
+      return;
+    }
     if (!filtered.any((item) => item.id == _selectedCategoryId)) {
       _selectedCategoryId = filtered.first.id;
     }
@@ -926,13 +1044,17 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet>
         total += double.tryParse(p) ?? 0.0;
       }
       return total < 0 ? 0.0 : total;
-    } catch (_) { return 0.0; }
+    } catch (_) {
+      return 0.0;
+    }
   }
 
   void _onDelete() {
     if (_amount.isEmpty) return;
     HapticFeedback.lightImpact();
-    setState(() { _amount = _amount.substring(0, _amount.length - 1); });
+    setState(() {
+      _amount = _amount.substring(0, _amount.length - 1);
+    });
   }
 
   Future<void> _pickDate() async {
@@ -951,13 +1073,22 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet>
     if (amountValue <= 0 || _selectedCategoryId == null) return;
     setState(() => _isSubmitting = true);
     final categories = ref.read(categoriesProvider).valueOrNull;
-    final category = categories?.where((item) => item.id == _selectedCategoryId).firstOrNull;
+    final category = categories
+        ?.where((item) => item.id == _selectedCategoryId)
+        .firstOrNull;
     final title = _remark.isNotEmpty ? _remark : (category?.name ?? '未分类');
     try {
       final api = ref.read(apiClientProvider);
-      await api.dio.post('/api/transactions', data: {
-        'title': title, 'amount': amountValue, 'direction': _direction, 'categoryId': _selectedCategoryId, 'occurredAt': _occurredAt.toUtc().toIso8601String(),
-      });
+      await api.dio.post(
+        '/api/transactions',
+        data: {
+          'title': title,
+          'amount': amountValue,
+          'direction': _direction,
+          'categoryId': _selectedCategoryId,
+          'occurredAt': _occurredAt.toUtc().toIso8601String(),
+        },
+      );
       if (!mounted) return;
       Navigator.pop(context);
       ref.read(homeProvider.notifier).load();
@@ -965,7 +1096,11 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet>
     } catch (error) {
       setState(() => _isSubmitting = false);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ApiClient.readableError(error, fallback: '记账失败'))));
+      showOneKeepToast(
+        context,
+        message: ApiClient.readableError(error, fallback: '记账失败'),
+        type: OneKeepToastType.error,
+      );
     }
   }
 }
@@ -975,7 +1110,12 @@ class _QuickAddToggle extends StatelessWidget {
   final bool active;
   final Color activeColor;
   final VoidCallback onTap;
-  const _QuickAddToggle({required this.label, required this.active, required this.activeColor, required this.onTap});
+  const _QuickAddToggle({
+    required this.label,
+    required this.active,
+    required this.activeColor,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -986,18 +1126,24 @@ class _QuickAddToggle extends StatelessWidget {
         decoration: BoxDecoration(
           color: active ? activeColor : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
-          boxShadow: active ? [
-            BoxShadow(
-              color: activeColor.withValues(alpha: 0.2),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            )
-          ] : null,
+          boxShadow: active
+              ? [
+                  BoxShadow(
+                    color: activeColor.withValues(alpha: 0.2),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : null,
         ),
         alignment: Alignment.center,
         child: Text(
           label,
-          style: oneKeepManrope(color: active ? Colors.white : oneKeepTextSecondary(context), size: 13, weight: active ? FontWeight.w700 : FontWeight.w500),
+          style: oneKeepManrope(
+            color: active ? Colors.white : oneKeepTextSecondary(context),
+            size: 13,
+            weight: active ? FontWeight.w700 : FontWeight.w500,
+          ),
         ),
       ),
     );
@@ -1011,7 +1157,13 @@ class _NumericKeyboard extends StatelessWidget {
   final Color activeColor;
   final bool isSubmitting;
 
-  const _NumericKeyboard({required this.onKeyPress, required this.onDelete, required this.onConfirm, required this.activeColor, this.isSubmitting = false});
+  const _NumericKeyboard({
+    required this.onKeyPress,
+    required this.onDelete,
+    required this.onConfirm,
+    required this.activeColor,
+    this.isSubmitting = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1043,7 +1195,12 @@ class _NumericKeyboard extends StatelessWidget {
                 const SizedBox(height: 10),
                 _Key(label: '.', onTap: () => onKeyPress('.'), height: 49),
                 const SizedBox(height: 10),
-                _ConfirmKey(onTap: onConfirm, activeColor: activeColor, height: 108, isLoading: isSubmitting),
+                _ConfirmKey(
+                  onTap: onConfirm,
+                  activeColor: activeColor,
+                  height: 108,
+                  isLoading: isSubmitting,
+                ),
               ],
             ),
           ),
@@ -1077,12 +1234,18 @@ class _Key extends StatelessWidget {
   final double height;
   final bool isOperator;
 
-  const _Key({this.label, this.icon, required this.onTap, this.height = 48, this.isOperator = false});
+  const _Key({
+    this.label,
+    this.icon,
+    required this.onTap,
+    this.height = 48,
+    this.isOperator = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return OneKeepBouncingCard(
       onTap: onTap,
       child: Container(
@@ -1101,7 +1264,13 @@ class _Key extends StatelessWidget {
                     weight: isOperator ? FontWeight.w400 : FontWeight.w600,
                   ),
                 )
-              : Icon(icon, color: (icon == LucideIcons.delete) ? Colors.redAccent.withValues(alpha: 0.7) : oneKeepTextPrimary(context), size: 20),
+              : Icon(
+                  icon,
+                  color: (icon == LucideIcons.delete)
+                      ? Colors.redAccent.withValues(alpha: 0.7)
+                      : oneKeepTextPrimary(context),
+                  size: 20,
+                ),
         ),
       ),
     );
@@ -1114,7 +1283,12 @@ class _ConfirmKey extends StatelessWidget {
   final double height;
   final bool isLoading;
 
-  const _ConfirmKey({required this.onTap, required this.activeColor, required this.height, this.isLoading = false});
+  const _ConfirmKey({
+    required this.onTap,
+    required this.activeColor,
+    required this.height,
+    this.isLoading = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1127,32 +1301,41 @@ class _ConfirmKey extends StatelessWidget {
         decoration: BoxDecoration(
           color: enabled ? activeColor : activeColor.withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(14),
-          boxShadow: enabled ? [
-            BoxShadow(
-              color: activeColor.withValues(alpha: 0.3),
-              blurRadius: 15,
-              offset: const Offset(0, 6),
-            )
-          ] : null,
+          boxShadow: enabled
+              ? [
+                  BoxShadow(
+                    color: activeColor.withValues(alpha: 0.3),
+                    blurRadius: 15,
+                    offset: const Offset(0, 6),
+                  ),
+                ]
+              : null,
         ),
         child: Center(
-          child: isLoading 
-            ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-            : Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(LucideIcons.check, color: Colors.white, size: 28),
-                  const SizedBox(height: 6),
-                  Text(
-                    '确认',
-                    style: oneKeepManrope(
-                      color: Colors.white,
-                      size: 14,
-                      weight: FontWeight.w800,
-                    ),
+          child: isLoading
+              ? const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2.5,
                   ),
-                ],
-              ),
+                )
+              : Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(LucideIcons.check, color: Colors.white, size: 28),
+                    const SizedBox(height: 6),
+                    Text(
+                      '确认',
+                      style: oneKeepManrope(
+                        color: Colors.white,
+                        size: 14,
+                        weight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
         ),
       ),
     );

@@ -69,7 +69,11 @@ class _HomePalette {
       return _HomePalette(
         scaffoldBackground: AppColors.darkBg,
         overlayStyle: SystemUiOverlayStyle.light,
-        heroGradient: [_nordicDarkHeroTop, _nordicDarkHeroMid, _nordicDarkHeroBottom],
+        heroGradient: [
+          _nordicDarkHeroTop,
+          _nordicDarkHeroMid,
+          _nordicDarkHeroBottom,
+        ],
         heroGlowPrimary: AppColors.emerald.withValues(alpha: 0.15),
         heroGlowSecondary: AppColors.emerald.withValues(alpha: 0.1),
         heroGreetingText: AppColors.darkTextSecondary,
@@ -88,7 +92,8 @@ class _HomePalette {
 
     return _HomePalette(
       scaffoldBackground: AppColors.lightBg,
-      overlayStyle: SystemUiOverlayStyle.light, // Keep status bar light on dark header
+      overlayStyle:
+          SystemUiOverlayStyle.light, // Keep status bar light on dark header
       heroGradient: [_nordicHeroTop, _nordicHeroMid, _nordicHeroBottom],
       heroGlowPrimary: Colors.white.withValues(alpha: 0.1),
       heroGlowSecondary: Colors.white.withValues(alpha: 0.05),
@@ -172,7 +177,8 @@ class _HomePageState extends ConsumerState<HomePage> {
       }
     });
     final preferences = ref.watch(preferencesProvider);
-    final categories = ref.watch(categoriesProvider).valueOrNull ?? const <Category>[];
+    final categories =
+        ref.watch(categoriesProvider).valueOrNull ?? const <Category>[];
     final categoryColors = <String, String?>{
       for (final item in categories) item.id: item.color,
     };
@@ -219,7 +225,11 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-  Widget _buildStickyHeader(PreferencesState preferences, _HomePalette palette, HomeSummary? summary) {
+  Widget _buildStickyHeader(
+    PreferencesState preferences,
+    _HomePalette palette,
+    HomeSummary? summary,
+  ) {
     final topInset = MediaQuery.paddingOf(context).top;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     // progress: 0 = not scrolled, 1 = fully compact
@@ -227,9 +237,7 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     final userName = preferences.nickname.isNotEmpty
         ? preferences.nickname
-        : (summary?.user.name.isNotEmpty == true
-              ? summary!.user.name
-              : '厘清用户');
+        : (summary?.user.name.isNotEmpty == true ? summary!.user.name : '厘清用户');
 
     // Avatar: 54 → 36
     final avatarSize = 54.0 - 18.0 * progress;
@@ -239,9 +247,13 @@ class _HomePageState extends ConsumerState<HomePage> {
     // Name font: 22 → 16
     final nameFontSize = 22.0 - 6.0 * progress;
     // Greeting opacity: fade out in first 40%
-    final greetingOpacity = progress < 0.4 ? (1.0 - progress / 0.4).clamp(0.0, 1.0) : 0.0;
+    final greetingOpacity = progress < 0.4
+        ? (1.0 - progress / 0.4).clamp(0.0, 1.0)
+        : 0.0;
     // Greeting height factor
-    final greetingHeight = progress < 0.5 ? (1.0 - progress / 0.5).clamp(0.0, 1.0) : 0.0;
+    final greetingHeight = progress < 0.5
+        ? (1.0 - progress / 0.5).clamp(0.0, 1.0)
+        : 0.0;
     // Background opacity
     final bgOpacity = progress;
     // Blur
@@ -257,10 +269,9 @@ class _HomePageState extends ConsumerState<HomePage> {
           child: Container(
             padding: EdgeInsets.fromLTRB(16, topInset + 12, 16, 12),
             decoration: BoxDecoration(
-              color: (isDark
-                  ? const Color(0xFF0D1111)
-                  : const Color(0xFF065F46))
-                  .withValues(alpha: bgOpacity * 0.9),
+              color:
+                  (isDark ? const Color(0xFF0D1111) : const Color(0xFF065F46))
+                      .withValues(alpha: bgOpacity * 0.9),
               border: Border(
                 bottom: BorderSide(
                   color: Colors.white.withValues(alpha: 0.06 * progress),
@@ -293,7 +304,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                             child: Opacity(
                               opacity: greetingOpacity,
                               child: Padding(
-                                padding: EdgeInsets.only(bottom: 6.0 * greetingHeight),
+                                padding: EdgeInsets.only(
+                                  bottom: 6.0 * greetingHeight,
+                                ),
                                 child: Text(
                                   _greeting(),
                                   style: oneKeepManrope(
@@ -344,15 +357,14 @@ class _HomePageState extends ConsumerState<HomePage> {
     const balanceCardTopSpacing = 24.0;
     const balanceCardHeight = 196.0;
     const contentSpacing = 16.0;
-    final balanceCardTop = topInset + headerTopSpacing + avatarSize + balanceCardTopSpacing;
+    final balanceCardTop =
+        topInset + headerTopSpacing + avatarSize + balanceCardTopSpacing;
     final heroHeight = balanceCardTop + balanceCardHeight + contentSpacing;
     final userName = preferences.nickname.isNotEmpty
         ? preferences.nickname
         : (summary?.user.name.isNotEmpty == true
               ? summary!.user.name
-              : (authUserName?.isNotEmpty == true
-                    ? authUserName!
-                    : '厘清用户'));
+              : (authUserName?.isNotEmpty == true ? authUserName! : '厘清用户'));
     return SizedBox(
       height: heroHeight,
       child: Stack(
@@ -409,7 +421,12 @@ class _HomePageState extends ConsumerState<HomePage> {
                   Align(
                     alignment: Alignment.topCenter,
                     child: Padding(
-                        padding: EdgeInsets.fromLTRB(16, topInset + headerTopSpacing, 16, 0),
+                      padding: EdgeInsets.fromLTRB(
+                        16,
+                        topInset + headerTopSpacing,
+                        16,
+                        0,
+                      ),
                       // Invisible spacer — actual header is in outer Stack overlay
                       child: SizedBox(height: avatarSize),
                     ),
@@ -436,7 +453,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   Widget _buildHeroBalanceCard(HomeSummary summary) {
     final palette = _HomePalette.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
@@ -612,9 +629,14 @@ class _HomePageState extends ConsumerState<HomePage> {
             GestureDetector(
               onTap: () => context.go('/bills'),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
                 decoration: BoxDecoration(
-                  color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.05)
+                      : Colors.black.withValues(alpha: 0.03),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -657,10 +679,13 @@ class _HomePageState extends ConsumerState<HomePage> {
               for (int i = 0; i < items.length; i++)
                 _HomeTransactionRow(
                   transaction: items[i],
-                  categoryColor: categoryColors[items[i].categoryId] ?? items[i].categoryColor,
+                  categoryColor:
+                      categoryColors[items[i].categoryId] ??
+                      items[i].categoryColor,
                   onTap: () => _showTransactionSheet(
                     items[i],
-                    categoryColors[items[i].categoryId] ?? items[i].categoryColor,
+                    categoryColors[items[i].categoryId] ??
+                        items[i].categoryColor,
                   ),
                   isEven: i.isEven,
                 ),
@@ -670,7 +695,10 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-  Future<void> _showTransactionSheet(Transaction tx, String? categoryColor) async {
+  Future<void> _showTransactionSheet(
+    Transaction tx,
+    String? categoryColor,
+  ) async {
     final action = await showModalBottomSheet<_TransactionDetailAction>(
       context: context,
       backgroundColor: Colors.transparent,
@@ -710,15 +738,17 @@ class _HomePageState extends ConsumerState<HomePage> {
       ref.read(billsProvider.notifier).load();
       ref.read(statsProvider.notifier).load();
       if (!mounted) return;
-      ScaffoldMessenger.of(
+      showOneKeepToast(
         context,
-      ).showSnackBar(const SnackBar(content: Text('记账已更新')));
+        message: '记账已更新',
+        type: OneKeepToastType.success,
+      );
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(ApiClient.readableError(error, fallback: '更新失败')),
-        ),
+      showOneKeepToast(
+        context,
+        message: ApiClient.readableError(error, fallback: '更新失败'),
+        type: OneKeepToastType.error,
       );
     }
   }
@@ -782,15 +812,17 @@ class _HomePageState extends ConsumerState<HomePage> {
       ref.read(billsProvider.notifier).load();
       ref.read(statsProvider.notifier).load();
       if (!mounted) return;
-      ScaffoldMessenger.of(
+      showOneKeepToast(
         context,
-      ).showSnackBar(const SnackBar(content: Text('记账已删除')));
+        message: '记账已删除',
+        type: OneKeepToastType.success,
+      );
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(ApiClient.readableError(error, fallback: '删除失败')),
-        ),
+      showOneKeepToast(
+        context,
+        message: ApiClient.readableError(error, fallback: '删除失败'),
+        type: OneKeepToastType.error,
       );
     }
   }
@@ -908,7 +940,9 @@ class _HomeTransactionRow extends StatelessWidget {
         ? (isDark ? const Color(0xFFFF6B6B) : const Color(0xFFE84545))
         : AppColors.emerald;
     final rowColor = isEven
-        ? (isDark ? Colors.white.withValues(alpha: 0.03) : Colors.black.withValues(alpha: 0.02))
+        ? (isDark
+              ? Colors.white.withValues(alpha: 0.03)
+              : Colors.black.withValues(alpha: 0.02))
         : Colors.transparent;
 
     return OneKeepBouncingCard(
@@ -998,8 +1032,8 @@ class _HomeTransactionDetailSheet extends StatelessWidget {
         filter: ImageFilter.blur(sigmaX: 32, sigmaY: 32),
         child: Container(
           decoration: BoxDecoration(
-            color: isDark 
-                ? const Color(0xFF1C1C1E).withValues(alpha: 0.75) 
+            color: isDark
+                ? const Color(0xFF1C1C1E).withValues(alpha: 0.75)
                 : Colors.white.withValues(alpha: 0.8),
             border: Border(
               top: BorderSide(
@@ -1022,7 +1056,8 @@ class _HomeTransactionDetailSheet extends StatelessWidget {
                       width: 32,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.1),
+                        color: (isDark ? Colors.white : Colors.black)
+                            .withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -1076,15 +1111,18 @@ class _HomeTransactionDetailSheet extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 28),
-                  
+
                   // Detail Info Block
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.04),
+                      color: (isDark ? Colors.white : Colors.black).withValues(
+                        alpha: 0.04,
+                      ),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.05),
+                        color: (isDark ? Colors.white : Colors.black)
+                            .withValues(alpha: 0.05),
                         width: 0.5,
                       ),
                     ),
@@ -1117,7 +1155,7 @@ class _HomeTransactionDetailSheet extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 32),
-                  
+
                   Row(
                     children: [
                       Expanded(
@@ -1125,7 +1163,9 @@ class _HomeTransactionDetailSheet extends StatelessWidget {
                           label: '编辑',
                           icon: LucideIcons.edit3,
                           tone: AppColors.emerald,
-                          onTap: () => Navigator.of(context).pop(_TransactionDetailAction.edit),
+                          onTap: () => Navigator.of(
+                            context,
+                          ).pop(_TransactionDetailAction.edit),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -1134,7 +1174,9 @@ class _HomeTransactionDetailSheet extends StatelessWidget {
                           label: '删除',
                           icon: LucideIcons.trash2,
                           tone: AppColors.rose,
-                          onTap: () => Navigator.of(context).pop(_TransactionDetailAction.delete),
+                          onTap: () => Navigator.of(
+                            context,
+                          ).pop(_TransactionDetailAction.delete),
                         ),
                       ),
                     ],
@@ -1154,7 +1196,11 @@ class _DetailRow extends StatelessWidget {
   final String value;
   final bool isDark;
 
-  const _DetailRow({required this.label, required this.value, required this.isDark});
+  const _DetailRow({
+    required this.label,
+    required this.value,
+    required this.isDark,
+  });
 
   @override
   Widget build(BuildContext context) {

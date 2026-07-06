@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/providers/preferences_provider.dart';
 import '../../core/theme/app_colors.dart';
+import '../../shared/widgets/onekeep_ui.dart';
 
 class AiSettingsPage extends ConsumerStatefulWidget {
   const AiSettingsPage({super.key});
@@ -29,12 +30,22 @@ class _AiSettingsPageState extends ConsumerState<AiSettingsPage> {
   // 预设 API 地址
   static const _presets = [
     ('OpenAI 官方', 'https://api.openai.com/v1', 'gpt-4o-mini'),
-    ('硅基流动', 'https://api.siliconflow.cn/v1', 'Qwen/Qwen3-Omni-30B-A3B-Instruct'),
+    (
+      '硅基流动',
+      'https://api.siliconflow.cn/v1',
+      'Qwen/Qwen3-Omni-30B-A3B-Instruct',
+    ),
     ('DeepSeek', 'https://api.deepseek.com/v1', 'deepseek-v4-flash'),
     ('Moonshot', 'https://api.moonshot.cn/v1', 'moonshot-v1-8k'),
     ('GLM (智谱)', 'https://open.bigmodel.cn/api/paas/v4', 'glm-4-flash'),
     ('通义千问', 'https://dashscope.aliyuncs.com/compatible-mode/v1', 'qwen-turbo'),
   ];
+
+  static bool _supportsVoiceTranscription(String baseUrl) {
+    final normalized = baseUrl.toLowerCase();
+    if (normalized.contains('deepseek.com')) return false;
+    return true;
+  }
 
   @override
   void initState() {
@@ -150,6 +161,11 @@ class _AiSettingsPageState extends ConsumerState<AiSettingsPage> {
 
   Widget _buildStatusCard(bool isDark, PreferencesState prefs) {
     final configured = prefs.hasAiConfigured;
+    final supportsVoice =
+        configured && _supportsVoiceTranscription(prefs.aiApiBaseUrl);
+    final statusText = configured
+        ? (supportsVoice ? '聊天和语音转写可用' : '聊天可用，语音需切换支持转写的服务')
+        : '配置后可使用 AI 聊天记账';
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -188,8 +204,14 @@ class _AiSettingsPageState extends ConsumerState<AiSettingsPage> {
               borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(
-              configured ? Icons.smart_toy_rounded : Icons.psychology_outlined,
-              color: configured ? Colors.white : (isDark ? Colors.white60 : const Color(0xFF64748B)),
+              configured
+                  ? (supportsVoice
+                        ? Icons.smart_toy_rounded
+                        : Icons.record_voice_over_rounded)
+                  : Icons.psychology_outlined,
+              color: configured
+                  ? Colors.white
+                  : (isDark ? Colors.white60 : const Color(0xFF64748B)),
               size: 26,
             ),
           ),
@@ -201,18 +223,20 @@ class _AiSettingsPageState extends ConsumerState<AiSettingsPage> {
                 Text(
                   configured ? 'AI 服务已配置' : '尚未配置 AI 服务',
                   style: TextStyle(
-                    color: configured ? Colors.white : (isDark ? Colors.white60 : const Color(0xFF64748B)),
+                    color: configured
+                        ? Colors.white
+                        : (isDark ? Colors.white60 : const Color(0xFF64748B)),
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  configured
-                      ? '聊天记账功能已就绪'
-                      : '配置后可使用 AI 聊天记账',
+                  statusText,
                   style: TextStyle(
-                    color: configured ? Colors.white.withValues(alpha: 0.8) : (isDark ? Colors.white38 : const Color(0xFF94A3B8)),
+                    color: configured
+                        ? Colors.white.withValues(alpha: 0.8)
+                        : (isDark ? Colors.white38 : const Color(0xFF94A3B8)),
                     fontSize: 13,
                   ),
                 ),
@@ -220,7 +244,13 @@ class _AiSettingsPageState extends ConsumerState<AiSettingsPage> {
             ),
           ),
           if (configured)
-            Icon(Icons.check_circle_rounded, color: Colors.white.withValues(alpha: 0.9), size: 24),
+            Icon(
+              supportsVoice
+                  ? Icons.check_circle_rounded
+                  : Icons.info_outline_rounded,
+              color: Colors.white.withValues(alpha: 0.9),
+              size: 24,
+            ),
         ],
       ),
     );
@@ -263,10 +293,16 @@ class _AiSettingsPageState extends ConsumerState<AiSettingsPage> {
                   decoration: BoxDecoration(
                     color: isSelected
                         ? AppColors.emerald.withValues(alpha: 0.15)
-                        : isDark ? AppColors.darkSurface : Colors.white,
+                        : isDark
+                        ? AppColors.darkSurface
+                        : Colors.white,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: isSelected ? AppColors.emerald : (isDark ? AppColors.darkBorder : AppColors.lightBorder),
+                      color: isSelected
+                          ? AppColors.emerald
+                          : (isDark
+                                ? AppColors.darkBorder
+                                : AppColors.lightBorder),
                       width: isSelected ? 1.5 : 0.5,
                     ),
                   ),
@@ -276,9 +312,13 @@ class _AiSettingsPageState extends ConsumerState<AiSettingsPage> {
                     style: TextStyle(
                       color: isSelected
                           ? AppColors.emerald
-                          : isDark ? Colors.white70 : const Color(0xFF374151),
+                          : isDark
+                          ? Colors.white70
+                          : const Color(0xFF374151),
                       fontSize: 13,
-                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                      fontWeight: isSelected
+                          ? FontWeight.w700
+                          : FontWeight.w500,
                     ),
                   ),
                 ),
@@ -308,7 +348,9 @@ class _AiSettingsPageState extends ConsumerState<AiSettingsPage> {
             color: Colors.transparent,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: isDark ? AppColors.darkBorder : AppColors.lightBorder.withValues(alpha: 0.4),
+              color: isDark
+                  ? AppColors.darkBorder
+                  : AppColors.lightBorder.withValues(alpha: 0.4),
               width: 0.8,
             ),
           ),
@@ -331,7 +373,10 @@ class _AiSettingsPageState extends ConsumerState<AiSettingsPage> {
                 size: 20,
               ),
               border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 14,
+              ),
             ),
             onChanged: (_) => setState(() {}),
           ),
@@ -358,7 +403,9 @@ class _AiSettingsPageState extends ConsumerState<AiSettingsPage> {
             color: Colors.transparent,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: isDark ? AppColors.darkBorder : AppColors.lightBorder.withValues(alpha: 0.4),
+              color: isDark
+                  ? AppColors.darkBorder
+                  : AppColors.lightBorder.withValues(alpha: 0.4),
               width: 0.8,
             ),
           ),
@@ -383,13 +430,18 @@ class _AiSettingsPageState extends ConsumerState<AiSettingsPage> {
               suffixIcon: GestureDetector(
                 onTap: () => setState(() => _obscureApiKey = !_obscureApiKey),
                 child: Icon(
-                  _obscureApiKey ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                  _obscureApiKey
+                      ? Icons.visibility_off_rounded
+                      : Icons.visibility_rounded,
                   color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
                   size: 20,
                 ),
               ),
               border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 14,
+              ),
             ),
             onChanged: (_) => setState(() {}),
           ),
@@ -407,7 +459,8 @@ class _AiSettingsPageState extends ConsumerState<AiSettingsPage> {
   }
 
   Widget _buildModelNameField(bool isDark) {
-    final canFetch = _baseUrlController.text.trim().isNotEmpty &&
+    final canFetch =
+        _baseUrlController.text.trim().isNotEmpty &&
         _apiKeyController.text.trim().isNotEmpty;
 
     return Column(
@@ -428,7 +481,10 @@ class _AiSettingsPageState extends ConsumerState<AiSettingsPage> {
               GestureDetector(
                 onTap: _fetchModels,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.emerald.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
@@ -440,8 +496,10 @@ class _AiSettingsPageState extends ConsumerState<AiSettingsPage> {
                           ? SizedBox(
                               width: 14,
                               height: 14,
-                              child:
-                                  CircularProgressIndicator(strokeWidth: 1.5, color: AppColors.emerald),
+                              child: CircularProgressIndicator(
+                                strokeWidth: 1.5,
+                                color: AppColors.emerald,
+                              ),
                             )
                           : Icon(
                               Icons.sync_rounded,
@@ -490,7 +548,9 @@ class _AiSettingsPageState extends ConsumerState<AiSettingsPage> {
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: isDark ? AppColors.darkBorder : AppColors.lightBorder.withValues(alpha: 0.4),
+          color: isDark
+              ? AppColors.darkBorder
+              : AppColors.lightBorder.withValues(alpha: 0.4),
           width: 0.8,
         ),
       ),
@@ -512,7 +572,10 @@ class _AiSettingsPageState extends ConsumerState<AiSettingsPage> {
             size: 20,
           ),
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 14,
+          ),
         ),
         onChanged: (_) => setState(() {}),
       ),
@@ -570,7 +633,10 @@ class _AiSettingsPageState extends ConsumerState<AiSettingsPage> {
     setState(() => _isLoadingModels = true);
 
     try {
-      var baseUrl = _baseUrlController.text.trim().replaceAll(RegExp(r'/+$'), '');
+      var baseUrl = _baseUrlController.text.trim().replaceAll(
+        RegExp(r'/+$'),
+        '',
+      );
       if (baseUrl.endsWith('/v1')) {
         baseUrl = baseUrl.substring(0, baseUrl.length - 3);
       }
@@ -600,7 +666,8 @@ class _AiSettingsPageState extends ConsumerState<AiSettingsPage> {
         _availableModels = ids.toList()..sort();
 
         // 自动选中第一个（如果当前为空）且高亮提示
-        if (_modelNameController.text.trim().isEmpty && _availableModels.isNotEmpty) {
+        if (_modelNameController.text.trim().isEmpty &&
+            _availableModels.isNotEmpty) {
           // 不自动填充，让用户自己选
         }
       } else {
@@ -611,16 +678,13 @@ class _AiSettingsPageState extends ConsumerState<AiSettingsPage> {
           ? '获取失败（HTTP ${e.response?.statusCode}）'
           : '连接失败：${e.message?.split('\n').first ?? "网络错误"}';
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(msg), behavior: SnackBarBehavior.floating),
-      );
+      showOneKeepToast(context, message: msg, type: OneKeepToastType.error);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('获取模型列表失败：${e.toString().split("\n").first}'),
-          behavior: SnackBarBehavior.floating,
-        ),
+      showOneKeepToast(
+        context,
+        message: '获取模型列表失败：${e.toString().split("\n").first}',
+        type: OneKeepToastType.error,
       );
     } finally {
       setState(() => _isLoadingModels = false);
@@ -664,7 +728,9 @@ class _AiSettingsPageState extends ConsumerState<AiSettingsPage> {
       child: Row(
         children: [
           Icon(
-            isSuccess ? Icons.check_circle_rounded : Icons.error_outline_rounded,
+            isSuccess
+                ? Icons.check_circle_rounded
+                : Icons.error_outline_rounded,
             color: isSuccess ? AppColors.emerald : AppColors.expense,
             size: 20,
           ),
@@ -685,8 +751,11 @@ class _AiSettingsPageState extends ConsumerState<AiSettingsPage> {
   }
 
   Widget _buildActions(bool isDark, PreferencesState prefs) {
-    final hasInput = _baseUrlController.text.trim().isNotEmpty && _apiKeyController.text.trim().isNotEmpty;
-    final hasChanged = _baseUrlController.text.trim() != prefs.aiApiBaseUrl ||
+    final hasInput =
+        _baseUrlController.text.trim().isNotEmpty &&
+        _apiKeyController.text.trim().isNotEmpty;
+    final hasChanged =
+        _baseUrlController.text.trim() != prefs.aiApiBaseUrl ||
         _apiKeyController.text.trim() != prefs.aiApiKey ||
         _modelNameController.text.trim() != prefs.aiModelName;
 
@@ -721,7 +790,9 @@ class _AiSettingsPageState extends ConsumerState<AiSettingsPage> {
               onPressed: _isTesting ? null : _testConnection,
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.emerald,
-                side: BorderSide(color: AppColors.emerald.withValues(alpha: 0.4)),
+                side: BorderSide(
+                  color: AppColors.emerald.withValues(alpha: 0.4),
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
                 ),
@@ -730,11 +801,17 @@ class _AiSettingsPageState extends ConsumerState<AiSettingsPage> {
                   ? const SizedBox(
                       width: 20,
                       height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.emerald),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.emerald,
+                      ),
                     )
                   : const Text(
                       '测试连接',
-                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
             ),
           ),
@@ -766,11 +843,10 @@ class _AiSettingsPageState extends ConsumerState<AiSettingsPage> {
     await ref.read(preferencesProvider.notifier).setAiModelName(modelName);
 
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('AI 服务配置已保存'),
-        behavior: SnackBarBehavior.floating,
-      ),
+    showOneKeepToast(
+      context,
+      message: 'AI 服务配置已保存',
+      type: OneKeepToastType.success,
     );
   }
 
@@ -834,7 +910,9 @@ class _AiSettingsPageState extends ConsumerState<AiSettingsPage> {
           content: Text(
             '确定清除已保存的 API 地址和 Key？',
             style: TextStyle(
-              color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+              color: isDark
+                  ? AppColors.darkTextSecondary
+                  : AppColors.lightTextSecondary,
               fontSize: 14,
             ),
           ),
@@ -844,7 +922,9 @@ class _AiSettingsPageState extends ConsumerState<AiSettingsPage> {
               child: Text(
                 '取消',
                 style: TextStyle(
-                  color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                  color: isDark
+                      ? AppColors.darkTextSecondary
+                      : AppColors.lightTextSecondary,
                 ),
               ),
             ),
@@ -852,7 +932,10 @@ class _AiSettingsPageState extends ConsumerState<AiSettingsPage> {
               onPressed: () => Navigator.of(dialogContext).pop(true),
               child: Text(
                 '清除',
-                style: TextStyle(color: AppColors.expense, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  color: AppColors.expense,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ],
@@ -922,8 +1005,9 @@ class _ModelPickerSheetState extends State<_ModelPickerSheet> {
         filter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
         child: Container(
           decoration: BoxDecoration(
-            color:
-                isDark ? const Color(0xFF1C1C1E).withValues(alpha: 0.85) : Colors.white.withValues(alpha: 0.88),
+            color: isDark
+                ? const Color(0xFF1C1C1E).withValues(alpha: 0.85)
+                : Colors.white.withValues(alpha: 0.88),
           ),
           constraints: BoxConstraints(
             maxHeight: MediaQuery.of(context).size.height * 0.65,
@@ -938,7 +1022,9 @@ class _ModelPickerSheetState extends State<_ModelPickerSheet> {
                   width: 32,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.1),
+                    color: (isDark ? Colors.white : Colors.black).withValues(
+                      alpha: 0.1,
+                    ),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -951,7 +1037,9 @@ class _ModelPickerSheetState extends State<_ModelPickerSheet> {
                     Text(
                       '选择模型',
                       style: TextStyle(
-                        color: isDark ? Colors.white : AppColors.lightTextPrimary,
+                        color: isDark
+                            ? Colors.white
+                            : AppColors.lightTextPrimary,
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
                       ),
@@ -960,7 +1048,9 @@ class _ModelPickerSheetState extends State<_ModelPickerSheet> {
                     Text(
                       '${items.length} 个可用',
                       style: TextStyle(
-                        color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
+                        color: isDark
+                            ? Colors.white38
+                            : const Color(0xFF94A3B8),
                         fontSize: 13,
                       ),
                     ),
@@ -969,11 +1059,16 @@ class _ModelPickerSheetState extends State<_ModelPickerSheet> {
               ),
               // 搜索框
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 6,
+                ),
                 child: Container(
                   height: 42,
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF2C2C2E) : const Color(0xFFF1F5F9),
+                    color: isDark
+                        ? const Color(0xFF2C2C2E)
+                        : const Color(0xFFF1F5F9),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: TextField(
@@ -986,13 +1081,17 @@ class _ModelPickerSheetState extends State<_ModelPickerSheet> {
                     decoration: InputDecoration(
                       hintText: '搜索模型...',
                       hintStyle: TextStyle(
-                        color: isDark ? Colors.white24 : const Color(0xFF94A3B8),
+                        color: isDark
+                            ? Colors.white24
+                            : const Color(0xFF94A3B8),
                         fontSize: 13,
                       ),
                       prefixIcon: Icon(
                         Icons.search_rounded,
                         size: 18,
-                        color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
+                        color: isDark
+                            ? Colors.white38
+                            : const Color(0xFF94A3B8),
                       ),
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(vertical: 10),
@@ -1007,7 +1106,11 @@ class _ModelPickerSheetState extends State<_ModelPickerSheet> {
                         padding: const EdgeInsets.all(40),
                         child: Text(
                           '无匹配的模型',
-                          style: TextStyle(color: isDark ? Colors.white38 : const Color(0xFF94A3B8)),
+                          style: TextStyle(
+                            color: isDark
+                                ? Colors.white38
+                                : const Color(0xFF94A3B8),
+                          ),
                         ),
                       )
                     : ListView.builder(
@@ -1020,7 +1123,10 @@ class _ModelPickerSheetState extends State<_ModelPickerSheet> {
                             onTap: () => widget.onSelect(model),
                             behavior: HitTestBehavior.opaque,
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 13),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 13,
+                              ),
                               decoration: BoxDecoration(
                                 color: isSelected
                                     ? AppColors.emerald.withValues(alpha: 0.08)
@@ -1029,9 +1135,15 @@ class _ModelPickerSheetState extends State<_ModelPickerSheet> {
                               child: Row(
                                 children: [
                                   Icon(
-                                    isSelected ? Icons.check_circle_rounded : Icons.circle_outlined,
+                                    isSelected
+                                        ? Icons.check_circle_rounded
+                                        : Icons.circle_outlined,
                                     size: 22,
-                                    color: isSelected ? AppColors.emerald : (isDark ? Colors.white24 : const Color(0xFFCBD5E1)),
+                                    color: isSelected
+                                        ? AppColors.emerald
+                                        : (isDark
+                                              ? Colors.white24
+                                              : const Color(0xFFCBD5E1)),
                                   ),
                                   const SizedBox(width: 12),
                                   Expanded(
@@ -1040,18 +1152,29 @@ class _ModelPickerSheetState extends State<_ModelPickerSheet> {
                                       style: TextStyle(
                                         color: isSelected
                                             ? AppColors.emerald
-                                            : (isDark ? Colors.white.withValues(alpha: 0.87) : AppColors.lightTextPrimary),
+                                            : (isDark
+                                                  ? Colors.white.withValues(
+                                                      alpha: 0.87,
+                                                    )
+                                                  : AppColors.lightTextPrimary),
                                         fontSize: 15,
-                                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                                        fontWeight: isSelected
+                                            ? FontWeight.w600
+                                            : FontWeight.w500,
                                       ),
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
                                   if (isSelected)
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 2,
+                                      ),
                                       decoration: BoxDecoration(
-                                        color: AppColors.emerald.withValues(alpha: 0.1),
+                                        color: AppColors.emerald.withValues(
+                                          alpha: 0.1,
+                                        ),
                                         borderRadius: BorderRadius.circular(6),
                                       ),
                                       child: const Text(
