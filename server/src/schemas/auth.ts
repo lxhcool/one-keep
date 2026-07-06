@@ -13,6 +13,7 @@ export const registerSchema = {
       email: { type: "string", format: "email" },
       password: { type: "string", minLength: 6 },
       displayName: { type: "string", minLength: 1, maxLength: 20 },
+      code: { type: "string", minLength: 6, maxLength: 6, pattern: "^[0-9]{6}$" },
     },
   },
 } as const;

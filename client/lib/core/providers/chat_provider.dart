@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/providers/api_provider.dart';
 import '../../core/providers/data_providers.dart';
 import '../../core/providers/preferences_provider.dart';
+import '../../core/services/ai_endpoint_utils.dart';
 import '../../shared/models/models.dart';
 
 /// 聊天消息模型
@@ -301,15 +302,9 @@ $categoryList
 5. 如果无法理解用户的意图，reply 中说明，transactions 设为空数组
 6. 只输出纯 JSON，不要输出思考过程，不要用markdown代码块包裹''';
 
-      var baseUrl = prefs.aiApiBaseUrl.replaceAll(RegExp(r'/+$'), '');
-      // 如果 baseUrl 以 /v1 结尾，去掉后统一拼接
-      if (baseUrl.endsWith('/v1')) {
-        baseUrl = baseUrl.substring(0, baseUrl.length - 3);
-      }
-
       final dio = Dio();
       final response = await dio.post(
-        '$baseUrl/v1/chat/completions',
+        aiChatCompletionsUrl(prefs.aiApiBaseUrl),
         data: {
           'model': modelName,
           'messages': [

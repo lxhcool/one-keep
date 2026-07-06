@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:dio/dio.dart';
 
+import 'ai_endpoint_utils.dart';
+
 /// AI 服务 - 封装 OpenAI 兼容 API 的聊天补全调用
 class AiService {
   final String baseUrl;
@@ -18,11 +20,7 @@ class AiService {
   Stream<String> chatStream({
     required List<Map<String, String>> messages,
   }) async* {
-    var base = baseUrl.replaceAll(RegExp(r'/+$'), '');
-    if (base.endsWith('/v1')) {
-      base = base.substring(0, base.length - 3);
-    }
-    final url = '$base/v1/chat/completions';
+    final url = aiChatCompletionsUrl(baseUrl);
     final dio = Dio();
     dio.options.headers = {
       'Authorization': 'Bearer $apiKey',

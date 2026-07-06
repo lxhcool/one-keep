@@ -452,7 +452,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../network/api_client.dart';
 
-const _defaultApiBaseUrl = 'https://onekeep.lxhcoool.cn';
+const _defaultApiBaseUrl = 'https://liqing.eatdesk.net';
 const _localApiBaseUrl = 'http://192.168.10.231:3002';
 
 final apiClientProvider = Provider<ApiClient>((ref) {
@@ -1909,7 +1909,7 @@ export default fp(async function corePlugins(app: FastifyInstance) {
   await app.register(cors, {
     origin: isDev
       ? true
-      : (process.env.CORS_ORIGIN || "https://onekeep.lxhcoool.cn").split(","),
+      : (process.env.CORS_ORIGIN || "https://liqing.eatdesk.net").split(","),
   });
 
   // JWT — 生产环境必须设置 JWT_SECRET
@@ -2155,7 +2155,7 @@ export default async function authRoutes(app: FastifyInstance) {
         const { Resend } = await import("resend");
         const resend = new Resend(resendKey);
         const result = await resend.emails.send({
-          from: process.env.RESEND_FROM || "厘清 <noreply@lxhcoool.cn>",
+          from: process.env.RESEND_FROM || "厘清 <noreply@eatdesk.net>",
           to: normalizedEmail,
           subject: "您的厘清验证码",
           html: `<div style="font-family: sans-serif; padding: 24px;">

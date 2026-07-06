@@ -15,15 +15,16 @@ final routerProvider = Provider<GoRouter>((ref) {
   final authStatus = ref.watch(authProvider.select((state) => state.status));
 
   return GoRouter(
-    initialLocation: '/home',
     redirect: (context, state) {
       final isAuth = authStatus == AuthStatus.authenticated;
       final isAuthRoute = state.matchedLocation.startsWith('/auth');
+      final isRootRoute = state.matchedLocation == '/';
       final isLegalRoute =
           state.matchedLocation == '/legal/privacy' ||
           state.matchedLocation == '/legal/terms' ||
           state.matchedLocation == '/about';
 
+      if (isRootRoute) return '/home';
       if (authStatus == AuthStatus.unknown) return null;
       if (!isAuth && !isAuthRoute && !isLegalRoute) return '/auth/login';
       if (isAuth && isAuthRoute) return '/home';

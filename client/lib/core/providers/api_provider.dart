@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../network/api_client.dart';
 
-const _defaultApiBaseUrl = 'https://liqing.lxhcoool.cn';
+const _defaultApiBaseUrl = 'https://liqing.eatdesk.net';
 const _localApiBaseUrl = 'http://192.168.10.231:3002';
 
 final apiClientProvider = Provider<ApiClient>((ref) {

@@ -1,8 +1,8 @@
 name: liqing
-description: "厘清 — 极简智能记账应用"
+description: "厘清 — 极简个人记账应用"
 publish_to: 'none'
 
-version: 1.0.0+1
+version: 1.0.0+8
 
 environment:
   sdk: ^3.10.7
@@ -23,7 +23,7 @@ dependencies:
   # google_fonts: 已移除，字体已打包到 assets/fonts
   shimmer: ^3.0.0
   image_picker: ^1.1.2
-  speech_to_text: ^7.0.0
+  speech_to_text: 7.3.0
   permission_handler: ^11.3.0
   record: ^6.0.0
   path_provider: ^2.1.5

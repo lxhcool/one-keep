@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
+import '../../core/config/feature_flags.dart';
 import '../../core/network/api_client.dart';
 import '../../core/providers/api_provider.dart';
 import '../../core/providers/data_providers.dart';
@@ -180,16 +181,22 @@ class _MainShellState extends ConsumerState<MainShell> {
 
   Widget _buildFabItem(bool isDark) {
     return Tooltip(
-      message: '选择记账方式',
+      message: FeatureFlags.aiFeaturesEnabled ? '选择记账方式' : '手动记账',
       child: GestureDetector(
         onTap: () {
           HapticFeedback.lightImpact();
-          _showAddMethodSheet(context);
+          if (FeatureFlags.aiFeaturesEnabled) {
+            _showAddMethodSheet(context);
+          } else {
+            _showManualEntrySheet(context);
+          }
         },
-        onLongPress: () {
-          HapticFeedback.mediumImpact();
-          _showManualEntrySheet(context);
-        },
+        onLongPress: FeatureFlags.aiFeaturesEnabled
+            ? () {
+                HapticFeedback.mediumImpact();
+                _showManualEntrySheet(context);
+              }
+            : null,
         child: Container(
           width: 64,
           height: 64,

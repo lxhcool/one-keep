@@ -1,11 +1,11 @@
 {
-    "name": "liqing",
-    "short_name": "liqing",
+    "name": "厘清",
+    "short_name": "厘清",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#f7f4ef",
+    "theme_color": "#1f7a5a",
+    "description": "厘清是一款简单清楚的个人记账应用。",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

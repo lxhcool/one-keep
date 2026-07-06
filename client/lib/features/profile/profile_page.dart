@@ -8,8 +8,6 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'category_settings_page.dart';
-import 'ai_settings_page.dart';
-import 'export_data_page.dart';
 import '../../core/providers/api_provider.dart';
 import '../../core/network/api_client.dart';
 import '../../core/providers/auth_provider.dart';
@@ -220,11 +218,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                               .setThemeMode(newMode);
                         },
                         onBackgroundTap: _showBackgroundStudio,
-                        onAvatarTap: _showAvatarStudio,
-                        onNicknameTap: _showNicknameSheet,
                         onCategoryTap: _openCategorySettings,
-                        onAiTap: _openAiSettings,
-                        onExportTap: _showExportSheet,
                         onAccountTap: _showAccountSheet,
                       ),
                       const SizedBox(height: 28),
@@ -609,13 +603,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     );
   }
 
-  void _openAiSettings() {
-    Navigator.of(
-      context,
-      rootNavigator: true,
-    ).push(MaterialPageRoute(builder: (context) => const AiSettingsPage()));
-  }
-
   Future<void> _deleteAccount() async {
     HapticFeedback.heavyImpact();
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -699,16 +686,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           _deleteAccount();
         },
       ),
-    );
-  }
-
-  Future<void> _showExportSheet() async {
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      barrierColor: Colors.black.withValues(alpha: 0.25),
-      builder: (_) => const ExportDataSheet(),
     );
   }
 }
@@ -1075,22 +1052,14 @@ class _BentoGridMenu extends StatelessWidget {
   final dynamic preferences;
   final VoidCallback onThemeTap;
   final VoidCallback onBackgroundTap;
-  final VoidCallback onAvatarTap;
-  final VoidCallback onNicknameTap;
   final VoidCallback onCategoryTap;
-  final VoidCallback onAiTap;
-  final VoidCallback onExportTap;
   final VoidCallback onAccountTap;
 
   const _BentoGridMenu({
     required this.preferences,
     required this.onThemeTap,
     required this.onBackgroundTap,
-    required this.onAvatarTap,
-    required this.onNicknameTap,
     required this.onCategoryTap,
-    required this.onAiTap,
-    required this.onExportTap,
     required this.onAccountTap,
   });
 
@@ -1101,270 +1070,51 @@ class _BentoGridMenu extends StatelessWidget {
 
     return Column(
       children: [
-        Row(
-          children: [
-            Expanded(
-              flex: 1,
-              child: Column(
-                children: [
-                  OneKeepBouncingCard(
-                    onTap: onThemeTap,
-                    child: _BentoBlock(
-                      height: 66,
-                      color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 38,
-                            height: 38,
-                            decoration: BoxDecoration(
-                              color:
-                                  (isLightMode
-                                          ? const Color(0xFFF59E0B)
-                                          : const Color(0xFF6366F1))
-                                      .withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(11),
-                            ),
-                            child: Icon(
-                              isLightMode
-                                  ? Icons.wb_sunny_rounded
-                                  : Icons.nightlight_round,
-                              color: isLightMode
-                                  ? const Color(0xFFF59E0B)
-                                  : const Color(0xFF6366F1),
-                              size: 18,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              isLightMode ? '明亮模式' : '深色模式',
-                              style: _bentoTitleStyle(isDark),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  OneKeepBouncingCard(
-                    onTap: onAccountTap,
-                    child: _BentoBlock(
-                      height: 66,
-                      color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 38,
-                            height: 38,
-                            decoration: BoxDecoration(
-                              color: const Color(
-                                0xFFFF3B30,
-                              ).withValues(alpha: 0.09),
-                              borderRadius: BorderRadius.circular(11),
-                            ),
-                            child: const Icon(
-                              Icons.manage_accounts_rounded,
-                              color: Color(0xFFFF3B30),
-                              size: 18,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              '账号管理',
-                              style: _bentoTitleStyle(isDark),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              flex: 1,
-              child: Column(
-                children: [
-                  OneKeepBouncingCard(
-                    onTap: onCategoryTap,
-                    child: _BentoBlock(
-                      height: 66,
-                      color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 38,
-                            height: 38,
-                            decoration: BoxDecoration(
-                              color: AppColors.teal.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(11),
-                            ),
-                            child: const Icon(
-                              Icons.grid_view_rounded,
-                              color: AppColors.teal,
-                              size: 18,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              '分类管理',
-                              style: _bentoTitleStyle(isDark),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  OneKeepBouncingCard(
-                    onTap: onBackgroundTap,
-                    child: _BentoBlock(
-                      height: 66,
-                      color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 38,
-                            height: 38,
-                            decoration: BoxDecoration(
-                              color: const Color(
-                                0xFF8B5CF6,
-                              ).withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(11),
-                            ),
-                            child: const Icon(
-                              Icons.style_rounded,
-                              color: Color(0xFF8B5CF6),
-                              size: 18,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              '头部背景',
-                              style: _bentoTitleStyle(isDark),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+        _BentoMenuItem(
+          title: '头部背景',
+          icon: Icons.style_rounded,
+          iconColor: const Color(0xFF8B5CF6),
+          isDark: isDark,
+          onTap: onBackgroundTap,
+          titleStyle: _bentoTitleStyle(isDark),
         ),
-        Padding(
-          padding: const EdgeInsets.only(top: 12),
-          child: Row(
-            children: [
-              Expanded(
-                child: OneKeepBouncingCard(
-                  onTap: onAiTap,
-                  child: _BentoBlock(
-                    height: 66,
-                    color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 38,
-                          height: 38,
-                          decoration: BoxDecoration(
-                            color: AppColors.emerald.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(11),
-                          ),
-                          child: const Icon(
-                            Icons.smart_toy_rounded,
-                            color: AppColors.emerald,
-                            size: 18,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text('AI 设置', style: _bentoTitleStyle(isDark)),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: OneKeepBouncingCard(
-                  onTap: () => context.push('/about'),
-                  child: _BentoBlock(
-                    height: 66,
-                    color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 38,
-                          height: 38,
-                          decoration: BoxDecoration(
-                            color: const Color(
-                              0xFF6B7280,
-                            ).withValues(alpha: 0.08),
-                            borderRadius: BorderRadius.circular(11),
-                          ),
-                          child: const Icon(
-                            Icons.info_outline_rounded,
-                            color: Color(0xFF6B7280),
-                            size: 18,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text('关于系统', style: _bentoTitleStyle(isDark)),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
+        const SizedBox(height: 12),
+        _BentoMenuItem(
+          title: '深色模式',
+          icon: isLightMode ? Icons.wb_sunny_rounded : Icons.nightlight_round,
+          iconColor: isLightMode
+              ? const Color(0xFFF59E0B)
+              : const Color(0xFF6366F1),
+          isDark: isDark,
+          onTap: onThemeTap,
+          titleStyle: _bentoTitleStyle(isDark),
         ),
-        Padding(
-          padding: const EdgeInsets.only(top: 12),
-          child: OneKeepBouncingCard(
-            onTap: onExportTap,
-            child: _BentoBlock(
-              height: 66,
-              color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
-              child: Row(
-                children: [
-                  Container(
-                    width: 38,
-                    height: 38,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF0EA5E9).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(11),
-                    ),
-                    child: const Icon(
-                      Icons.file_download_outlined,
-                      color: Color(0xFF0EA5E9),
-                      size: 18,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text('数据导出', style: _bentoTitleStyle(isDark)),
-                  ),
-                  Icon(
-                    Icons.chevron_right_rounded,
-                    size: 20,
-                    color: isDark
-                        ? const Color(0xFF48484A)
-                        : const Color(0xFFD1D5DB),
-                  ),
-                ],
-              ),
-            ),
-          ),
+        const SizedBox(height: 12),
+        _BentoMenuItem(
+          title: '分类管理',
+          icon: Icons.grid_view_rounded,
+          iconColor: AppColors.teal,
+          isDark: isDark,
+          onTap: onCategoryTap,
+          titleStyle: _bentoTitleStyle(isDark),
+        ),
+        const SizedBox(height: 12),
+        _BentoMenuItem(
+          title: '账号管理',
+          icon: Icons.manage_accounts_rounded,
+          iconColor: const Color(0xFFFF3B30),
+          isDark: isDark,
+          onTap: onAccountTap,
+          titleStyle: _bentoTitleStyle(isDark),
+        ),
+        const SizedBox(height: 12),
+        _BentoMenuItem(
+          title: '关于系统',
+          icon: Icons.info_outline_rounded,
+          iconColor: const Color(0xFF6B7280),
+          isDark: isDark,
+          onTap: () => context.push('/about'),
+          titleStyle: _bentoTitleStyle(isDark),
         ),
       ],
     );
@@ -1394,6 +1144,55 @@ class _BentoGridMenu extends StatelessWidget {
       color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF6B7280),
       fontSize: 14,
       fontWeight: FontWeight.w600,
+    );
+  }
+}
+
+class _BentoMenuItem extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final Color iconColor;
+  final bool isDark;
+  final VoidCallback onTap;
+  final TextStyle titleStyle;
+
+  const _BentoMenuItem({
+    required this.title,
+    required this.icon,
+    required this.iconColor,
+    required this.isDark,
+    required this.onTap,
+    required this.titleStyle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return OneKeepBouncingCard(
+      onTap: onTap,
+      child: _BentoBlock(
+        height: 66,
+        color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+        child: Row(
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: iconColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(11),
+              ),
+              child: Icon(icon, color: iconColor, size: 18),
+            ),
+            const SizedBox(width: 12),
+            Expanded(child: Text(title, style: titleStyle)),
+            Icon(
+              Icons.chevron_right_rounded,
+              size: 20,
+              color: isDark ? const Color(0xFF48484A) : const Color(0xFFD1D5DB),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

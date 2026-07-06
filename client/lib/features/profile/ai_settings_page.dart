@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/providers/preferences_provider.dart';
+import '../../core/services/ai_endpoint_utils.dart';
 import '../../core/theme/app_colors.dart';
 import '../../shared/widgets/onekeep_ui.dart';
 
@@ -286,6 +287,7 @@ class _AiSettingsPageState extends ConsumerState<AiSettingsPage> {
                 onTap: () {
                   _baseUrlController.text = url;
                   _modelNameController.text = model;
+                  _availableModels = [];
                   setState(() {});
                 },
                 child: Container(
@@ -379,6 +381,7 @@ class _AiSettingsPageState extends ConsumerState<AiSettingsPage> {
               ),
             ),
             onChanged: (_) => setState(() {}),
+            onSubmitted: (_) => setState(() => _availableModels = []),
           ),
         ),
       ],
@@ -530,7 +533,7 @@ class _AiSettingsPageState extends ConsumerState<AiSettingsPage> {
         const SizedBox(height: 8),
         Text(
           _availableModels.isEmpty
-              ? '选择预设服务时自动填充，也可手动输入或点击"获取模型"'
+              ? '可手动输入任意兼容接口的模型名；获取模型仅适用于提供模型列表的服务'
               : '已获取 ${_availableModels.length} 个可用模型',
           style: TextStyle(
             color: isDark ? Colors.white24 : const Color(0xFF94A3B8),
@@ -633,18 +636,11 @@ class _AiSettingsPageState extends ConsumerState<AiSettingsPage> {
     setState(() => _isLoadingModels = true);
 
     try {
-      var baseUrl = _baseUrlController.text.trim().replaceAll(
-        RegExp(r'/+$'),
-        '',
-      );
-      if (baseUrl.endsWith('/v1')) {
-        baseUrl = baseUrl.substring(0, baseUrl.length - 3);
-      }
       final apiKey = _apiKeyController.text.trim();
       final dio = Dio();
 
       final response = await dio.get(
-        '$baseUrl/v1/models',
+        aiModelsUrl(_baseUrlController.text),
         options: Options(
           headers: {'Authorization': 'Bearer $apiKey'},
           sendTimeout: const Duration(seconds: 15),
@@ -858,13 +854,9 @@ class _AiSettingsPageState extends ConsumerState<AiSettingsPage> {
 
     try {
       final prefs = ref.read(preferencesProvider);
-      var baseUrl = prefs.aiApiBaseUrl.replaceAll(RegExp(r'/+$'), '');
-      if (baseUrl.endsWith('/v1')) {
-        baseUrl = baseUrl.substring(0, baseUrl.length - 3);
-      }
       final dio = Dio();
       final response = await dio.get(
-        '$baseUrl/v1/models',
+        aiModelsUrl(prefs.aiApiBaseUrl),
         options: Options(
           headers: {'Authorization': 'Bearer ${prefs.aiApiKey}'},
           sendTimeout: const Duration(seconds: 10),

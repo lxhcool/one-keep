@@ -20,6 +20,28 @@ function serializeUser(user: {
   };
 }
 
+async function findOrCreateEmailUser(prisma: ReturnType<typeof getPrisma>, email: string) {
+  let user = await prisma.user.findUnique({ where: { email } });
+  let isNewUser = false;
+
+  if (!user) {
+    const defaultName = email.split("@")[0];
+    const randomSuffix = crypto.randomBytes(3).toString("hex");
+    user = await prisma.user.create({
+      data: {
+        email,
+        username: `user_${randomSuffix}`,
+        password: "",
+        name: defaultName,
+      },
+    });
+    await ensureUserCategories(prisma, user.id);
+    isNewUser = true;
+  }
+
+  return { user, isNewUser };
+}
+
 export default async function authRoutes(app: FastifyInstance) {
   const prisma = getPrisma();
 
@@ -40,11 +62,12 @@ export default async function authRoutes(app: FastifyInstance) {
   });
 
   app.post("/api/auth/register", { schema: registerSchema }, async (request, reply) => {
-    const { username, email, displayName, password } = request.body as {
+    const { username, email, displayName, password, code } = request.body as {
       username: string;
       email: string;
       displayName: string;
       password: string;
+      code?: string;
     };
 
     const normalizedUsername = username.trim().toLowerCase();
@@ -62,6 +85,27 @@ export default async function authRoutes(app: FastifyInstance) {
     }
     if (existingUser?.username === normalizedUsername) {
       return reply.status(409).send({ error: "用户名已被占用" });
+    }
+
+    if (code) {
+      const record = await prisma.verificationCode.findFirst({
+        where: {
+          email: normalizedEmail,
+          code,
+          used: false,
+          expiresAt: { gte: new Date() },
+        },
+        orderBy: { createdAt: "desc" },
+      });
+
+      if (!record) {
+        return reply.status(400).send({ error: "验证码无效或已过期" });
+      }
+
+      await prisma.verificationCode.update({
+        where: { id: record.id },
+        data: { used: true },
+      });
     }
 
     const hashed = await bcrypt.hash(password, 10);
@@ -156,8 +200,8 @@ export default async function authRoutes(app: FastifyInstance) {
       try {
         const { Resend } = await import("resend");
         const resend = new Resend(resendKey);
-        const result = await resend.emails.send({
-          from: process.env.RESEND_FROM || "厘清 <noreply@lxhcoool.cn>",
+        const emailPayload = {
+          from: process.env.RESEND_FROM || "厘清 <noreply@eatdesk.net>",
           to: normalizedEmail,
           subject: "您的厘清验证码",
           html: `<div style="font-family: sans-serif; padding: 24px;">
@@ -168,9 +212,23 @@ export default async function authRoutes(app: FastifyInstance) {
             </div>
             <p style="color: #666;">验证码 10 分钟内有效，请勿透露给他人。</p>
           </div>`,
-        });
-        if (result.error) {
-          request.log.warn(result.error, "Failed to send email via Resend");
+        };
+
+        let lastError: unknown;
+        for (let attempt = 1; attempt <= 2; attempt += 1) {
+          const result = await resend.emails.send(emailPayload);
+          if (!result.error) {
+            lastError = undefined;
+            break;
+          }
+          lastError = result.error;
+          request.log.warn({ attempt, error: result.error }, "Failed to send email via Resend");
+          if (attempt < 2) {
+            await new Promise((resolve) => setTimeout(resolve, 800));
+          }
+        }
+
+        if (lastError) {
           return reply.status(502).send({ error: "验证码邮件发送失败，请稍后重试" });
         }
       } catch (e) {
@@ -190,6 +248,18 @@ export default async function authRoutes(app: FastifyInstance) {
   app.post("/api/auth/verify-code", { schema: verifyCodeSchema }, async (request, reply) => {
     const { email, code } = request.body as { email: string; code: string };
     const normalizedEmail = email.trim().toLowerCase();
+    const reviewEmail = process.env.REVIEW_ACCOUNT_EMAIL?.trim().toLowerCase();
+    const reviewCode = process.env.REVIEW_ACCOUNT_CODE?.trim();
+
+    if (reviewEmail && reviewCode && normalizedEmail === reviewEmail && code === reviewCode) {
+      const { user, isNewUser } = await findOrCreateEmailUser(prisma, normalizedEmail);
+      const token = app.jwt.sign({ sub: user.id }, { expiresIn: "7d" });
+      return {
+        token,
+        user: serializeUser(user),
+        isNewUser,
+      };
+    }
 
     // 查找有效的验证码
     const record = await prisma.verificationCode.findFirst({
@@ -213,23 +283,7 @@ export default async function authRoutes(app: FastifyInstance) {
     });
 
     // 查找或创建用户
-    let user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
-    let isNewUser = false;
-
-    if (!user) {
-      const defaultName = normalizedEmail.split("@")[0];
-      const randomSuffix = crypto.randomBytes(3).toString("hex");
-      user = await prisma.user.create({
-        data: {
-          email: normalizedEmail,
-          username: `user_${randomSuffix}`,
-          password: "", // 邮箱验证用户无需密码
-          name: defaultName,
-        },
-      });
-      await ensureUserCategories(prisma, user.id);
-      isNewUser = true;
-    }
+    const { user, isNewUser } = await findOrCreateEmailUser(prisma, normalizedEmail);
 
     const token = app.jwt.sign({ sub: user.id }, { expiresIn: "7d" });
     return {

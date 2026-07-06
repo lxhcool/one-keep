@@ -7,8 +7,8 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 SERVER_USER="${SERVER_USER:-root}"
 SERVER_HOST="${SERVER_HOST:-119.45.243.103}"
-SERVER_PATH="${SERVER_PATH:-/www/wwwroot/liqing.lxhcoool.cn/client/}"
-API_BASE_URL="${API_BASE_URL:-https://liqing.lxhcoool.cn}"
+SERVER_PATH="${SERVER_PATH:-/www/wwwroot/liqing.eatdesk.net/client/}"
+API_BASE_URL="${API_BASE_URL:-https://liqing.eatdesk.net}"
 SERVER_PASSWORD="${SERVER_PASSWORD:-}"
 
 cd "$PROJECT_ROOT/client"

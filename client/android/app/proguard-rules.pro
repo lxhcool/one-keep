@@ -5,4 +5,4 @@
 -keep class io.flutter.view.**  { *; }
 -keep class io.flutter.**  { *; }
 -keep class io.flutter.plugins.**  { *; }
--keep class com.lxhcoool.liqing.** { *; }
+-keep class net.eatdesk.liqing.** { *; }

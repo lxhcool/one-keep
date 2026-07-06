@@ -1,4 +1,4 @@
-package com.lxhcoool.liqing
+package net.eatdesk.liqing
 
 import io.flutter.embedding.android.FlutterActivity
 

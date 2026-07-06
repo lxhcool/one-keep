@@ -28,7 +28,7 @@ export default fp(async function corePlugins(app: FastifyInstance) {
       ? true
       : (
           process.env.CORS_ORIGIN ||
-          "https://liqing.lxhcoool.cn,https://onekeep.lxhcoool.cn"
+          "https://liqing.eatdesk.net"
         ).split(","),
   });
 

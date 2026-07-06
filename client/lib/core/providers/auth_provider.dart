@@ -105,19 +105,22 @@ class AuthNotifier extends StateNotifier<AuthState> {
     String username,
     String email,
     String password,
-    String displayName,
-  ) async {
+    String displayName, [
+    String? code,
+  ]) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      final res = await _api.dio.post(
-        '/api/auth/register',
-        data: {
-          'username': username,
-          'email': email,
-          'password': password,
-          'displayName': displayName,
-        },
-      );
+      final payload = <String, dynamic>{
+        'username': username,
+        'email': email,
+        'password': password,
+        'displayName': displayName,
+      };
+      if (code != null && code.trim().isNotEmpty) {
+        payload['code'] = code.trim();
+      }
+
+      final res = await _api.dio.post('/api/auth/register', data: payload);
       final data = res.data as Map<String, dynamic>;
       final user = Map<String, dynamic>.from(
         data['user'] as Map<String, dynamic>,

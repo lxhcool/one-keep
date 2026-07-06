@@ -14,6 +14,8 @@ import '../../shared/widgets/onekeep_ui.dart';
 
 const _brandLogoAsset = 'assets/images/login-logo.png';
 
+enum _AuthMode { login, register }
+
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
 
@@ -25,6 +27,14 @@ class _LoginPageState extends ConsumerState<LoginPage>
     with SingleTickerProviderStateMixin {
   late AnimationController _flowController;
 
+  _AuthMode _mode = _AuthMode.login;
+  final _identifierController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _registerUsernameController = TextEditingController();
+  final _registerEmailController = TextEditingController();
+  final _registerPasswordController = TextEditingController();
+  final _displayNameController = TextEditingController();
+  final _registerCodeController = TextEditingController();
   final _emailController = TextEditingController();
   final _codeController = TextEditingController();
   bool _agreedToTerms = true;
@@ -45,20 +55,45 @@ class _LoginPageState extends ConsumerState<LoginPage>
   @override
   void dispose() {
     _flowController.dispose();
+    _identifierController.dispose();
+    _passwordController.dispose();
+    _registerUsernameController.dispose();
+    _registerEmailController.dispose();
+    _registerPasswordController.dispose();
+    _displayNameController.dispose();
+    _registerCodeController.dispose();
     _emailController.dispose();
     _codeController.dispose();
     _countdownTimer?.cancel();
     super.dispose();
   }
 
+  String get _activeCodeEmail {
+    return _mode == _AuthMode.register
+        ? _registerEmailController.text.trim()
+        : _emailController.text.trim();
+  }
+
   bool get _canSendCode =>
-      _emailController.text.trim().isNotEmpty &&
+      _activeCodeEmail.isNotEmpty &&
       _countdown == 0 &&
       !ref.read(authProvider).isSendingCode;
 
-  bool get _canSubmit =>
+  bool get _canCodeSubmit =>
       _emailController.text.trim().isNotEmpty &&
       _codeController.text.trim().length == 6 &&
+      _agreedToTerms;
+
+  bool get _canPasswordSubmit =>
+      _identifierController.text.trim().isNotEmpty &&
+      _passwordController.text.trim().isNotEmpty &&
+      _agreedToTerms;
+
+  bool get _canRegisterSubmit =>
+      _registerUsernameController.text.trim().length >= 3 &&
+      _registerEmailController.text.trim().isNotEmpty &&
+      _registerPasswordController.text.trim().length >= 6 &&
+      _displayNameController.text.trim().isNotEmpty &&
       _agreedToTerms;
 
   bool _isValidEmail(String email) {
@@ -66,7 +101,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
   }
 
   Future<void> _sendCode() async {
-    final email = _emailController.text.trim();
+    final email = _activeCodeEmail;
     if (!_canSendCode) return;
     if (!_isValidEmail(email)) {
       ref.read(authProvider.notifier).setError('请输入正确的邮箱地址');
@@ -94,12 +129,47 @@ class _LoginPageState extends ConsumerState<LoginPage>
     });
   }
 
-  void _submit() {
+  void _submitCodeLogin() {
     final email = _emailController.text.trim();
     final code = _codeController.text.trim();
     if (email.isEmpty || code.length != 6 || !_agreedToTerms) return;
     HapticFeedback.heavyImpact();
     ref.read(authProvider.notifier).verifyCode(email, code);
+  }
+
+  void _submitPasswordLogin() {
+    final identifier = _identifierController.text.trim();
+    final password = _passwordController.text.trim();
+    if (identifier.isEmpty || password.isEmpty || !_agreedToTerms) return;
+    HapticFeedback.heavyImpact();
+    ref.read(authProvider.notifier).login(identifier, password);
+  }
+
+  void _submitRegister() {
+    final username = _registerUsernameController.text.trim();
+    final email = _registerEmailController.text.trim();
+    final password = _registerPasswordController.text.trim();
+    final displayName = _displayNameController.text.trim();
+
+    if (!_canRegisterSubmit) return;
+    if (!RegExp(r'^[a-zA-Z0-9_]{3,20}$').hasMatch(username)) {
+      ref.read(authProvider.notifier).setError('用户名需为 3-20 位字母、数字或下划线');
+      return;
+    }
+    if (!_isValidEmail(email)) {
+      ref.read(authProvider.notifier).setError('请输入正确的邮箱地址');
+      return;
+    }
+    HapticFeedback.heavyImpact();
+    ref
+        .read(authProvider.notifier)
+        .register(username, email, password, displayName);
+  }
+
+  void _setMode(_AuthMode mode) {
+    if (_mode == mode) return;
+    ref.read(authProvider.notifier).clearError();
+    setState(() => _mode = mode);
   }
 
   @override
@@ -130,11 +200,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
 
             SafeArea(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.only(
-                  left: 16,
-                  right: 16,
-                  top: 200,
-                ),
+                padding: const EdgeInsets.only(left: 16, right: 16, top: 200),
                 physics: const BouncingScrollPhysics(),
                 child: ConstrainedBox(
                   constraints: BoxConstraints(maxWidth: contentWidth),
@@ -191,9 +257,13 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                   const SizedBox(height: 16),
                                 ],
 
-                                _buildEmailSection(isDark),
+                                _AuthModeSwitch(
+                                  mode: _mode,
+                                  isDark: isDark,
+                                  onChanged: _setMode,
+                                ),
                                 const SizedBox(height: 16),
-                                _buildCodeField(isDark),
+                                ..._buildModeFields(isDark),
                                 const SizedBox(height: 20),
                                 _AgreementCheckbox(
                                   agreed: _agreedToTerms,
@@ -204,10 +274,10 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                 ),
                                 const SizedBox(height: 20),
                                 _AuthSubmitButton(
-                                  label: '登录',
+                                  label: _submitLabel,
                                   loading: state.isLoading,
-                                  enabled: _canSubmit,
-                                  onTap: _submit,
+                                  enabled: _canSubmitCurrentMode,
+                                  onTap: _submitCurrentMode,
                                 ),
                               ],
                             ),
@@ -249,10 +319,112 @@ class _LoginPageState extends ConsumerState<LoginPage>
                 ),
               ),
             ),
-            ],
+          ],
         ),
       ),
     );
+  }
+
+  String get _submitLabel {
+    switch (_mode) {
+      case _AuthMode.login:
+        return '登录';
+      case _AuthMode.register:
+        return '注册并进入';
+    }
+  }
+
+  bool get _canSubmitCurrentMode {
+    switch (_mode) {
+      case _AuthMode.login:
+        return _canPasswordSubmit;
+      case _AuthMode.register:
+        return _canRegisterSubmit;
+    }
+  }
+
+  void _submitCurrentMode() {
+    switch (_mode) {
+      case _AuthMode.login:
+        _submitPasswordLogin();
+        return;
+      case _AuthMode.register:
+        _submitRegister();
+        return;
+    }
+  }
+
+  List<Widget> _buildModeFields(bool isDark) {
+    switch (_mode) {
+      case _AuthMode.login:
+        return [
+          _PremiumTextField(
+            controller: _identifierController,
+            hint: '邮箱或用户名',
+            icon: LucideIcons.user,
+            isDark: isDark,
+            keyboardType: TextInputType.emailAddress,
+            autofillHints: const [AutofillHints.username, AutofillHints.email],
+            textInputAction: TextInputAction.next,
+            onChanged: (_) => setState(() {}),
+          ),
+          const SizedBox(height: 16),
+          _PremiumTextField(
+            controller: _passwordController,
+            hint: '密码',
+            icon: LucideIcons.lock,
+            isDark: isDark,
+            obscureText: true,
+            autofillHints: const [AutofillHints.password],
+            textInputAction: TextInputAction.done,
+            onChanged: (_) => setState(() {}),
+          ),
+        ];
+      case _AuthMode.register:
+        return [
+          _PremiumTextField(
+            controller: _registerUsernameController,
+            hint: '用户名（字母、数字或下划线）',
+            icon: LucideIcons.user,
+            isDark: isDark,
+            autofillHints: const [AutofillHints.username],
+            textInputAction: TextInputAction.next,
+            onChanged: (_) => setState(() {}),
+          ),
+          const SizedBox(height: 16),
+          _PremiumTextField(
+            controller: _registerEmailController,
+            hint: '邮箱',
+            icon: LucideIcons.mail,
+            isDark: isDark,
+            keyboardType: TextInputType.emailAddress,
+            autofillHints: const [AutofillHints.email],
+            textInputAction: TextInputAction.next,
+            onChanged: (_) => setState(() {}),
+          ),
+          const SizedBox(height: 16),
+          _PremiumTextField(
+            controller: _registerPasswordController,
+            hint: '密码（至少 6 位）',
+            icon: LucideIcons.lock,
+            isDark: isDark,
+            obscureText: true,
+            autofillHints: const [AutofillHints.newPassword],
+            textInputAction: TextInputAction.next,
+            onChanged: (_) => setState(() {}),
+          ),
+          const SizedBox(height: 16),
+          _PremiumTextField(
+            controller: _displayNameController,
+            hint: '昵称',
+            icon: LucideIcons.badge,
+            isDark: isDark,
+            autofillHints: const [AutofillHints.nickname],
+            textInputAction: TextInputAction.done,
+            onChanged: (_) => setState(() {}),
+          ),
+        ];
+    }
   }
 
   Widget _buildEmailSection(bool isDark) {
@@ -287,7 +459,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
   }
 
   Widget _buildCodeSuffix(bool isDark) {
-    final emailEmpty = _emailController.text.trim().isEmpty;
+    final emailEmpty = _activeCodeEmail.isEmpty;
 
     if (_countdown > 0) {
       return Padding(
@@ -334,6 +506,22 @@ class _LoginPageState extends ConsumerState<LoginPage>
       ),
     );
   }
+
+  // ignore: unused_element
+  Widget _buildRegisterCodeField(bool isDark) {
+    return _PremiumTextField(
+      controller: _registerCodeController,
+      hint: '输入 6 位验证码',
+      icon: LucideIcons.shield,
+      isDark: isDark,
+      keyboardType: TextInputType.number,
+      autofillHints: const [],
+      maxLength: 6,
+      textInputAction: TextInputAction.next,
+      onChanged: (_) => setState(() {}),
+      suffix: _buildCodeSuffix(isDark),
+    );
+  }
 }
 
 class _BrandHeader extends StatelessWidget {
@@ -355,6 +543,137 @@ class _BrandHeader extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _AuthModeSwitch extends StatelessWidget {
+  final _AuthMode mode;
+  final bool isDark;
+  final ValueChanged<_AuthMode> onChanged;
+
+  const _AuthModeSwitch({
+    required this.mode,
+    required this.isDark,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 40,
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: isDark
+            ? Colors.white.withValues(alpha: 0.06)
+            : Colors.black.withValues(alpha: 0.04),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: [
+          _AuthModeTab(
+            label: '登录',
+            selected: mode != _AuthMode.register,
+            isDark: isDark,
+            onTap: () => onChanged(_AuthMode.login),
+          ),
+          _AuthModeTab(
+            label: '注册',
+            selected: mode == _AuthMode.register,
+            isDark: isDark,
+            onTap: () => onChanged(_AuthMode.register),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AuthModeTab extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final bool isDark;
+  final VoidCallback onTap;
+
+  const _AuthModeTab({
+    required this.label,
+    required this.selected,
+    required this.isDark,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: selected
+                ? (isDark ? Colors.white.withValues(alpha: 0.12) : Colors.white)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+            boxShadow: selected && !isDark
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.06),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: oneKeepInter(
+              color: selected
+                  ? AppColors.emerald
+                  : (isDark ? Colors.white54 : AppColors.lightTextTertiary),
+              size: 13,
+              weight: selected ? FontWeight.w800 : FontWeight.w600,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _InlineAuthAction extends StatelessWidget {
+  final String label;
+  final bool isDark;
+  final VoidCallback onTap;
+
+  const _InlineAuthAction({
+    required this.label,
+    required this.isDark,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerRight,
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+          child: Text(
+            label,
+            style: oneKeepInter(
+              color: isDark ? AppColors.emeraldLight : AppColors.emerald,
+              size: 13,
+              weight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -478,6 +797,8 @@ class _PremiumTextField extends StatefulWidget {
   final TextInputType? keyboardType;
   final Iterable<String>? autofillHints;
   final int? maxLength;
+  final bool obscureText;
+  final TextInputAction? textInputAction;
   final ValueChanged<String>? onChanged;
 
   const _PremiumTextField({
@@ -489,6 +810,8 @@ class _PremiumTextField extends StatefulWidget {
     this.keyboardType,
     this.autofillHints,
     this.maxLength,
+    this.obscureText = false,
+    this.textInputAction,
     this.onChanged,
   });
 
@@ -557,6 +880,8 @@ class _PremiumTextFieldState extends State<_PremiumTextField> {
             keyboardType: widget.keyboardType,
             autofillHints: widget.autofillHints,
             maxLength: widget.maxLength,
+            obscureText: widget.obscureText,
+            textInputAction: widget.textInputAction,
             onChanged: widget.onChanged,
             cursorColor: AppColors.emerald,
             style: oneKeepInter(
@@ -567,7 +892,9 @@ class _PremiumTextFieldState extends State<_PremiumTextField> {
             decoration: InputDecoration(
               hintText: widget.hint,
               hintStyle: oneKeepInter(
-                color: widget.isDark ? Colors.white30 : AppColors.lightTextTertiary,
+                color: widget.isDark
+                    ? Colors.white30
+                    : AppColors.lightTextTertiary,
                 size: 15,
                 weight: FontWeight.w500,
               ),

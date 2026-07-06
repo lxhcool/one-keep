@@ -22,7 +22,7 @@ val releaseStoreFile =
 val hasReleaseKeystore = releaseStoreFile?.exists() == true
 
 android {
-    namespace = "com.lxhcoool.liqing"
+    namespace = "net.eatdesk.liqing"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -36,7 +36,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.lxhcoool.liqing"
+        applicationId = "net.eatdesk.liqing"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode

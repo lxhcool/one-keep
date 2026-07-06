@@ -9,6 +9,7 @@ import 'package:speech_to_text/speech_recognition_error.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 
+import 'ai_endpoint_utils.dart';
 import 'permission_helper_stub.dart'
     if (dart.library.io) 'permission_helper_io.dart';
 
@@ -384,12 +385,7 @@ class SpeechService {
         'model': _transcriptionModel,
       });
 
-      // 拼接 URL，避免重复 /v1
-      var baseUrl = _aiBaseUrl!.replaceAll(RegExp(r'/+$'), '');
-      if (baseUrl.endsWith('/v1')) {
-        baseUrl = baseUrl.substring(0, baseUrl.length - 3);
-      }
-      final apiUrl = '$baseUrl/v1/audio/transcriptions';
+      final apiUrl = aiAudioTranscriptionsUrl(_aiBaseUrl!);
       _log('[SpeechService] calling API: $apiUrl');
 
       final response = await dio.post(
