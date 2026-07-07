@@ -4,25 +4,50 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="厘清是一款面向个人用户的极简记账应用，支持收支记录、账单管理、分类统计和账户同步。">
-  <meta name="theme-color" content="#f7f4ef">
+  <meta name="theme-color" content="#f2fbf6">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="厘清">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="manifest" href="manifest.json">
-  <title>厘清 - 简单清楚的个人记账</title>
+  <title>厘清 - 极简记账，清晰掌控每一笔</title>
   <style>
+    @font-face {
+      font-family: "Manrope";
+      src: url("assets/fonts/Manrope-400.ttf") format("truetype");
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    @font-face {
+      font-family: "Manrope";
+      src: url("assets/fonts/Manrope-700.ttf") format("truetype");
+      font-weight: 700;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    @font-face {
+      font-family: "Space Grotesk";
+      src: url("assets/fonts/SpaceGrotesk-700.ttf") format("truetype");
+      font-weight: 700;
+      font-style: normal;
+      font-display: swap;
+    }
+
     :root {
       color-scheme: light;
-      --bg: #f7f4ef;
-      --surface: #ffffff;
-      --ink: #141412;
-      --muted: #67645f;
-      --line: #ded8ce;
-      --accent: #1f7a5a;
-      --accent-ink: #ffffff;
-      --soft: #e8efe8;
-      --shadow: 0 24px 60px rgba(49, 43, 34, 0.12);
+      --bg: #f4fbf7;
+      --paper: #ffffff;
+      --ink: #101817;
+      --muted: #66736f;
+      --line: rgba(16, 24, 23, 0.1);
+      --green: #00a878;
+      --green-deep: #04765b;
+      --mint: #dff8ef;
+      --glow: rgba(0, 168, 120, 0.22);
+      --shadow: 0 32px 90px rgba(5, 48, 38, 0.14);
     }
 
     * {
@@ -36,10 +61,12 @@
     body {
       margin: 0;
       min-width: 320px;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
-      line-height: 1.6;
+      font-family: "Manrope", "PingFang SC", "Microsoft YaHei", sans-serif;
       color: var(--ink);
-      background: var(--bg);
+      background:
+        radial-gradient(circle at 8% 12%, rgba(0, 168, 120, 0.14), transparent 34%),
+        radial-gradient(circle at 92% 4%, rgba(0, 168, 120, 0.2), transparent 30%),
+        linear-gradient(180deg, #fbfffd 0%, var(--bg) 44%, #ffffff 100%);
     }
 
     a {
@@ -47,9 +74,8 @@
       text-decoration: none;
     }
 
-    a:focus-visible,
-    button:focus-visible {
-      outline: 3px solid rgba(31, 122, 90, 0.35);
+    a:focus-visible {
+      outline: 3px solid rgba(0, 168, 120, 0.32);
       outline-offset: 4px;
     }
 
@@ -57,40 +83,48 @@
       position: sticky;
       top: 0;
       z-index: 10;
-      border-bottom: 1px solid rgba(222, 216, 206, 0.72);
-      background: rgba(247, 244, 239, 0.92);
-      backdrop-filter: blur(16px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.62);
+      background: rgba(244, 251, 247, 0.78);
+      backdrop-filter: blur(18px);
+    }
+
+    .nav,
+    .wrap {
+      width: min(1180px, calc(100% - 40px));
+      margin: 0 auto;
     }
 
     .nav {
-      width: min(1120px, calc(100% - 40px));
-      height: 68px;
-      margin: 0 auto;
+      height: 72px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 24px;
+      gap: 20px;
     }
 
     .brand {
       display: inline-flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
       font-size: 18px;
-      font-weight: 750;
-      letter-spacing: 0;
+      font-weight: 700;
     }
 
     .brand-mark {
-      width: 34px;
-      height: 34px;
-      border-radius: 8px;
-      display: grid;
-      place-items: center;
-      color: var(--accent-ink);
-      background: var(--accent);
-      font-size: 18px;
-      font-weight: 800;
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      display: block;
+      overflow: hidden;
+      background: #ffffff;
+      box-shadow: 0 12px 26px var(--glow);
+    }
+
+    .brand-mark img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
     }
 
     .nav-links {
@@ -99,6 +133,7 @@
       gap: 22px;
       color: var(--muted);
       font-size: 14px;
+      font-weight: 700;
     }
 
     .nav-links a {
@@ -106,7 +141,7 @@
     }
 
     .nav-links a:hover {
-      color: var(--ink);
+      color: var(--green-deep);
     }
 
     main {
@@ -114,36 +149,51 @@
     }
 
     .hero {
-      width: min(1120px, calc(100% - 40px));
-      min-height: calc(100vh - 68px);
-      margin: 0 auto;
-      padding: 72px 0 64px;
+      padding: 78px 0 80px;
+    }
+
+    .hero-grid {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
+      grid-template-columns: 0.88fr 1.12fr;
       align-items: center;
-      gap: 72px;
+      gap: 54px;
     }
 
     .eyebrow {
-      margin: 0 0 16px;
-      color: var(--accent);
-      font-size: 14px;
+      width: fit-content;
+      margin: 0 0 20px;
+      padding: 8px 12px;
+      border: 1px solid rgba(0, 168, 120, 0.18);
+      border-radius: 999px;
+      color: var(--green-deep);
+      background: rgba(255, 255, 255, 0.72);
+      font-size: 13px;
       font-weight: 700;
     }
 
+    h1,
+    h2 {
+      font-family: "Space Grotesk", "Manrope", sans-serif;
+      letter-spacing: -0.055em;
+    }
+
     h1 {
+      max-width: 620px;
       margin: 0;
-      max-width: 660px;
-      font-size: clamp(42px, 7vw, 76px);
-      line-height: 1.04;
-      letter-spacing: 0;
+      font-size: clamp(48px, 7.4vw, 94px);
+      line-height: 0.96;
+    }
+
+    .accent {
+      color: var(--green);
     }
 
     .hero-copy {
       max-width: 560px;
-      margin: 24px 0 0;
+      margin: 26px 0 0;
       color: var(--muted);
-      font-size: 18px;
+      font-size: 19px;
+      line-height: 1.72;
     }
 
     .hero-actions {
@@ -154,239 +204,201 @@
     }
 
     .button {
-      min-height: 46px;
+      min-height: 50px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
-      border-radius: 8px;
-      padding: 0 18px;
-      border: 1px solid var(--ink);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 0 22px;
       font-size: 15px;
       font-weight: 700;
-      transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
+      transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
     }
 
     .button:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 10px 24px rgba(20, 20, 18, 0.12);
+      transform: translateY(-2px);
+      box-shadow: 0 18px 38px rgba(5, 48, 38, 0.14);
     }
 
     .button-primary {
-      color: var(--accent-ink);
-      border-color: var(--accent);
-      background: var(--accent);
+      color: #ffffff;
+      border-color: transparent;
+      background: linear-gradient(135deg, #15d69a, #00795e);
     }
 
     .button-secondary {
-      background: transparent;
+      color: var(--green-deep);
+      background: rgba(255, 255, 255, 0.72);
     }
 
-    .phone-wrap {
-      display: flex;
-      justify-content: center;
-    }
-
-    .phone {
-      width: min(100%, 360px);
-      aspect-ratio: 9 / 18;
-      border: 10px solid #171512;
-      border-radius: 34px;
-      background: var(--surface);
-      box-shadow: var(--shadow);
-      overflow: hidden;
+    .hero-card {
       position: relative;
     }
 
-    .phone::before {
+    .hero-card::before {
       content: "";
       position: absolute;
-      top: 10px;
-      left: 50%;
-      width: 96px;
-      height: 24px;
-      border-radius: 0 0 16px 16px;
-      transform: translateX(-50%);
-      background: #171512;
-      z-index: 2;
+      inset: 9% 2% -7% 10%;
+      z-index: -1;
+      border-radius: 44px;
+      background: linear-gradient(135deg, rgba(0, 168, 120, 0.24), rgba(255, 255, 255, 0));
+      filter: blur(8px);
     }
 
-    .screen {
-      min-height: 100%;
-      padding: 50px 24px 24px;
-      background: linear-gradient(180deg, #fbfaf7 0%, #eef5ed 100%);
+    .hero-image {
+      width: 100%;
+      display: block;
+      border: 1px solid rgba(255, 255, 255, 0.78);
+      border-radius: 34px;
+      box-shadow: var(--shadow);
+      background: #ffffff;
     }
 
-    .app-icon {
-      width: 58px;
-      height: 58px;
-      border-radius: 14px;
-      box-shadow: 0 12px 24px rgba(31, 122, 90, 0.22);
+    .stats {
+      margin-top: 34px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
     }
 
-    .screen-title {
-      margin: 22px 0 8px;
-      font-size: 28px;
-      line-height: 1.18;
-      font-weight: 800;
-    }
-
-    .balance {
-      margin-top: 22px;
+    .stat {
       padding: 18px;
       border: 1px solid var(--line);
-      border-radius: 8px;
-      background: rgba(255, 255, 255, 0.82);
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.7);
     }
 
-    .balance span {
+    .stat strong {
       display: block;
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 26px;
+      letter-spacing: -0.04em;
+    }
+
+    .stat span {
+      display: block;
+      margin-top: 2px;
       color: var(--muted);
       font-size: 13px;
     }
 
-    .balance strong {
-      display: block;
-      margin-top: 6px;
-      font-size: 30px;
-      line-height: 1;
-    }
-
-    .list {
-      margin-top: 18px;
-      display: grid;
-      gap: 10px;
-    }
-
-    .item {
-      min-height: 58px;
-      display: grid;
-      grid-template-columns: 36px 1fr auto;
-      align-items: center;
-      gap: 12px;
-      padding: 10px;
-      border-radius: 8px;
-      background: rgba(255, 255, 255, 0.78);
-      border: 1px solid rgba(222, 216, 206, 0.7);
-    }
-
-    .item-dot {
-      width: 36px;
-      height: 36px;
-      border-radius: 8px;
-      background: var(--soft);
-    }
-
-    .item-title {
-      display: block;
-      font-weight: 700;
-      font-size: 14px;
-    }
-
-    .item-sub {
-      display: block;
-      color: var(--muted);
-      font-size: 12px;
-    }
-
-    .item-amount {
-      font-weight: 800;
-      font-size: 14px;
-    }
-
     .section {
-      width: min(1120px, calc(100% - 40px));
-      margin: 0 auto;
-      padding: 72px 0;
-      border-top: 1px solid var(--line);
+      padding: 76px 0;
     }
 
-    .section-heading {
+    .section-head {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 28px;
+      margin-bottom: 28px;
+    }
+
+    h2 {
       margin: 0;
-      font-size: clamp(28px, 4vw, 42px);
-      line-height: 1.18;
-      letter-spacing: 0;
+      font-size: clamp(34px, 4vw, 56px);
+      line-height: 1.02;
     }
 
     .section-copy {
-      max-width: 680px;
-      margin: 14px 0 0;
+      max-width: 520px;
+      margin: 0;
       color: var(--muted);
       font-size: 16px;
+      line-height: 1.7;
     }
 
     .features {
-      margin-top: 34px;
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 16px;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
     }
 
     .feature {
-      min-height: 172px;
-      padding: 22px;
+      min-height: 218px;
+      padding: 24px;
       border: 1px solid var(--line);
-      border-radius: 8px;
-      background: rgba(255, 255, 255, 0.56);
+      border-radius: 28px;
+      background: rgba(255, 255, 255, 0.72);
+      box-shadow: 0 18px 46px rgba(5, 48, 38, 0.07);
     }
 
-    .feature svg {
-      width: 26px;
-      height: 26px;
-      color: var(--accent);
+    .feature-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 16px;
+      display: grid;
+      place-items: center;
+      color: #ffffff;
+      background: linear-gradient(135deg, #18d59b, #08705a);
+    }
+
+    .feature-icon svg {
+      width: 24px;
+      height: 24px;
     }
 
     .feature h3 {
-      margin: 18px 0 8px;
-      font-size: 18px;
-      line-height: 1.3;
+      margin: 22px 0 8px;
+      font-size: 20px;
+      line-height: 1.25;
     }
 
     .feature p {
       margin: 0;
       color: var(--muted);
       font-size: 14px;
+      line-height: 1.65;
     }
 
-    .download-band {
-      margin-top: 34px;
-      padding: 28px;
-      border-radius: 8px;
-      color: var(--accent-ink);
-      background: var(--accent);
-      display: flex;
+    .download {
+      margin: 14px 0 76px;
+    }
+
+    .download-card {
+      padding: clamp(28px, 5vw, 54px);
+      border-radius: 34px;
+      color: #ffffff;
+      background:
+        radial-gradient(circle at 18% 0%, rgba(84, 255, 193, 0.42), transparent 36%),
+        linear-gradient(135deg, #006d59 0%, #00a878 58%, #12d692 100%);
+      box-shadow: var(--shadow);
+      display: grid;
+      grid-template-columns: 1fr auto;
       align-items: center;
-      justify-content: space-between;
-      gap: 24px;
+      gap: 28px;
     }
 
-    .download-band h2 {
-      margin: 0;
-      font-size: 24px;
-      line-height: 1.25;
+    .download-card h2 {
+      max-width: 700px;
+      font-size: clamp(32px, 5vw, 62px);
     }
 
-    .download-band p {
-      margin: 8px 0 0;
+    .download-card p {
+      max-width: 620px;
+      margin: 16px 0 0;
       color: rgba(255, 255, 255, 0.82);
+      font-size: 16px;
+      line-height: 1.75;
     }
 
-    .download-band .button {
-      color: var(--ink);
-      border-color: var(--surface);
-      background: var(--surface);
+    .download-card .button {
+      color: var(--green-deep);
+      background: #ffffff;
       white-space: nowrap;
     }
 
     .site-footer {
       border-top: 1px solid var(--line);
-      background: #eee9df;
+      background: rgba(255, 255, 255, 0.68);
     }
 
     .footer-inner {
-      width: min(1120px, calc(100% - 40px));
+      width: min(1180px, calc(100% - 40px));
       margin: 0 auto;
-      padding: 26px 0;
+      padding: 28px 0;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -407,59 +419,52 @@
       text-underline-offset: 3px;
     }
 
-    @media (max-width: 820px) {
-      .nav {
-        width: min(100% - 28px, 1120px);
-      }
-
-      .nav-links {
-        gap: 14px;
-      }
-
+    @media (max-width: 980px) {
       .hero {
-        width: min(100% - 28px, 1120px);
-        min-height: auto;
-        padding: 48px 0 52px;
+        padding-top: 52px;
+      }
+
+      .hero-grid {
         grid-template-columns: 1fr;
-        gap: 42px;
       }
 
-      .phone {
-        max-width: 330px;
+      .hero-card {
+        max-width: 760px;
       }
 
-      .section {
-        width: min(100% - 28px, 1120px);
-        padding: 52px 0;
+      .section-head,
+      .download-card {
+        align-items: flex-start;
+        grid-template-columns: 1fr;
+        flex-direction: column;
       }
 
       .features {
-        grid-template-columns: 1fr;
-      }
-
-      .download-band {
-        align-items: flex-start;
-        flex-direction: column;
-      }
-
-      .footer-inner {
-        width: min(100% - 28px, 1120px);
-        align-items: flex-start;
-        flex-direction: column;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
       }
     }
 
-    @media (max-width: 520px) {
+    @media (max-width: 640px) {
+      .nav,
+      .wrap,
+      .footer-inner {
+        width: min(100% - 28px, 1180px);
+      }
+
       .nav {
-        height: 60px;
+        height: 64px;
       }
 
       .nav-links a[href="#features"] {
         display: none;
       }
 
+      .hero {
+        padding: 42px 0 56px;
+      }
+
       h1 {
-        font-size: 40px;
+        font-size: 46px;
       }
 
       .hero-copy {
@@ -474,8 +479,22 @@
         width: 100%;
       }
 
-      .phone {
-        max-width: 300px;
+      .hero-image {
+        border-radius: 22px;
+      }
+
+      .stats,
+      .features {
+        grid-template-columns: 1fr;
+      }
+
+      .section {
+        padding: 52px 0;
+      }
+
+      .footer-inner {
+        align-items: flex-start;
+        flex-direction: column;
       }
     }
 
@@ -496,7 +515,9 @@
   <header class="site-header">
     <nav class="nav" aria-label="主导航">
       <a class="brand" href="/" aria-label="厘清首页">
-        <span class="brand-mark" aria-hidden="true">厘</span>
+        <span class="brand-mark" aria-hidden="true">
+          <img src="assets/app-icon.png" alt="">
+        </span>
         <span>厘清</span>
       </a>
       <div class="nav-links">
@@ -508,93 +529,101 @@
   </header>
 
   <main>
-    <section class="hero" aria-labelledby="hero-title">
-      <div>
-        <p class="eyebrow">个人记账应用</p>
-        <h1 id="hero-title">把每一笔账，记得简单清楚。</h1>
-        <p class="hero-copy">厘清帮助你记录日常收支、整理账单分类、查看收支统计。界面轻量，操作直接，适合每天反复使用。</p>
-        <div class="hero-actions">
-          <a class="button button-primary" href="#download">获取厘清</a>
-          <a class="button button-secondary" href="/privacy.html">查看隐私政策</a>
-        </div>
-      </div>
-
-      <div class="phone-wrap" aria-label="厘清应用界面预览">
-        <div class="phone">
-          <div class="screen">
-            <img class="app-icon" src="icons/Icon-192.png" alt="厘清应用图标">
-            <p class="screen-title">本月收支<br>一眼看清</p>
-            <div class="balance">
-              <span>本月结余</span>
-              <strong>¥ 3,280</strong>
+    <section class="hero">
+      <div class="wrap hero-grid">
+        <div>
+          <p class="eyebrow">Android 个人记账应用</p>
+          <h1>极简记账，<span class="accent">清晰</span>掌控每一笔。</h1>
+          <p class="hero-copy">厘清帮你快速记录日常收支、整理账单分类、查看收支趋势。少一点复杂操作，多一点真正看得懂的财务状态。</p>
+          <div class="hero-actions">
+            <a class="button button-primary" href="#download">获取厘清</a>
+            <a class="button button-secondary" href="/privacy.html">查看隐私政策</a>
+          </div>
+          <div class="stats" aria-label="产品特点">
+            <div class="stat">
+              <strong>3步</strong>
+              <span>完成一笔记录</span>
             </div>
-            <div class="list" aria-hidden="true">
-              <div class="item">
-                <span class="item-dot"></span>
-                <span>
-                  <span class="item-title">午餐</span>
-                  <span class="item-sub">餐饮</span>
-                </span>
-                <span class="item-amount">- ¥ 32</span>
-              </div>
-              <div class="item">
-                <span class="item-dot"></span>
-                <span>
-                  <span class="item-title">交通</span>
-                  <span class="item-sub">出行</span>
-                </span>
-                <span class="item-amount">- ¥ 18</span>
-              </div>
-              <div class="item">
-                <span class="item-dot"></span>
-                <span>
-                  <span class="item-title">工资</span>
-                  <span class="item-sub">收入</span>
-                </span>
-                <span class="item-amount">+ ¥ 8,600</span>
-              </div>
+            <div class="stat">
+              <strong>清晰</strong>
+              <span>账单与统计</span>
+            </div>
+            <div class="stat">
+              <strong>安心</strong>
+              <span>隐私保护说明</span>
             </div>
           </div>
+        </div>
+
+        <div class="hero-card" aria-label="厘清应用封面图">
+          <img class="hero-image" src="assets/liqing-hero-cover.png" alt="厘清应用界面与核心功能展示">
         </div>
       </div>
     </section>
 
-    <section id="features" class="section" aria-labelledby="features-title">
-      <h2 id="features-title" class="section-heading">围绕日常记账的必要功能。</h2>
-      <p class="section-copy">不堆复杂概念，优先把记录、查账和统计做好，让个人收支管理保持清晰。</p>
-      <div class="features">
-        <article class="feature">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <path d="M12 5v14M5 12h14"/>
-          </svg>
-          <h3>快速记录</h3>
-          <p>记录金额、分类、时间和备注，常用场景少点几步就能完成。</p>
-        </article>
-        <article class="feature">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <path d="M4 5h16M4 12h16M4 19h16"/>
-            <path d="M8 5v14"/>
-          </svg>
-          <h3>账单管理</h3>
-          <p>按时间和分类浏览收支明细，适合回看消费记录和整理账目。</p>
-        </article>
-        <article class="feature">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <path d="M4 19V5"/>
-            <path d="M4 19h16"/>
-            <path d="M8 15l3-3 3 2 5-7"/>
-          </svg>
-          <h3>统计分析</h3>
-          <p>汇总收支趋势和分类占比，帮助你看清钱花在哪里。</p>
-        </article>
-      </div>
-
-      <div id="download" class="download-band">
-        <div>
-          <h2>厘清 Android 版已准备就绪。</h2>
-          <p>当前官网用于展示产品信息、隐私政策和备案主体信息。</p>
+    <section id="features" class="section">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>只保留每天都会用到的记账能力。</h2>
+          <p class="section-copy">不做复杂财务系统，优先把记录、查账、统计和分类这几件事做顺手。</p>
         </div>
-        <a class="button" href="/privacy.html">隐私政策</a>
+
+        <div class="features">
+          <article class="feature">
+            <div class="feature-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 5v14M5 12h14"/>
+              </svg>
+            </div>
+            <h3>极简记账</h3>
+            <p>记录金额、分类、时间和备注，常用场景快速完成。</p>
+          </article>
+
+          <article class="feature">
+            <div class="feature-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 6h16M4 12h16M4 18h16"/>
+              </svg>
+            </div>
+            <h3>账单清楚</h3>
+            <p>按时间查看收支明细，回看每一笔钱花在哪里。</p>
+          </article>
+
+          <article class="feature">
+            <div class="feature-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 19V5"/>
+                <path d="M4 19h16"/>
+                <path d="M8 15l3-3 3 2 5-7"/>
+              </svg>
+            </div>
+            <h3>统计趋势</h3>
+            <p>收支趋势和分类占比一眼看清，掌握真实财务状态。</p>
+          </article>
+
+          <article class="feature">
+            <div class="feature-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7l8-4z"/>
+                <path d="M9 12l2 2 4-4"/>
+              </svg>
+            </div>
+            <h3>数据安全</h3>
+            <p>清楚说明数据使用方式，隐私政策公开可查。</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="download" class="download">
+      <div class="wrap">
+        <div class="download-card">
+          <div>
+            <h2>Android 版已准备就绪。</h2>
+            <p>当前官网用于展示产品信息、隐私政策和备案主体信息。应用上线后可从各安卓应用商店获取。</p>
+          </div>
+          <a class="button" href="/privacy.html">查看隐私政策</a>
+        </div>
       </div>
     </section>
   </main>
