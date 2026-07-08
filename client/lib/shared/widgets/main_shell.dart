@@ -1097,25 +1097,28 @@ Future<void> _showQuickAddSheet(BuildContext context) {
         curve: const Interval(0, 0.65, curve: Curves.easeOut),
         reverseCurve: Curves.easeIn,
       );
-      return Stack(
-        children: [
-          Positioned.fill(
-            child: FadeTransition(
-              opacity: Tween<double>(begin: 0, end: 1).animate(barrierCurve),
-              child: ColoredBox(color: Colors.black.withValues(alpha: 0.3)),
+      return Material(
+        type: MaterialType.transparency,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: FadeTransition(
+                opacity: Tween<double>(begin: 0, end: 1).animate(barrierCurve),
+                child: ColoredBox(color: Colors.black.withValues(alpha: 0.3)),
+              ),
             ),
-          ),
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(0, 1),
-                end: Offset.zero,
-              ).animate(sheetCurve),
-              child: const _QuickAddSheet(),
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0, 1),
+                  end: Offset.zero,
+                ).animate(sheetCurve),
+                child: const _QuickAddSheet(),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       );
     },
   );
