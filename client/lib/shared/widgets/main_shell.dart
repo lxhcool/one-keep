@@ -1076,28 +1076,11 @@ Future<void> _showQuickAddSheet(BuildContext context) {
   return showGeneralDialog<void>(
     context: context,
     useRootNavigator: true,
-    barrierDismissible: false,
+    barrierDismissible: true,
     barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-    barrierColor: Colors.transparent,
-    transitionDuration: const Duration(milliseconds: 360),
+    barrierColor: Colors.black.withValues(alpha: 0.25),
+    transitionDuration: const Duration(milliseconds: 260),
     pageBuilder: (dialogContext, animation, secondaryAnimation) {
-      return const Material(
-        type: MaterialType.transparency,
-        child: SizedBox.expand(),
-      );
-    },
-    transitionBuilder: (context, animation, secondaryAnimation, child) {
-      final screenHeight = MediaQuery.sizeOf(context).height;
-      final sheetCurve = CurvedAnimation(
-        parent: animation,
-        curve: Curves.easeOutQuart,
-        reverseCurve: Curves.easeInCubic,
-      );
-      final barrierCurve = CurvedAnimation(
-        parent: animation,
-        curve: const Interval(0, 0.65, curve: Curves.easeOut),
-        reverseCurve: Curves.easeIn,
-      );
       return Material(
         type: MaterialType.transparency,
         child: Stack(
@@ -1105,37 +1088,40 @@ Future<void> _showQuickAddSheet(BuildContext context) {
             Positioned.fill(
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
-                onTap: () => Navigator.of(context, rootNavigator: true).pop(),
-                child: FadeTransition(
-                  opacity: Tween<double>(
-                    begin: 0,
-                    end: 1,
-                  ).animate(barrierCurve),
-                  child: ColoredBox(color: Colors.black.withValues(alpha: 0.3)),
-                ),
+                onTap: () => Navigator.of(dialogContext).pop(),
               ),
             ),
             Align(
               alignment: Alignment.bottomCenter,
-              child: AnimatedBuilder(
-                animation: sheetCurve,
-                builder: (context, child) {
-                  return Transform.translate(
-                    offset: Offset(
-                      0,
-                      (1 - sheetCurve.value) * screenHeight * 0.7,
-                    ),
-                    child: child,
-                  );
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {},
+                onVerticalDragEnd: (details) {
+                  if ((details.primaryVelocity ?? 0) > 450) {
+                    Navigator.of(dialogContext).pop();
+                  }
                 },
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () {},
-                  child: const _QuickAddSheet(),
-                ),
+                child: const _QuickAddSheet(),
               ),
             ),
           ],
+        ),
+      );
+    },
+    transitionBuilder: (context, animation, secondaryAnimation, child) {
+      final curved = CurvedAnimation(
+        parent: animation,
+        curve: Curves.easeOutCubic,
+        reverseCurve: Curves.easeInCubic,
+      );
+      return FadeTransition(
+        opacity: curved,
+        child: SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0, 0.16),
+            end: Offset.zero,
+          ).animate(curved),
+          child: child,
         ),
       );
     },
