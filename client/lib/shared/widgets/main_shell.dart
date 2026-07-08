@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -5,7 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:liqing/core/theme/lucide_icons_compat.dart';
 
 import '../../core/config/feature_flags.dart';
 import '../../core/network/api_client.dart';
@@ -38,6 +39,18 @@ class _MainShellState extends ConsumerState<MainShell> {
     if (index == _currentIndex) return;
     setState(() => _currentIndex = index);
     context.go(_paths[index]);
+    _refreshTab(index);
+  }
+
+  void _refreshTab(int index) {
+    switch (index) {
+      case 1:
+        ref.read(statsProvider.notifier).load();
+        break;
+      case 2:
+        ref.read(billsProvider.notifier).load();
+        break;
+    }
   }
 
   @override
@@ -638,105 +651,128 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet>
                         Container(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           width: double.infinity,
-                          child: Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.baseline,
-                                textBaseline: TextBaseline.alphabetic,
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.only(bottom: 4),
-                                    child: Text(
-                                      '¥',
-                                      style: oneKeepGrotesk(
-                                        color: accentColor.withValues(
-                                          alpha: 0.5,
-                                        ),
-                                        size: 26,
-                                        weight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  AnimatedSwitcher(
-                                    duration: const Duration(milliseconds: 150),
-                                    transitionBuilder:
-                                        (
-                                          Widget child,
-                                          Animation<double> animation,
-                                        ) {
-                                          return FadeTransition(
-                                            opacity: animation,
-                                            child: child,
-                                          );
-                                        },
-                                    child: OneKeepGradientText(
-                                      key: ValueKey<String>(
-                                        _amount.isEmpty ? '0.00' : _amount,
-                                      ),
-                                      text: _amount.isEmpty ? '0.00' : _amount,
-                                      gradient: LinearGradient(
-                                        begin: Alignment.topCenter,
-                                        end: Alignment.bottomCenter,
-                                        colors: isDark
-                                            ? [Colors.white, accentColor]
-                                            : [
-                                                AppColors.lightTextPrimary,
-                                                accentColor,
-                                              ],
-                                      ),
-                                      style: oneKeepGrotesk(
-                                        color: oneKeepTextPrimary(context),
-                                        size: 56,
-                                        weight: FontWeight.w700,
-                                        letterSpacing: -1.5,
-                                      ),
-                                    ),
-                                  ),
-                                  AnimatedBuilder(
-                                    animation: _cursorController,
-                                    builder: (context, child) {
-                                      return Opacity(
-                                        opacity: _cursorController.value,
-                                        child: SizedBox(
-                                          height: 56,
-                                          child: Center(
-                                            child: Container(
-                                              margin: const EdgeInsets.only(
-                                                left: 4,
-                                              ),
-                                              width: 2.5,
-                                              height: 48,
-                                              decoration: BoxDecoration(
-                                                color: accentColor,
-                                                borderRadius:
-                                                    BorderRadius.circular(2),
+                          child: SizedBox(
+                            height: 68,
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                Positioned.fill(
+                                  right: _amount.isNotEmpty ? 40 : 0,
+                                  child: Center(
+                                    child: FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.center,
+                                        children: [
+                                          Transform.translate(
+                                            offset: const Offset(0, 8),
+                                            child: Text(
+                                              '¥',
+                                              style: oneKeepGrotesk(
+                                                color: accentColor.withValues(
+                                                  alpha: 0.5,
+                                                ),
+                                                size: 26,
+                                                weight: FontWeight.w600,
                                               ),
                                             ),
                                           ),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ],
-                              ),
-                              if (_amount.isNotEmpty)
-                                Positioned(
-                                  right: 0,
-                                  child: OneKeepBouncingCard(
-                                    onTap: () => setState(() => _amount = ''),
-                                    child: Icon(
-                                      Icons.backspace_rounded,
-                                      size: 18,
-                                      color: oneKeepTextTertiary(
-                                        context,
-                                      ).withValues(alpha: 0.4),
+                                          const SizedBox(width: 8),
+                                          AnimatedSwitcher(
+                                            duration: const Duration(
+                                              milliseconds: 150,
+                                            ),
+                                            transitionBuilder:
+                                                (
+                                                  Widget child,
+                                                  Animation<double> animation,
+                                                ) {
+                                                  return FadeTransition(
+                                                    opacity: animation,
+                                                    child: child,
+                                                  );
+                                                },
+                                            child: OneKeepGradientText(
+                                              key: ValueKey<String>(
+                                                _amount.isEmpty
+                                                    ? '0.00'
+                                                    : _amount,
+                                              ),
+                                              text: _amount.isEmpty
+                                                  ? '0.00'
+                                                  : _amount,
+                                              gradient: LinearGradient(
+                                                begin: Alignment.topCenter,
+                                                end: Alignment.bottomCenter,
+                                                colors: isDark
+                                                    ? [
+                                                        Colors.white,
+                                                        accentColor,
+                                                      ]
+                                                    : [
+                                                        AppColors
+                                                            .lightTextPrimary,
+                                                        accentColor,
+                                                      ],
+                                              ),
+                                              style: oneKeepGrotesk(
+                                                color: oneKeepTextPrimary(
+                                                  context,
+                                                ),
+                                                size: 56,
+                                                weight: FontWeight.w700,
+                                                letterSpacing: -1.5,
+                                              ),
+                                            ),
+                                          ),
+                                          AnimatedBuilder(
+                                            animation: _cursorController,
+                                            builder: (context, child) {
+                                              return Opacity(
+                                                opacity:
+                                                    _cursorController.value,
+                                                child: Container(
+                                                  margin: const EdgeInsets.only(
+                                                    left: 5,
+                                                  ),
+                                                  width: 2.5,
+                                                  height: 36,
+                                                  decoration: BoxDecoration(
+                                                    color: accentColor,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          2,
+                                                        ),
+                                                  ),
+                                                ),
+                                              );
+                                            },
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ),
                                 ),
-                            ],
+                                if (_amount.isNotEmpty)
+                                  Positioned(
+                                    right: 0,
+                                    child: OneKeepBouncingCard(
+                                      onTap: () => setState(() => _amount = ''),
+                                      child: Icon(
+                                        Icons.backspace_rounded,
+                                        size: 18,
+                                        color: oneKeepTextTertiary(
+                                          context,
+                                        ).withValues(alpha: 0.4),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
                           ),
                         ),
 
@@ -890,7 +926,8 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet>
 
                   // Category Grid
                   Container(
-                    constraints: const BoxConstraints(maxHeight: 240),
+                    margin: const EdgeInsets.only(bottom: 16),
+                    constraints: const BoxConstraints(maxHeight: 184),
                     child: ref
                         .watch(categoriesProvider)
                         .when(
@@ -902,8 +939,6 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet>
                           error: (error, _) => const SizedBox(),
                         ),
                   ),
-                  const SizedBox(height: 8),
-
                   // Premium Aligned Keyboard
                   _NumericKeyboard(
                     onKeyPress: _onKeyPress,
@@ -925,85 +960,44 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet>
     final filtered = items.where((item) => item.type == _direction).toList();
     if (filtered.isEmpty) return const SizedBox();
 
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    const crossAxisCount = 4;
+    const columns = 5;
+    final rows = <List<Category>>[
+      for (var i = 0; i < filtered.length; i += columns)
+        filtered.sublist(i, math.min(i + columns, filtered.length)),
+    ];
 
-    return GridView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      physics: const BouncingScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: crossAxisCount,
-        mainAxisSpacing: 4,
-        crossAxisSpacing: 4,
-        childAspectRatio: 1.1,
-      ),
-      itemCount: filtered.length,
-      itemBuilder: (context, index) {
-        final item = filtered[index];
-        final selected = item.id == _selectedCategoryId;
-        final tone = oneKeepCategoryTone(
-          colorHex: item.color,
-          categoryId: item.id,
-          categoryName: item.name,
-          categoryIcon: item.icon,
-        );
-
-        return GestureDetector(
-          onTap: () {
-            HapticFeedback.lightImpact();
-            setState(() => _selectedCategoryId = item.id);
-          },
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 250),
-                width: 46,
-                height: 46,
-                decoration: BoxDecoration(
-                  color: selected
-                      ? tone.withValues(alpha: 0.2)
-                      : (isDark
-                            ? Colors.white10
-                            : Colors.black.withValues(alpha: 0.05)),
-                  borderRadius: BorderRadius.circular(14),
-                  border: selected
-                      ? Border.all(
-                          color: tone.withValues(alpha: 0.4),
-                          width: 1.5,
-                        )
-                      : null,
-                ),
-                child: Image.asset(
-                  resolveCategoryIconAsset(
-                    item.icon.isNotEmpty ? item.icon : item.name,
-                  ),
-                  width: 22,
-                  height: 22,
-                  errorBuilder: (_, __, ___) => Icon(
-                    Icons.receipt_long_rounded,
-                    size: 22,
-                    color: selected ? tone : oneKeepTextSecondary(context),
-                  ),
-                ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
+      child: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        child: Column(
+          children: [
+            for (var rowIndex = 0; rowIndex < rows.length; rowIndex++) ...[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  for (var index = 0; index < columns; index++)
+                    index < rows[rowIndex].length
+                        ? _ManualEntryCategoryItem(
+                            item: rows[rowIndex][index],
+                            selected:
+                                rows[rowIndex][index].id == _selectedCategoryId,
+                            onTap: () {
+                              HapticFeedback.lightImpact();
+                              setState(
+                                () => _selectedCategoryId =
+                                    rows[rowIndex][index].id,
+                              );
+                            },
+                          )
+                        : const SizedBox(width: 46),
+                ],
               ),
-              const SizedBox(height: 4),
-              Text(
-                item.name,
-                style: oneKeepInter(
-                  color: selected ? tone : oneKeepTextSecondary(context),
-                  size: 10,
-                  weight: selected ? FontWeight.w700 : FontWeight.w500,
-                ),
-                maxLines: 1,
-                textAlign: TextAlign.center,
-                overflow: TextOverflow.ellipsis,
-              ),
+              if (rowIndex < rows.length - 1) const SizedBox(height: 6),
             ],
-          ),
-        );
-      },
+          ],
+        ),
+      ),
     );
   }
 
@@ -1157,6 +1151,85 @@ class _QuickAddToggle extends StatelessWidget {
   }
 }
 
+class _ManualEntryCategoryItem extends StatelessWidget {
+  final Category item;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _ManualEntryCategoryItem({
+    required this.item,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final tone = oneKeepCategoryTone(
+      colorHex: item.color,
+      categoryId: item.id,
+      categoryName: item.name,
+      categoryIcon: item.icon,
+    );
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 250),
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              color: selected
+                  ? tone.withValues(alpha: 0.2)
+                  : (isDark
+                        ? Colors.white10
+                        : Colors.black.withValues(alpha: 0.05)),
+              borderRadius: BorderRadius.circular(14),
+              border: selected
+                  ? Border.all(color: tone.withValues(alpha: 0.4), width: 1.5)
+                  : null,
+            ),
+            child: Center(
+              child: Image.asset(
+                resolveCategoryIconAsset(
+                  item.icon.isNotEmpty ? item.icon : item.name,
+                ),
+                width: 24,
+                height: 24,
+                fit: BoxFit.contain,
+                errorBuilder: (_, __, ___) => Icon(
+                  Icons.receipt_long_rounded,
+                  size: 24,
+                  color: selected ? tone : oneKeepTextSecondary(context),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 4),
+          SizedBox(
+            width: 46,
+            child: Text(
+              item.name,
+              style: oneKeepInter(
+                color: selected ? tone : oneKeepTextSecondary(context),
+                size: 10,
+                weight: selected ? FontWeight.w700 : FontWeight.w500,
+              ),
+              maxLines: 1,
+              textAlign: TextAlign.center,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _NumericKeyboard extends StatelessWidget {
   final Function(String) onKeyPress;
   final VoidCallback onDelete;
@@ -1234,7 +1307,7 @@ class _NumericKeyboard extends StatelessWidget {
   }
 }
 
-class _Key extends StatelessWidget {
+class _Key extends StatefulWidget {
   final String? label;
   final IconData? icon;
   final VoidCallback onTap;
@@ -1250,34 +1323,76 @@ class _Key extends StatelessWidget {
   });
 
   @override
+  State<_Key> createState() => _KeyState();
+}
+
+class _KeyState extends State<_Key> {
+  bool _pressed = false;
+
+  void _setPressed(bool value) {
+    if (_pressed == value) return;
+    setState(() => _pressed = value);
+  }
+
+  void _handleTapDown(TapDownDetails _) {
+    HapticFeedback.selectionClick();
+    _setPressed(true);
+  }
+
+  Future<void> _handleTapUp(TapUpDetails _) async {
+    widget.onTap();
+    await Future<void>.delayed(const Duration(milliseconds: 90));
+    if (!mounted) return;
+    _setPressed(false);
+  }
+
+  void _handleTapCancel() {
+    _setPressed(false);
+  }
+
+  @override
   Widget build(BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    final baseColor = (isDark ? Colors.white : Colors.black).withValues(
+      alpha: _pressed ? 0.12 : 0.06,
+    );
 
-    return OneKeepBouncingCard(
-      onTap: onTap,
-      child: Container(
-        height: height,
-        decoration: BoxDecoration(
-          color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.06),
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Center(
-          child: label != null
-              ? Text(
-                  label!,
-                  style: oneKeepGrotesk(
-                    color: oneKeepTextPrimary(context),
-                    size: isOperator ? 24 : 22,
-                    weight: isOperator ? FontWeight.w400 : FontWeight.w600,
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTapDown: _handleTapDown,
+      onTapUp: _handleTapUp,
+      onTapCancel: _handleTapCancel,
+      child: AnimatedScale(
+        duration: const Duration(milliseconds: 90),
+        curve: Curves.easeOutCubic,
+        scale: _pressed ? 0.93 : 1,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 90),
+          height: widget.height,
+          decoration: BoxDecoration(
+            color: baseColor,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Center(
+            child: widget.label != null
+                ? Text(
+                    widget.label!,
+                    style: oneKeepGrotesk(
+                      color: oneKeepTextPrimary(context),
+                      size: widget.isOperator ? 24 : 22,
+                      weight: widget.isOperator
+                          ? FontWeight.w400
+                          : FontWeight.w600,
+                    ),
+                  )
+                : Icon(
+                    widget.icon,
+                    color: (widget.icon == LucideIcons.delete)
+                        ? Colors.redAccent.withValues(alpha: 0.7)
+                        : oneKeepTextPrimary(context),
+                    size: 20,
                   ),
-                )
-              : Icon(
-                  icon,
-                  color: (icon == LucideIcons.delete)
-                      ? Colors.redAccent.withValues(alpha: 0.7)
-                      : oneKeepTextPrimary(context),
-                  size: 20,
-                ),
+          ),
         ),
       ),
     );

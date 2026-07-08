@@ -535,6 +535,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     final preferences = ref.read(preferencesProvider);
     await showModalBottomSheet<void>(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       barrierColor: Colors.black.withValues(alpha: 0.25),
@@ -551,11 +552,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
   Future<void> _showBackgroundStudio() async {
     final preferences = ref.read(preferencesProvider);
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      barrierColor: Colors.black.withValues(alpha: 0.25),
+    await _showProfileRootSheet<void>(
       builder: (_) => _BackgroundStudioSheet(
         imageData: preferences.profileBackgroundImageData,
         onSelectImage: (bytes) {
@@ -608,6 +605,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final confirmed = await showDialog<bool>(
       context: context,
+      useRootNavigator: true,
       builder: (ctx) => AlertDialog(
         backgroundColor: isDark ? const Color(0xFF1C1C1E) : Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -671,21 +669,68 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   }
 
   Future<void> _showAccountSheet() async {
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      barrierColor: Colors.black.withValues(alpha: 0.25),
-      builder: (_) => _AccountActionsSheet(
+    await _showProfileRootSheet<void>(
+      builder: (sheetContext) => _AccountActionsSheet(
         onLogout: () {
-          Navigator.of(context).pop();
+          Navigator.of(sheetContext).pop();
           ref.read(authProvider.notifier).logout();
         },
         onDeleteAccount: () {
-          Navigator.of(context).pop();
+          Navigator.of(sheetContext).pop();
           _deleteAccount();
         },
       ),
+    );
+  }
+
+  Future<T?> _showProfileRootSheet<T>({required WidgetBuilder builder}) {
+    return showGeneralDialog<T>(
+      context: context,
+      useRootNavigator: true,
+      barrierDismissible: true,
+      barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+      barrierColor: Colors.black.withValues(alpha: 0.25),
+      transitionDuration: const Duration(milliseconds: 260),
+      pageBuilder: (dialogContext, animation, secondaryAnimation) {
+        return Material(
+          type: MaterialType.transparency,
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => Navigator.of(dialogContext).pop(),
+                ),
+              ),
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () {},
+                  child: builder(dialogContext),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        final curved = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutCubic,
+          reverseCurve: Curves.easeInCubic,
+        );
+        return FadeTransition(
+          opacity: curved,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0, 0.16),
+              end: Offset.zero,
+            ).animate(curved),
+            child: child,
+          ),
+        );
+      },
     );
   }
 }
@@ -735,15 +780,14 @@ class _FinanceDashboardCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Expanded(
-                  child: Text(
-                    isLoading ? '--' : '¥${oneKeepCurrency(balance)}',
-                    style: TextStyle(
-                      color: isDark ? Colors.white : const Color(0xFF1C1C1E),
-                      fontSize: 36,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: -1.5,
-                      height: 1.0,
-                    ),
+                  child: _AdaptiveMoneyText(
+                    value: isLoading ? '--' : '¥${oneKeepCurrency(balance)}',
+                    color: isDark ? Colors.white : const Color(0xFF1C1C1E),
+                    maxFontSize: 36,
+                    minFontSize: 20,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -1.5,
+                    height: 1.0,
                   ),
                 ),
                 Container(
@@ -809,18 +853,17 @@ class _FinanceDashboardCard extends StatelessWidget {
                           ),
                           const SizedBox(width: 8),
                           Expanded(
-                            child: Text(
-                              isLoading ? '--' : '¥${oneKeepCurrency(expense)}',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: isDark
-                                    ? Colors.white
-                                    : const Color(0xFF1D1D1F),
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: -0.4,
-                              ),
+                            child: _AdaptiveMoneyText(
+                              value: isLoading
+                                  ? '--'
+                                  : '¥${oneKeepCurrency(expense)}',
+                              color: isDark
+                                  ? Colors.white
+                                  : const Color(0xFF1D1D1F),
+                              maxFontSize: 16,
+                              minFontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: -0.4,
                             ),
                           ),
                         ],
@@ -882,18 +925,17 @@ class _FinanceDashboardCard extends StatelessWidget {
                           ),
                           const SizedBox(width: 8),
                           Expanded(
-                            child: Text(
-                              isLoading ? '--' : '¥${oneKeepCurrency(income)}',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: isDark
-                                    ? Colors.white
-                                    : const Color(0xFF1D1D1F),
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: -0.4,
-                              ),
+                            child: _AdaptiveMoneyText(
+                              value: isLoading
+                                  ? '--'
+                                  : '¥${oneKeepCurrency(income)}',
+                              color: isDark
+                                  ? Colors.white
+                                  : const Color(0xFF1D1D1F),
+                              maxFontSize: 16,
+                              minFontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: -0.4,
                             ),
                           ),
                         ],
@@ -907,6 +949,81 @@ class _FinanceDashboardCard extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+class _AdaptiveMoneyText extends StatelessWidget {
+  final String value;
+  final Color color;
+  final double maxFontSize;
+  final double minFontSize;
+  final FontWeight fontWeight;
+  final double letterSpacing;
+  final double? height;
+
+  const _AdaptiveMoneyText({
+    required this.value,
+    required this.color,
+    required this.maxFontSize,
+    required this.minFontSize,
+    required this.fontWeight,
+    required this.letterSpacing,
+    this.height,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final fontSize = _resolveFontSize(
+          context,
+          maxWidth: constraints.maxWidth,
+        );
+        final style = TextStyle(
+          color: color,
+          fontSize: fontSize,
+          fontWeight: fontWeight,
+          letterSpacing: letterSpacing,
+          height: height,
+        );
+
+        return SizedBox(
+          width: double.infinity,
+          child: FittedBox(
+            alignment: Alignment.centerLeft,
+            fit: BoxFit.scaleDown,
+            child: Text(
+              value,
+              maxLines: 1,
+              softWrap: false,
+              overflow: TextOverflow.visible,
+              style: style,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  double _resolveFontSize(BuildContext context, {required double maxWidth}) {
+    if (maxWidth <= 0 || value.length <= 3) return maxFontSize;
+    for (var size = maxFontSize; size >= minFontSize; size -= 1) {
+      final painter = TextPainter(
+        text: TextSpan(
+          text: value,
+          style: TextStyle(
+            fontSize: size,
+            fontWeight: fontWeight,
+            letterSpacing: letterSpacing,
+            height: height,
+          ),
+        ),
+        maxLines: 1,
+        textDirection: Directionality.of(context),
+      )..layout(maxWidth: double.infinity);
+      if (painter.width <= maxWidth) return size;
+    }
+    return minFontSize;
   }
 }
 

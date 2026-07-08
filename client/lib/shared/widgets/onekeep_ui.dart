@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 import 'dart:typed_data';
 import 'dart:ui';
 
@@ -13,6 +14,8 @@ import '../../core/theme/onekeep_iconfont.dart';
 enum OneKeepPageVariant { auth, home, stats, bills, profile }
 
 enum OneKeepToastType { success, error, info }
+
+OverlayEntry? _activeOneKeepToastEntry;
 
 // ── Google Fonts 已离线打包 ──
 const _fontFamilyInter = 'Inter';
@@ -94,20 +97,121 @@ void showOneKeepToast(
   OneKeepToastType type = OneKeepToastType.info,
   Duration duration = const Duration(seconds: 2),
 }) {
-  final messenger = ScaffoldMessenger.of(context);
-  messenger.hideCurrentSnackBar();
-  messenger.showSnackBar(
-    SnackBar(
-      content: OneKeepToast(message: message, type: type),
-      behavior: SnackBarBehavior.floating,
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 88),
-      padding: EdgeInsets.zero,
+  final overlay = Overlay.maybeOf(context, rootOverlay: true);
+  if (overlay == null) return;
+
+  _activeOneKeepToastEntry?.remove();
+
+  late final OverlayEntry entry;
+  entry = OverlayEntry(
+    builder: (_) => _OneKeepToastOverlay(
+      message: message,
+      type: type,
       duration: duration,
-      dismissDirection: DismissDirection.down,
+      onDismissed: () {
+        if (_activeOneKeepToastEntry == entry) {
+          _activeOneKeepToastEntry = null;
+        }
+        entry.remove();
+      },
     ),
   );
+
+  _activeOneKeepToastEntry = entry;
+  overlay.insert(entry);
+}
+
+class _OneKeepToastOverlay extends StatefulWidget {
+  final String message;
+  final OneKeepToastType type;
+  final Duration duration;
+  final VoidCallback onDismissed;
+
+  const _OneKeepToastOverlay({
+    required this.message,
+    required this.type,
+    required this.duration,
+    required this.onDismissed,
+  });
+
+  @override
+  State<_OneKeepToastOverlay> createState() => _OneKeepToastOverlayState();
+}
+
+class _OneKeepToastOverlayState extends State<_OneKeepToastOverlay>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  Timer? _timer;
+  bool _dismissing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 280),
+      reverseDuration: const Duration(milliseconds: 180),
+    )..forward();
+    _timer = Timer(widget.duration, _dismiss);
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _dismiss() async {
+    if (_dismissing) return;
+    _dismissing = true;
+    _timer?.cancel();
+    await _controller.reverse();
+    if (mounted) {
+      widget.onDismissed();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final top = MediaQuery.paddingOf(context).top + 12;
+    final curve = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOutCubic,
+      reverseCurve: Curves.easeInCubic,
+    );
+
+    return Positioned(
+      left: 16,
+      right: 16,
+      top: top,
+      child: Material(
+        color: Colors.transparent,
+        child: FadeTransition(
+          opacity: curve,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0, -0.55),
+              end: Offset.zero,
+            ).animate(curve),
+            child: ScaleTransition(
+              scale: Tween<double>(begin: 0.98, end: 1).animate(curve),
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: _dismiss,
+                onVerticalDragEnd: (details) {
+                  if ((details.primaryVelocity ?? 0) < -80) {
+                    _dismiss();
+                  }
+                },
+                child: OneKeepToast(message: widget.message, type: widget.type),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class OneKeepToast extends StatelessWidget {
@@ -1041,6 +1145,8 @@ Future<DateTime?> showOneKeepDatePicker({
 }) {
   return showModalBottomSheet<DateTime>(
     context: context,
+    useRootNavigator: true,
+    isScrollControlled: true,
     backgroundColor: Colors.transparent,
     barrierColor: Colors.black.withValues(alpha: 0.3),
     builder: (_) => _OneKeepDatePickerSheet(

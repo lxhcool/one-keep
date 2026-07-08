@@ -4,7 +4,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:liqing/core/theme/lucide_icons_compat.dart';
 
 import '../../core/providers/chat_provider.dart';
 import '../../core/providers/preferences_provider.dart';

@@ -1,5 +1,4 @@
-﻿import 'dart:math' as math;
-import 'dart:ui';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -83,18 +82,23 @@ class _StatsPageState extends ConsumerState<StatsPage> {
     Future.microtask(_reload);
   }
 
-  Future<void> _reload() async {
-    await ref.read(statsProvider.notifier).load(
-      month: _monthKey,
-      metricType: _metricType,
-    );
+  Future<void> _reload({bool force = false}) async {
+    if (force) {
+      _overviewCache.clear();
+      _aggregateStats = null;
+      _aggregateError = null;
+    }
+    await ref
+        .read(statsProvider.notifier)
+        .load(month: _monthKey, metricType: _metricType);
     await _refreshAggregateData();
   }
 
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(statsProvider);
-    final categories = ref.watch(categoriesProvider).valueOrNull ?? const <Category>[];
+    final categories =
+        ref.watch(categoriesProvider).valueOrNull ?? const <Category>[];
     final categoryColors = <String, String?>{
       for (final item in categories) item.id: item.color,
     };
@@ -120,32 +124,60 @@ class _StatsPageState extends ConsumerState<StatsPage> {
         children: [
           _buildGradientHeader(isDark),
           Expanded(
-            child: showLoading
-                ? const Center(child: CircularProgressIndicator())
-                : showError
-                ? Center(
-                    child: Text(
-                      _aggregateError ?? state.error ?? '加载失败',
-                      style: oneKeepInter(
-                        color: oneKeepTextSecondary(context),
-                        size: 13,
-                        weight: FontWeight.w500,
+            child: RefreshIndicator(
+              onRefresh: () => _reload(force: true),
+              color: AppColors.teal,
+              child: showLoading
+                  ? _buildRefreshableState(const CircularProgressIndicator())
+                  : showError
+                  ? _buildRefreshableState(
+                      Text(
+                        _aggregateError ?? state.error ?? '加载失败',
+                        style: oneKeepInter(
+                          color: oneKeepTextSecondary(context),
+                          size: 13,
+                          weight: FontWeight.w500,
+                        ),
                       ),
-                    ),
-                  )
-                : ListView(
-                    padding: EdgeInsets.fromLTRB(16, 20, 16, MediaQuery.paddingOf(context).bottom + 24),
-                    children: [
-                      if (displayStats != null) ...[
-                        _buildTrendSection(displayStats),
-                        const SizedBox(height: 28),
-                        _buildCategorySection(displayStats, categoryColors),
+                    )
+                  : ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: EdgeInsets.fromLTRB(
+                        16,
+                        20,
+                        16,
+                        MediaQuery.paddingOf(context).bottom + 24,
+                      ),
+                      children: [
+                        if (displayStats != null) ...[
+                          _buildTrendSection(displayStats),
+                          const SizedBox(height: 28),
+                          _buildCategorySection(displayStats, categoryColors),
+                        ],
                       ],
-                    ],
-                  ),
+                    ),
+            ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildRefreshableState(Widget child) {
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: EdgeInsets.fromLTRB(
+        16,
+        20,
+        16,
+        MediaQuery.paddingOf(context).bottom + 24,
+      ),
+      children: [
+        SizedBox(
+          height: math.max(260, MediaQuery.sizeOf(context).height * 0.48),
+          child: Center(child: child),
+        ),
+      ],
     );
   }
 
@@ -230,7 +262,9 @@ class _StatsPageState extends ConsumerState<StatsPage> {
         'metricType': _metricType,
       },
     );
-    final overview = StatsOverview.fromJson(response.data as Map<String, dynamic>);
+    final overview = StatsOverview.fromJson(
+      response.data as Map<String, dynamic>,
+    );
     _overviewCache[key] = overview;
     return overview;
   }
@@ -239,7 +273,10 @@ class _StatsPageState extends ConsumerState<StatsPage> {
     final now = DateTime.now();
     final monthCount = year == now.year ? now.month : 12;
     final overviews = await Future.wait(
-      List.generate(monthCount, (index) => _fetchOverview(DateTime(year, index + 1))),
+      List.generate(
+        monthCount,
+        (index) => _fetchOverview(DateTime(year, index + 1)),
+      ),
     );
 
     return _ResolvedStats(
@@ -257,6 +294,7 @@ class _StatsPageState extends ConsumerState<StatsPage> {
       categoryRanks: _aggregateCategoryRanks(overviews),
     );
   }
+
   Future<_ResolvedStats> _buildYearStats(int endYear) async {
     final now = DateTime.now();
     final startYear = math.max(2023, endYear - 3);
@@ -268,10 +306,19 @@ class _StatsPageState extends ConsumerState<StatsPage> {
     for (var year = startYear; year <= endYear; year++) {
       final monthCount = year == now.year ? now.month : 12;
       final yearOverviews = await Future.wait(
-        List.generate(monthCount, (index) => _fetchOverview(DateTime(year, index + 1))),
+        List.generate(
+          monthCount,
+          (index) => _fetchOverview(DateTime(year, index + 1)),
+        ),
       );
-      final yearIncome = yearOverviews.fold(0.0, (sum, item) => sum + item.totalIncome);
-      final yearExpense = yearOverviews.fold(0.0, (sum, item) => sum + item.totalExpense);
+      final yearIncome = yearOverviews.fold(
+        0.0,
+        (sum, item) => sum + item.totalIncome,
+      );
+      final yearExpense = yearOverviews.fold(
+        0.0,
+        (sum, item) => sum + item.totalExpense,
+      );
 
       totalIncome += yearIncome;
       totalExpense += yearExpense;
@@ -304,7 +351,9 @@ class _StatsPageState extends ConsumerState<StatsPage> {
 
     final keys = weekTotals.keys.toList()..sort();
     return keys
-        .map((week) => TrendPoint(label: '第$week周', value: weekTotals[week] ?? 0))
+        .map(
+          (week) => TrendPoint(label: '第$week周', value: weekTotals[week] ?? 0),
+        )
         .toList();
   }
 
@@ -384,7 +433,10 @@ class _StatsPageState extends ConsumerState<StatsPage> {
             GestureDetector(
               onTap: _showMonthPicker,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(14),
@@ -397,7 +449,10 @@ class _StatsPageState extends ConsumerState<StatsPage> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      [_selectedMonth.year, _selectedMonth.month.toString().padLeft(2, '0')].join('/'),
+                      [
+                        _selectedMonth.year,
+                        _selectedMonth.month.toString().padLeft(2, '0'),
+                      ].join('/'),
                       style: oneKeepInter(
                         color: Colors.white.withValues(alpha: 0.9),
                         size: 13,
@@ -485,7 +540,9 @@ class _StatsPageState extends ConsumerState<StatsPage> {
             borderRadius: BorderRadius.circular(22),
             boxShadow: [
               BoxShadow(
-                color: isDark ? Colors.black.withValues(alpha: 0.2) : Colors.black.withValues(alpha: 0.04),
+                color: isDark
+                    ? Colors.black.withValues(alpha: 0.2)
+                    : Colors.black.withValues(alpha: 0.04),
                 blurRadius: 16,
                 offset: const Offset(0, 4),
               ),
@@ -510,7 +567,10 @@ class _StatsPageState extends ConsumerState<StatsPage> {
                   GestureDetector(
                     onTap: _showRangePicker,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: oneKeepGlassStrong(context),
                         borderRadius: BorderRadius.circular(999),
@@ -560,10 +620,7 @@ class _StatsPageState extends ConsumerState<StatsPage> {
                         ),
                       ),
                     )
-                  : _TrendBars(
-                      points: stats.trendSeries,
-                      tone: tone,
-                    ),
+                  : _TrendBars(points: stats.trendSeries, tone: tone),
             ],
           ),
         ),
@@ -608,8 +665,12 @@ class _StatsPageState extends ConsumerState<StatsPage> {
               for (int i = 0; i < ranks.length; i++)
                 _RankRow(
                   rank: ranks[i],
-                  categoryColor: categoryColors[ranks[i].categoryId] ?? ranks[i].categoryColor,
-                  progressRatio: totalAmount > 0 ? ranks[i].amount / totalAmount : 0,
+                  categoryColor:
+                      categoryColors[ranks[i].categoryId] ??
+                      ranks[i].categoryColor,
+                  progressRatio: totalAmount > 0
+                      ? ranks[i].amount / totalAmount
+                      : 0,
                   isEven: i.isEven,
                 ),
             ],
@@ -624,6 +685,7 @@ class _StatsPageState extends ConsumerState<StatsPage> {
 
     showModalBottomSheet<void>(
       context: context,
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
       barrierColor: oneKeepDimOverlay(context),
       builder: (context) {
@@ -642,16 +704,23 @@ class _StatsPageState extends ConsumerState<StatsPage> {
                         width: 36,
                         height: 4,
                         decoration: BoxDecoration(
-                          color: oneKeepTextTertiary(context).withValues(alpha: 0.2),
+                          color: oneKeepTextTertiary(
+                            context,
+                          ).withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
                       const SizedBox(height: 20),
                       // Year navigator
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
-                          color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
+                          color: isDark
+                              ? Colors.white.withValues(alpha: 0.05)
+                              : Colors.black.withValues(alpha: 0.03),
                           borderRadius: BorderRadius.circular(14),
                         ),
                         child: Row(
@@ -661,7 +730,8 @@ class _StatsPageState extends ConsumerState<StatsPage> {
                               icon: Icons.chevron_left_rounded,
                               enabled: true,
                               isDark: isDark,
-                              onTap: () => setModalState(() => displayYear -= 1),
+                              onTap: () =>
+                                  setModalState(() => displayYear -= 1),
                             ),
                             const Spacer(),
                             Text(
@@ -691,26 +761,32 @@ class _StatsPageState extends ConsumerState<StatsPage> {
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         itemCount: 12,
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 4,
-                          crossAxisSpacing: 10,
-                          mainAxisSpacing: 10,
-                          mainAxisExtent: 48,
-                        ),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 4,
+                              crossAxisSpacing: 10,
+                              mainAxisSpacing: 10,
+                              mainAxisExtent: 48,
+                            ),
                         itemBuilder: (context, index) {
                           final month = index + 1;
-                          final disabled = displayYear == now.year && month > now.month;
+                          final disabled =
+                              displayYear == now.year && month > now.month;
                           final selected =
                               displayYear == _selectedMonth.year &&
                               month == _selectedMonth.month;
-                          final isCurrent = displayYear == now.year && month == now.month;
+                          final isCurrent =
+                              displayYear == now.year && month == now.month;
 
                           return GestureDetector(
                             onTap: disabled
                                 ? null
                                 : () async {
                                     setState(() {
-                                      _selectedMonth = DateTime(displayYear, month);
+                                      _selectedMonth = DateTime(
+                                        displayYear,
+                                        month,
+                                      );
                                     });
                                     Navigator.pop(context);
                                     await _reload();
@@ -721,10 +797,19 @@ class _StatsPageState extends ConsumerState<StatsPage> {
                               decoration: BoxDecoration(
                                 color: selected
                                     ? AppColors.teal
-                                    : (isDark ? Colors.white.withValues(alpha: 0.04) : Colors.black.withValues(alpha: 0.02)),
+                                    : (isDark
+                                          ? Colors.white.withValues(alpha: 0.04)
+                                          : Colors.black.withValues(
+                                              alpha: 0.02,
+                                            )),
                                 borderRadius: BorderRadius.circular(14),
                                 border: isCurrent && !selected
-                                    ? Border.all(color: AppColors.teal.withValues(alpha: 0.4), width: 1.5)
+                                    ? Border.all(
+                                        color: AppColors.teal.withValues(
+                                          alpha: 0.4,
+                                        ),
+                                        width: 1.5,
+                                      )
                                     : null,
                               ),
                               alignment: Alignment.center,
@@ -734,10 +819,14 @@ class _StatsPageState extends ConsumerState<StatsPage> {
                                   color: selected
                                       ? Colors.white
                                       : disabled
-                                      ? oneKeepTextTertiary(context).withValues(alpha: 0.3)
+                                      ? oneKeepTextTertiary(
+                                          context,
+                                        ).withValues(alpha: 0.3)
                                       : oneKeepTextPrimary(context),
                                   size: 15,
-                                  weight: selected ? FontWeight.w700 : FontWeight.w500,
+                                  weight: selected
+                                      ? FontWeight.w700
+                                      : FontWeight.w500,
                                 ),
                               ),
                             ),
@@ -772,13 +861,15 @@ class _StatsPageState extends ConsumerState<StatsPage> {
               ? (isDark ? Colors.white.withValues(alpha: 0.08) : Colors.white)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
-          boxShadow: enabled && !isDark ? [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 4,
-              offset: const Offset(0, 1),
-            ),
-          ] : null,
+          boxShadow: enabled && !isDark
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                  ),
+                ]
+              : null,
         ),
         child: Icon(
           icon,
@@ -794,6 +885,7 @@ class _StatsPageState extends ConsumerState<StatsPage> {
   void _showRangePicker() {
     showModalBottomSheet<void>(
       context: context,
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
       barrierColor: oneKeepDimOverlay(context),
       builder: (sheetContext) {
@@ -812,7 +904,9 @@ class _StatsPageState extends ConsumerState<StatsPage> {
                       width: 40,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: oneKeepTextTertiary(context).withValues(alpha: 0.32),
+                        color: oneKeepTextTertiary(
+                          context,
+                        ).withValues(alpha: 0.32),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -854,7 +948,10 @@ class _StatsPageState extends ConsumerState<StatsPage> {
                           }
                         },
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 14,
+                          ),
                           decoration: BoxDecoration(
                             color: selected
                                 ? AppColors.teal.withValues(alpha: 0.14)
@@ -870,7 +967,9 @@ class _StatsPageState extends ConsumerState<StatsPage> {
                                       ? AppColors.tealDark
                                       : oneKeepTextPrimary(context),
                                   size: 14,
-                                  weight: selected ? FontWeight.w600 : FontWeight.w500,
+                                  weight: selected
+                                      ? FontWeight.w600
+                                      : FontWeight.w500,
                                 ),
                               ),
                               const Spacer(),
@@ -943,7 +1042,9 @@ class _MetricToggle extends StatelessWidget {
         curve: Curves.easeOut,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: active ? AppColors.teal.withValues(alpha: 0.18) : Colors.transparent,
+          color: active
+              ? AppColors.teal.withValues(alpha: 0.18)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
         ),
         child: Text(
@@ -970,14 +1071,14 @@ class _TrendBars extends StatelessWidget {
     if (points.isEmpty) {
       return const SizedBox(
         height: 184,
-        child: OneKeepEmptyState(
-          icon: Icons.bar_chart,
-          message: '暂无数据',
-        ),
+        child: OneKeepEmptyState(icon: Icons.bar_chart, message: '暂无数据'),
       );
     }
 
-    final maxValue = points.fold<double>(0, (max, point) => math.max(max, point.value));
+    final maxValue = points.fold<double>(
+      0,
+      (max, point) => math.max(max, point.value),
+    );
     final showEvery = math.max(1, (points.length / 6).ceil());
 
     return Column(
@@ -988,7 +1089,9 @@ class _TrendBars extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: points.asMap().entries.map((entry) {
               final point = entry.value;
-              final ratio = maxValue <= 0 ? 0.18 : (point.value / maxValue).clamp(0.12, 1.0);
+              final ratio = maxValue <= 0
+                  ? 0.18
+                  : (point.value / maxValue).clamp(0.12, 1.0);
               final active = entry.key == points.length - 1;
 
               return Expanded(
@@ -1089,7 +1192,9 @@ class _RankRow extends StatelessWidget {
         ? 0.0
         : progressRatio.clamp(0.04, 1.0);
     final rowColor = isEven
-        ? (isDark ? Colors.white.withValues(alpha: 0.03) : Colors.black.withValues(alpha: 0.02))
+        ? (isDark
+              ? Colors.white.withValues(alpha: 0.03)
+              : Colors.black.withValues(alpha: 0.02))
         : Colors.transparent;
 
     return Container(
@@ -1140,10 +1245,7 @@ class _RankRow extends StatelessWidget {
                             child: DecoratedBox(
                               decoration: BoxDecoration(
                                 gradient: LinearGradient(
-                                  colors: [
-                                    tone.withValues(alpha: 0.72),
-                                    tone,
-                                  ],
+                                  colors: [tone.withValues(alpha: 0.72), tone],
                                 ),
                                 borderRadius: BorderRadius.circular(999),
                               ),

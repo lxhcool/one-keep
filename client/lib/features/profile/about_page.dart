@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:liqing/core/theme/lucide_icons_compat.dart';
 import '../../shared/widgets/onekeep_ui.dart';
 
 class AboutPage extends StatelessWidget {
