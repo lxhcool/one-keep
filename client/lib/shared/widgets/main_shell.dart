@@ -590,6 +590,7 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet>
   String _remark = '';
   DateTime _occurredAt = DateTime.now();
   bool _isSubmitting = false;
+  bool _contentReady = false;
 
   late AnimationController _cursorController;
 
@@ -600,6 +601,10 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet>
       vsync: this,
       duration: const Duration(milliseconds: 500),
     )..repeat(reverse: true);
+    Future<void>.delayed(const Duration(milliseconds: 180), () {
+      if (!mounted) return;
+      setState(() => _contentReady = true);
+    });
   }
 
   @override
@@ -611,7 +616,9 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet>
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final categories = ref.watch(categoriesProvider).valueOrNull ?? [];
+    final categories = _contentReady
+        ? ref.watch(categoriesProvider).valueOrNull ?? []
+        : const <Category>[];
 
     final selectedCategory = categories
         .where((c) => c.id == _selectedCategoryId)
@@ -668,287 +675,297 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet>
                     ),
                   ),
 
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Column(
-                      children: [
-                        // Amount Area
-                        Container(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          width: double.infinity,
-                          child: SizedBox(
-                            height: 68,
-                            child: Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                Positioned.fill(
-                                  right: _amount.isNotEmpty ? 40 : 0,
-                                  child: Center(
-                                    child: FittedBox(
-                                      fit: BoxFit.scaleDown,
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.center,
-                                        children: [
-                                          Transform.translate(
-                                            offset: const Offset(0, 8),
-                                            child: Text(
-                                              '¥',
-                                              style: oneKeepGrotesk(
-                                                color: accentColor.withValues(
-                                                  alpha: 0.5,
+                  if (!_contentReady)
+                    _QuickAddSheetSkeleton(isDark: isDark)
+                  else ...[
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Column(
+                        children: [
+                          // Amount Area
+                          Container(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            width: double.infinity,
+                            child: SizedBox(
+                              height: 68,
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  Positioned.fill(
+                                    right: _amount.isNotEmpty ? 40 : 0,
+                                    child: Center(
+                                      child: FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.center,
+                                          children: [
+                                            Transform.translate(
+                                              offset: const Offset(0, 8),
+                                              child: Text(
+                                                '¥',
+                                                style: oneKeepGrotesk(
+                                                  color: accentColor.withValues(
+                                                    alpha: 0.5,
+                                                  ),
+                                                  size: 26,
+                                                  weight: FontWeight.w600,
                                                 ),
-                                                size: 26,
-                                                weight: FontWeight.w600,
                                               ),
                                             ),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          AnimatedSwitcher(
-                                            duration: const Duration(
-                                              milliseconds: 150,
-                                            ),
-                                            transitionBuilder:
-                                                (
-                                                  Widget child,
-                                                  Animation<double> animation,
-                                                ) {
-                                                  return FadeTransition(
-                                                    opacity: animation,
-                                                    child: child,
-                                                  );
-                                                },
-                                            child: OneKeepGradientText(
-                                              key: ValueKey<String>(
-                                                _amount.isEmpty
+                                            const SizedBox(width: 8),
+                                            AnimatedSwitcher(
+                                              duration: const Duration(
+                                                milliseconds: 150,
+                                              ),
+                                              transitionBuilder:
+                                                  (
+                                                    Widget child,
+                                                    Animation<double> animation,
+                                                  ) {
+                                                    return FadeTransition(
+                                                      opacity: animation,
+                                                      child: child,
+                                                    );
+                                                  },
+                                              child: OneKeepGradientText(
+                                                key: ValueKey<String>(
+                                                  _amount.isEmpty
+                                                      ? '0.00'
+                                                      : _amount,
+                                                ),
+                                                text: _amount.isEmpty
                                                     ? '0.00'
                                                     : _amount,
-                                              ),
-                                              text: _amount.isEmpty
-                                                  ? '0.00'
-                                                  : _amount,
-                                              gradient: LinearGradient(
-                                                begin: Alignment.topCenter,
-                                                end: Alignment.bottomCenter,
-                                                colors: isDark
-                                                    ? [
-                                                        Colors.white,
-                                                        accentColor,
-                                                      ]
-                                                    : [
-                                                        AppColors
-                                                            .lightTextPrimary,
-                                                        accentColor,
-                                                      ],
-                                              ),
-                                              style: oneKeepGrotesk(
-                                                color: oneKeepTextPrimary(
-                                                  context,
+                                                gradient: LinearGradient(
+                                                  begin: Alignment.topCenter,
+                                                  end: Alignment.bottomCenter,
+                                                  colors: isDark
+                                                      ? [
+                                                          Colors.white,
+                                                          accentColor,
+                                                        ]
+                                                      : [
+                                                          AppColors
+                                                              .lightTextPrimary,
+                                                          accentColor,
+                                                        ],
                                                 ),
-                                                size: 56,
-                                                weight: FontWeight.w700,
-                                                letterSpacing: -1.5,
+                                                style: oneKeepGrotesk(
+                                                  color: oneKeepTextPrimary(
+                                                    context,
+                                                  ),
+                                                  size: 56,
+                                                  weight: FontWeight.w700,
+                                                  letterSpacing: -1.5,
+                                                ),
                                               ),
                                             ),
-                                          ),
-                                          AnimatedBuilder(
-                                            animation: _cursorController,
-                                            builder: (context, child) {
-                                              return Opacity(
-                                                opacity:
-                                                    _cursorController.value,
-                                                child: Container(
-                                                  margin: const EdgeInsets.only(
-                                                    left: 5,
-                                                  ),
-                                                  width: 2.5,
-                                                  height: 36,
-                                                  decoration: BoxDecoration(
-                                                    color: accentColor,
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          2,
+                                            AnimatedBuilder(
+                                              animation: _cursorController,
+                                              builder: (context, child) {
+                                                return Opacity(
+                                                  opacity:
+                                                      _cursorController.value,
+                                                  child: Container(
+                                                    margin:
+                                                        const EdgeInsets.only(
+                                                          left: 5,
                                                         ),
+                                                    width: 2.5,
+                                                    height: 36,
+                                                    decoration: BoxDecoration(
+                                                      color: accentColor,
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            2,
+                                                          ),
+                                                    ),
                                                   ),
-                                                ),
-                                              );
-                                            },
-                                          ),
-                                        ],
+                                                );
+                                              },
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ),
                                   ),
-                                ),
-                                if (_amount.isNotEmpty)
-                                  Positioned(
-                                    right: 0,
-                                    child: OneKeepBouncingCard(
-                                      onTap: () => setState(() => _amount = ''),
-                                      child: Icon(
-                                        Icons.backspace_rounded,
-                                        size: 18,
-                                        color: oneKeepTextTertiary(
-                                          context,
-                                        ).withValues(alpha: 0.4),
+                                  if (_amount.isNotEmpty)
+                                    Positioned(
+                                      right: 0,
+                                      child: OneKeepBouncingCard(
+                                        onTap: () =>
+                                            setState(() => _amount = ''),
+                                        child: Icon(
+                                          Icons.backspace_rounded,
+                                          size: 18,
+                                          color: oneKeepTextTertiary(
+                                            context,
+                                          ).withValues(alpha: 0.4),
+                                        ),
                                       ),
                                     ),
-                                  ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
-                        ),
 
-                        // Toggle Buttons
-                        _QuickAddDirectionToggle(
-                          direction: _direction,
-                          onChanged: (value) {
-                            if (value == _direction) return;
-                            HapticFeedback.selectionClick();
-                            setState(() {
-                              _direction = value;
-                              _selectedCategoryId = null;
-                            });
-                          },
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Remark and Date (Separated Boxes)
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Container(
-                                height: 44,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 14,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: isDark
-                                      ? const Color(0xFF2C2C2E)
-                                      : Colors.white,
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color:
-                                        (isDark ? Colors.white : Colors.black)
-                                            .withValues(alpha: 0.05),
-                                    width: 0.5,
-                                  ),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      LucideIcons.pencil,
-                                      size: 14,
-                                      color: accentColor.withValues(alpha: 0.5),
-                                    ),
-                                    const SizedBox(width: 10),
-                                    Expanded(
-                                      child: TextField(
-                                        onChanged: (v) => _remark = v,
-                                        style: oneKeepInter(
-                                          color: oneKeepTextPrimary(context),
-                                          size: 14,
-                                        ),
-                                        decoration: const InputDecoration(
-                                          hintText: '备注...',
-                                          hintStyle: TextStyle(
-                                            fontSize: 14,
-                                            color: Colors.grey,
-                                          ),
-                                          border: InputBorder.none,
-                                          enabledBorder: InputBorder.none,
-                                          focusedBorder: InputBorder.none,
-                                          filled:
-                                              false, // Ensure no grey background
-                                          isDense: true,
-                                          contentPadding: EdgeInsets.zero,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            OneKeepBouncingCard(
-                              onTap: _pickDate,
-                              child: Container(
-                                height: 44,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 14,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: isDark
-                                      ? const Color(0xFF2C2C2E)
-                                      : Colors.white,
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color:
-                                        (isDark ? Colors.white : Colors.black)
-                                            .withValues(alpha: 0.05),
-                                    width: 0.5,
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      LucideIcons.calendar,
-                                      size: 14,
-                                      color: accentColor.withValues(alpha: 0.5),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      DateFormat('MM-dd').format(_occurredAt),
-                                      style: oneKeepInter(
-                                        color: oneKeepTextSecondary(context),
-                                        size: 14,
-                                        weight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                      ],
-                    ),
-                  ),
-
-                  // Category Grid
-                  AnimatedSize(
-                    duration: reduceMotion
-                        ? Duration.zero
-                        : const Duration(milliseconds: 260),
-                    curve: Curves.easeOutCubic,
-                    alignment: Alignment.topCenter,
-                    child: Container(
-                      margin: const EdgeInsets.only(bottom: 16),
-                      constraints: const BoxConstraints(maxHeight: 184),
-                      child: ref
-                          .watch(categoriesProvider)
-                          .when(
-                            data: (items) {
-                              _syncSelectedCategory(items);
-                              return _buildCategoryGrid(items);
+                          // Toggle Buttons
+                          _QuickAddDirectionToggle(
+                            direction: _direction,
+                            onChanged: (value) {
+                              if (value == _direction) return;
+                              HapticFeedback.selectionClick();
+                              setState(() {
+                                _direction = value;
+                                _selectedCategoryId = null;
+                              });
                             },
-                            loading: () => const SizedBox(),
-                            error: (error, _) => const SizedBox(),
                           ),
+                          const SizedBox(height: 16),
+
+                          // Remark and Date (Separated Boxes)
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Container(
+                                  height: 44,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: isDark
+                                        ? const Color(0xFF2C2C2E)
+                                        : Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color:
+                                          (isDark ? Colors.white : Colors.black)
+                                              .withValues(alpha: 0.05),
+                                      width: 0.5,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        LucideIcons.pencil,
+                                        size: 14,
+                                        color: accentColor.withValues(
+                                          alpha: 0.5,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: TextField(
+                                          onChanged: (v) => _remark = v,
+                                          style: oneKeepInter(
+                                            color: oneKeepTextPrimary(context),
+                                            size: 14,
+                                          ),
+                                          decoration: const InputDecoration(
+                                            hintText: '备注...',
+                                            hintStyle: TextStyle(
+                                              fontSize: 14,
+                                              color: Colors.grey,
+                                            ),
+                                            border: InputBorder.none,
+                                            enabledBorder: InputBorder.none,
+                                            focusedBorder: InputBorder.none,
+                                            filled:
+                                                false, // Ensure no grey background
+                                            isDense: true,
+                                            contentPadding: EdgeInsets.zero,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              OneKeepBouncingCard(
+                                onTap: _pickDate,
+                                child: Container(
+                                  height: 44,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: isDark
+                                        ? const Color(0xFF2C2C2E)
+                                        : Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color:
+                                          (isDark ? Colors.white : Colors.black)
+                                              .withValues(alpha: 0.05),
+                                      width: 0.5,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        LucideIcons.calendar,
+                                        size: 14,
+                                        color: accentColor.withValues(
+                                          alpha: 0.5,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        DateFormat('MM-dd').format(_occurredAt),
+                                        style: oneKeepInter(
+                                          color: oneKeepTextSecondary(context),
+                                          size: 14,
+                                          weight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+                      ),
                     ),
-                  ),
-                  // Premium Aligned Keyboard
-                  _NumericKeyboard(
-                    onKeyPress: _onKeyPress,
-                    onDelete: _onDelete,
-                    onConfirm: canSubmit ? _submit : null,
-                    activeColor: accentColor,
-                    isSubmitting: _isSubmitting,
-                  ),
+
+                    // Category Grid
+                    AnimatedSize(
+                      duration: reduceMotion
+                          ? Duration.zero
+                          : const Duration(milliseconds: 260),
+                      curve: Curves.easeOutCubic,
+                      alignment: Alignment.topCenter,
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 16),
+                        constraints: const BoxConstraints(maxHeight: 184),
+                        child: ref
+                            .watch(categoriesProvider)
+                            .when(
+                              data: (items) {
+                                _syncSelectedCategory(items);
+                                return _buildCategoryGrid(items);
+                              },
+                              loading: () => const SizedBox(),
+                              error: (error, _) => const SizedBox(),
+                            ),
+                      ),
+                    ),
+                    // Premium Aligned Keyboard
+                    _NumericKeyboard(
+                      onKeyPress: _onKeyPress,
+                      onDelete: _onDelete,
+                      onConfirm: canSubmit ? _submit : null,
+                      activeColor: accentColor,
+                      isSubmitting: _isSubmitting,
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -1120,6 +1137,91 @@ Future<void> _showQuickAddSheet(BuildContext context) {
     sheetAnimationStyle: _MainShellState._sheetAnimationStyle,
     builder: (_) => const _QuickAddSheet(),
   );
+}
+
+class _QuickAddSheetSkeleton extends StatelessWidget {
+  final bool isDark;
+
+  const _QuickAddSheetSkeleton({required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    final baseColor = isDark
+        ? Colors.white.withValues(alpha: 0.06)
+        : Colors.black.withValues(alpha: 0.04);
+    final itemColor = isDark
+        ? Colors.white.withValues(alpha: 0.09)
+        : Colors.black.withValues(alpha: 0.055);
+
+    Widget block({
+      required double height,
+      required double width,
+      double radius = 14,
+    }) {
+      return Container(
+        width: width,
+        height: height,
+        decoration: BoxDecoration(
+          color: itemColor,
+          borderRadius: BorderRadius.circular(radius),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 20),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          block(height: 54, width: 190, radius: 18),
+          const SizedBox(height: 20),
+          Container(
+            height: 44,
+            decoration: BoxDecoration(
+              color: baseColor,
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(child: block(height: 44, width: double.infinity)),
+              const SizedBox(width: 12),
+              block(height: 44, width: 88),
+            ],
+          ),
+          const SizedBox(height: 18),
+          Wrap(
+            spacing: 20,
+            runSpacing: 14,
+            alignment: WrapAlignment.center,
+            children: [
+              for (var i = 0; i < 10; i++)
+                block(height: 46, width: 46, radius: 16),
+            ],
+          ),
+          const SizedBox(height: 20),
+          GridView.count(
+            crossAxisCount: 4,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            mainAxisSpacing: 10,
+            crossAxisSpacing: 10,
+            childAspectRatio: 1.75,
+            children: [
+              for (var i = 0; i < 12; i++)
+                Container(
+                  decoration: BoxDecoration(
+                    color: baseColor,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _QuickAddDirectionToggle extends StatelessWidget {
