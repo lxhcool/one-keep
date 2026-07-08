@@ -202,19 +202,15 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Placeholder shortened to match overlay offset (-25px)
                       Transform.translate(
                         offset: const Offset(0, -21),
-                        child: Opacity(
-                          opacity: 0,
-                          child: _buildFinanceOverview(
-                            isDark: isDark,
-                            totalExpense: totalExpense,
-                            totalIncome: totalIncome,
-                            balance: balance,
-                            isLoading:
-                                statsState.isLoading && statsOverview == null,
-                          ),
+                        child: _buildFinanceOverview(
+                          isDark: isDark,
+                          totalExpense: totalExpense,
+                          totalIncome: totalIncome,
+                          balance: balance,
+                          isLoading:
+                              statsState.isLoading && statsOverview == null,
                         ),
                       ),
                       const SizedBox(height: 0),
@@ -241,21 +237,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               ),
             ],
           ),
-          // ── Finance Card overlay ───────────────
-          Positioned(
-            top: bgHeight - 25 - actualScrollOffset + 4,
-            left: 16,
-            right: 16,
-            child: IgnorePointer(
-              child: _buildFinanceOverview(
-                isDark: isDark,
-                totalExpense: totalExpense,
-                totalIncome: totalIncome,
-                balance: balance,
-                isLoading: statsState.isLoading && statsOverview == null,
-              ),
-            ),
-          ),
           // ── Avatar & Nickname (fixed overlay, never enters status bar) ──
           Positioned(
             top: avatarTop,
@@ -268,40 +249,45 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   onTap: _showAvatarStudio,
                   child: Hero(
                     tag: 'profile_avatar',
-                    child: Container(
-                      width: avatarSize,
-                      height: avatarSize,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(
-                              alpha: (0.25 * (1 - t * 0.5)).clamp(0, 0.25),
-                            ),
-                            blurRadius: 25 * (1 - t * 0.3),
-                            offset: Offset(0, 12 * (1 - t * 0.5)),
-                          ),
-                        ],
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.9),
-                          width: (3.5 - 1.5 * t).clamp(1.0, 3.5),
-                        ),
-                      ),
-                      child: ClipOval(
-                        child: _avatarBytes != null
-                            ? Image.memory(
-                                _avatarBytes!,
-                                fit: BoxFit.cover,
-                                cacheWidth: avatarCacheSize,
-                                cacheHeight: avatarCacheSize,
-                                gaplessPlayback: true,
-                              )
-                            : Image.asset(
-                                _defaultAvatarAsset,
-                                fit: BoxFit.cover,
-                                cacheWidth: avatarCacheSize,
-                                cacheHeight: avatarCacheSize,
+                    child: SizedBox.square(
+                      dimension: avatarSize,
+                      child: RepaintBoundary(
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(
+                                  alpha: (0.25 * (1 - t * 0.5)).clamp(0, 0.25),
+                                ),
+                                blurRadius: 25 * (1 - t * 0.3),
+                                offset: Offset(0, 12 * (1 - t * 0.5)),
                               ),
+                            ],
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.9),
+                              width: (3.5 - 1.5 * t).clamp(1.0, 3.5),
+                            ),
+                          ),
+                          child: ClipOval(
+                            child: SizedBox.expand(
+                              child: _avatarBytes != null
+                                  ? Image.memory(
+                                      _avatarBytes!,
+                                      fit: BoxFit.cover,
+                                      cacheWidth: avatarCacheSize,
+                                      cacheHeight: avatarCacheSize,
+                                      gaplessPlayback: true,
+                                    )
+                                  : Image.asset(
+                                      _defaultAvatarAsset,
+                                      fit: BoxFit.cover,
+                                      cacheWidth: avatarCacheSize,
+                                      cacheHeight: avatarCacheSize,
+                                    ),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ),
