@@ -1078,32 +1078,44 @@ Future<void> _showQuickAddSheet(BuildContext context) {
     useRootNavigator: true,
     barrierDismissible: true,
     barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-    barrierColor: Colors.black.withValues(alpha: 0.3),
-    transitionDuration: const Duration(milliseconds: 280),
+    barrierColor: Colors.transparent,
+    transitionDuration: const Duration(milliseconds: 340),
     pageBuilder: (dialogContext, animation, secondaryAnimation) {
       return const Material(
         type: MaterialType.transparency,
-        child: Align(
-          alignment: Alignment.bottomCenter,
-          child: _QuickAddSheet(),
-        ),
+        child: SizedBox.expand(),
       );
     },
     transitionBuilder: (context, animation, secondaryAnimation, child) {
-      final curved = CurvedAnimation(
+      final sheetCurve = CurvedAnimation(
         parent: animation,
-        curve: Curves.easeOutCubic,
+        curve: Curves.easeOutQuart,
         reverseCurve: Curves.easeInCubic,
       );
-      return FadeTransition(
-        opacity: curved,
-        child: SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(0, 0.12),
-            end: Offset.zero,
-          ).animate(curved),
-          child: child,
-        ),
+      final barrierCurve = CurvedAnimation(
+        parent: animation,
+        curve: const Interval(0, 0.65, curve: Curves.easeOut),
+        reverseCurve: Curves.easeIn,
+      );
+      return Stack(
+        children: [
+          Positioned.fill(
+            child: FadeTransition(
+              opacity: Tween<double>(begin: 0, end: 1).animate(barrierCurve),
+              child: ColoredBox(color: Colors.black.withValues(alpha: 0.3)),
+            ),
+          ),
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0, 1),
+                end: Offset.zero,
+              ).animate(sheetCurve),
+              child: const _QuickAddSheet(),
+            ),
+          ),
+        ],
       );
     },
   );
