@@ -1456,7 +1456,6 @@ class _AccountActionsSheet extends StatelessWidget {
                     icon: Icons.power_settings_new_rounded,
                     label: '退出登录',
                     color: const Color(0xFFFF3B30),
-                    crisp: true,
                     onTap: onLogout,
                   ),
                 ),
@@ -1466,7 +1465,6 @@ class _AccountActionsSheet extends StatelessWidget {
                     icon: Icons.delete_outline_rounded,
                     label: '注销账号',
                     color: const Color(0xFFDC2626),
-                    crisp: true,
                     onTap: onDeleteAccount,
                   ),
                 ),
@@ -2048,14 +2046,12 @@ class _ActionCard extends StatelessWidget {
   final String label;
   final Color color;
   final VoidCallback onTap;
-  final bool crisp;
 
   const _ActionCard({
     required this.icon,
     required this.label,
     required this.color,
     required this.onTap,
-    this.crisp = false,
   });
 
   @override
@@ -2070,23 +2066,17 @@ class _ActionCard extends StatelessWidget {
           color: isDark ? const Color(0xFF2C2C2E) : Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: crisp
-                ? (isDark
-                      ? Colors.white.withValues(alpha: 0.14)
-                      : Colors.black.withValues(alpha: 0.08))
-                : (isDark
-                      ? Colors.white.withValues(alpha: 0.1)
-                      : Colors.black.withValues(alpha: 0.04)),
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.14)
+                : Colors.black.withValues(alpha: 0.08),
             width: 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(
-                alpha: crisp ? (isDark ? 0.10 : 0.035) : (isDark ? 0.12 : 0.02),
-              ),
-              blurRadius: crisp ? 3 : 8,
-              spreadRadius: crisp ? -1 : 0,
-              offset: Offset(0, crisp ? 1 : 3),
+              color: Colors.black.withValues(alpha: isDark ? 0.10 : 0.035),
+              blurRadius: 3,
+              spreadRadius: -1,
+              offset: const Offset(0, 1),
             ),
           ],
         ),
