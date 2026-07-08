@@ -166,6 +166,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     final bgHeight = 320.0 + topPadding;
     const financeCardHeight = 174.0;
     const financeCardOverlap = 22.0;
+    const profileToFinanceGap = 38.0;
     const baseAvatarSize = 88.0;
     const minAvatarSize = 54.0;
     final avatarSize = baseAvatarSize - (baseAvatarSize - minAvatarSize) * t;
@@ -176,10 +177,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     final actualScrollOffset = _scrollController.hasClients
         ? _scrollController.offset.clamp(0.0, double.infinity)
         : 0.0;
-    final avatarTop = (bgHeight - avatarSize - 44 - actualScrollOffset).clamp(
-      topPadding + 20.0,
-      double.infinity,
-    );
+    final financeCardTop = bgHeight - financeCardOverlap;
+    final avatarTop =
+        (financeCardTop - avatarSize - profileToFinanceGap - actualScrollOffset)
+            .clamp(topPadding + 20.0, double.infinity);
 
     return Scaffold(
       backgroundColor: isDark
@@ -1455,6 +1456,7 @@ class _AccountActionsSheet extends StatelessWidget {
                     icon: Icons.power_settings_new_rounded,
                     label: '退出登录',
                     color: const Color(0xFFFF3B30),
+                    crisp: true,
                     onTap: onLogout,
                   ),
                 ),
@@ -1464,6 +1466,7 @@ class _AccountActionsSheet extends StatelessWidget {
                     icon: Icons.delete_outline_rounded,
                     label: '注销账号',
                     color: const Color(0xFFDC2626),
+                    crisp: true,
                     onTap: onDeleteAccount,
                   ),
                 ),
@@ -1759,7 +1762,13 @@ class _BackgroundStudioSheet extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final preferences = ref.watch(preferencesProvider);
+    final authState = ref.watch(authProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final displayName = preferences.nickname.isNotEmpty
+        ? preferences.nickname
+        : (authState.user?.name.isNotEmpty == true
+              ? authState.user!.name
+              : '厘清用户');
 
     Uint8List? previewBytes;
     if (preferences.profileBackgroundImageData != null) {
@@ -1771,6 +1780,18 @@ class _BackgroundStudioSheet extends ConsumerWidget {
         previewBytes = base64Decode(normalized);
       } catch (_) {
         previewBytes = null;
+      }
+    }
+    Uint8List? avatarBytes;
+    final avatarImageData = preferences.avatarImageData;
+    if (avatarImageData != null && avatarImageData.isNotEmpty) {
+      try {
+        final normalized = avatarImageData.contains(',')
+            ? avatarImageData.substring(avatarImageData.indexOf(',') + 1)
+            : avatarImageData;
+        avatarBytes = base64Decode(normalized);
+      } catch (_) {
+        avatarBytes = null;
       }
     }
 
@@ -1882,19 +1903,29 @@ class _BackgroundStudioSheet extends ConsumerWidget {
                               ],
                             ),
                             child: ClipOval(
-                              child: Image.asset(
-                                _defaultAvatarAsset,
-                                fit: BoxFit.cover,
+                              child: SizedBox.expand(
+                                child: avatarBytes != null
+                                    ? Image.memory(
+                                        avatarBytes,
+                                        fit: BoxFit.cover,
+                                        alignment: Alignment.center,
+                                        gaplessPlayback: true,
+                                      )
+                                    : Image.asset(
+                                        _defaultAvatarAsset,
+                                        fit: BoxFit.cover,
+                                        alignment: Alignment.center,
+                                      ),
                               ),
                             ),
                           ),
                           const SizedBox(width: 12),
-                          const Expanded(
+                          Expanded(
                             child: Text(
-                              '厘清用户',
+                              displayName,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 17,
                                 fontWeight: FontWeight.w900,
@@ -2017,12 +2048,14 @@ class _ActionCard extends StatelessWidget {
   final String label;
   final Color color;
   final VoidCallback onTap;
+  final bool crisp;
 
   const _ActionCard({
     required this.icon,
     required this.label,
     required this.color,
     required this.onTap,
+    this.crisp = false,
   });
 
   @override
@@ -2037,16 +2070,23 @@ class _ActionCard extends StatelessWidget {
           color: isDark ? const Color(0xFF2C2C2E) : Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.1)
-                : Colors.black.withValues(alpha: 0.04),
+            color: crisp
+                ? (isDark
+                      ? Colors.white.withValues(alpha: 0.14)
+                      : Colors.black.withValues(alpha: 0.08))
+                : (isDark
+                      ? Colors.white.withValues(alpha: 0.1)
+                      : Colors.black.withValues(alpha: 0.04)),
             width: 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.12 : 0.02),
-              blurRadius: 8,
-              offset: const Offset(0, 3),
+              color: Colors.black.withValues(
+                alpha: crisp ? (isDark ? 0.10 : 0.035) : (isDark ? 0.12 : 0.02),
+              ),
+              blurRadius: crisp ? 3 : 8,
+              spreadRadius: crisp ? -1 : 0,
+              offset: Offset(0, crisp ? 1 : 3),
             ),
           ],
         ),
