@@ -31,6 +31,7 @@ class MainShell extends ConsumerStatefulWidget {
 
 class _MainShellState extends ConsumerState<MainShell> {
   int _currentIndex = 0;
+  bool _isOpeningSheet = false;
 
   static const _paths = ['/home', '/stats', '/bills', '/profile'];
   static const _navAccent = AppColors.emerald;
@@ -184,7 +185,23 @@ class _MainShellState extends ConsumerState<MainShell> {
 
   void _showManualEntrySheet(BuildContext context) {
     ref.read(categoriesProvider);
-    _showQuickAddSheet(context);
+    _openSheetOnce(() => _showQuickAddSheet(context));
+  }
+
+  void _openSheetOnce(Future<void> Function() openSheet) {
+    if (_isOpeningSheet) return;
+    _isOpeningSheet = true;
+    Future<void>.delayed(Duration.zero, () async {
+      if (!mounted) {
+        _isOpeningSheet = false;
+        return;
+      }
+      try {
+        await openSheet();
+      } finally {
+        if (mounted) _isOpeningSheet = false;
+      }
+    });
   }
 
   Widget _buildFabItem(bool isDark) {
@@ -195,25 +212,16 @@ class _MainShellState extends ConsumerState<MainShell> {
           HapticFeedback.lightImpact();
           ref.read(categoriesProvider);
           if (FeatureFlags.aiFeaturesEnabled) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (!mounted) return;
-              _showAddMethodSheet(context);
-            });
+            _openSheetOnce(() => _showAddMethodSheet(context));
           } else {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (!mounted) return;
-              _showManualEntrySheet(context);
-            });
+            _showManualEntrySheet(context);
           }
         },
         onLongPress: FeatureFlags.aiFeaturesEnabled
             ? () {
                 HapticFeedback.mediumImpact();
                 ref.read(categoriesProvider);
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (!mounted) return;
-                  _showManualEntrySheet(context);
-                });
+                _showManualEntrySheet(context);
               }
             : null,
         child: Container(
@@ -241,8 +249,8 @@ class _MainShellState extends ConsumerState<MainShell> {
     );
   }
 
-  void _showAddMethodSheet(BuildContext context) {
-    showModalBottomSheet<void>(
+  Future<void> _showAddMethodSheet(BuildContext context) {
+    return showModalBottomSheet<void>(
       context: context,
       useRootNavigator: true,
       isScrollControlled: true,
