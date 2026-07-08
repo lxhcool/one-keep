@@ -1,4 +1,0 @@
-interface:
-  display_name: "需求文档生成"
-  short_description: "根据页面分析输出详细需求文档，按服务端在前、客户端在后组织内容。"
-  default_prompt: "使用 $product-requirement-writer 根据 UI 分析和业务目标输出详细需求文档，先写服务端需求，再写客户端需求，并写入 docs。"

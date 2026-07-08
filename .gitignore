@@ -6,6 +6,10 @@ dist/
 build/
 coverage/
 snap/
+tmp/
+
+# local Codex/agent workflow files
+skills/
 
 # logs
 *.log
@@ -23,3 +27,12 @@ yarn-error.log*
 
 # local scratch files
 /image.png
+
+# app listing and software copyright materials
+/电子软著申请资料模板/
+/软著申请材料-厘清V1.0-提交版/
+/软著申请材料-厘清V1.0/
+/上架准备度清单.md
+/厘清App上架进度汇总.md
+/厘清app材料说明.md
+/软著-用户操作手册.md

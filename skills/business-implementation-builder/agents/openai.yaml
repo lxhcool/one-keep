@@ -1,4 +1,0 @@
-interface:
-  display_name: "服务端优先的实现与联调"
-  short_description: "根据需求文档先做服务端，再做客户端，并输出实现记录和最小测试结果。"
-  default_prompt: "使用 $business-implementation-builder 根据需求文档先实现服务端接口，再完成客户端页面和对接，并输出实现计划、变更摘要和测试记录。"
