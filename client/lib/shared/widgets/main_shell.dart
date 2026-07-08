@@ -607,6 +607,7 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet>
     final currentAmountValue = _evaluateAmount();
     final canSubmit =
         currentAmountValue > 0 && _selectedCategoryId != null && !_isSubmitting;
+    final reduceMotion = oneKeepReduceMotion(context);
 
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
@@ -777,46 +778,16 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet>
                         ),
 
                         // Toggle Buttons
-                        Container(
-                          height: 38,
-                          padding: const EdgeInsets.all(2),
-                          decoration: BoxDecoration(
-                            color: (isDark ? Colors.white : Colors.black)
-                                .withValues(alpha: 0.05),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: _QuickAddToggle(
-                                  label: '支出',
-                                  active: _direction == 'expense',
-                                  activeColor: AppColors.expense,
-                                  onTap: () {
-                                    HapticFeedback.selectionClick();
-                                    setState(() {
-                                      _direction = 'expense';
-                                      _selectedCategoryId = null;
-                                    });
-                                  },
-                                ),
-                              ),
-                              Expanded(
-                                child: _QuickAddToggle(
-                                  label: '收入',
-                                  active: _direction == 'income',
-                                  activeColor: AppColors.emerald,
-                                  onTap: () {
-                                    HapticFeedback.selectionClick();
-                                    setState(() {
-                                      _direction = 'income';
-                                      _selectedCategoryId = null;
-                                    });
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
+                        _QuickAddDirectionToggle(
+                          direction: _direction,
+                          onChanged: (value) {
+                            if (value == _direction) return;
+                            HapticFeedback.selectionClick();
+                            setState(() {
+                              _direction = value;
+                              _selectedCategoryId = null;
+                            });
+                          },
                         ),
                         const SizedBox(height: 16),
 
@@ -925,19 +896,52 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet>
                   ),
 
                   // Category Grid
-                  Container(
-                    margin: const EdgeInsets.only(bottom: 16),
-                    constraints: const BoxConstraints(maxHeight: 184),
-                    child: ref
-                        .watch(categoriesProvider)
-                        .when(
-                          data: (items) {
-                            _syncSelectedCategory(items);
-                            return _buildCategoryGrid(items);
-                          },
-                          loading: () => const SizedBox(),
-                          error: (error, _) => const SizedBox(),
-                        ),
+                  AnimatedSize(
+                    duration: reduceMotion
+                        ? Duration.zero
+                        : const Duration(milliseconds: 260),
+                    curve: Curves.easeOutCubic,
+                    alignment: Alignment.topCenter,
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      constraints: const BoxConstraints(maxHeight: 184),
+                      child: ref
+                          .watch(categoriesProvider)
+                          .when(
+                            data: (items) {
+                              _syncSelectedCategory(items);
+                              return AnimatedSwitcher(
+                                duration: reduceMotion
+                                    ? Duration.zero
+                                    : const Duration(milliseconds: 220),
+                                switchInCurve: Curves.easeOutCubic,
+                                switchOutCurve: Curves.easeInCubic,
+                                transitionBuilder: (child, animation) {
+                                  final curved = CurvedAnimation(
+                                    parent: animation,
+                                    curve: Curves.easeOutCubic,
+                                  );
+                                  return FadeTransition(
+                                    opacity: curved,
+                                    child: SlideTransition(
+                                      position: Tween<Offset>(
+                                        begin: const Offset(0.04, 0),
+                                        end: Offset.zero,
+                                      ).animate(curved),
+                                      child: child,
+                                    ),
+                                  );
+                                },
+                                child: KeyedSubtree(
+                                  key: ValueKey(_direction),
+                                  child: _buildCategoryGrid(items),
+                                ),
+                              );
+                            },
+                            loading: () => const SizedBox(),
+                            error: (error, _) => const SizedBox(),
+                          ),
+                    ),
                   ),
                   // Premium Aligned Keyboard
                   _NumericKeyboard(
@@ -1106,45 +1110,116 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet>
   }
 }
 
-class _QuickAddToggle extends StatelessWidget {
+class _QuickAddDirectionToggle extends StatelessWidget {
+  final String direction;
+  final ValueChanged<String> onChanged;
+
+  const _QuickAddDirectionToggle({
+    required this.direction,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isExpense = direction == 'expense';
+    final activeColor = isExpense ? AppColors.expense : AppColors.emerald;
+    final reduceMotion = oneKeepReduceMotion(context);
+
+    return Container(
+      height: 38,
+      padding: const EdgeInsets.all(2),
+      decoration: BoxDecoration(
+        color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final thumbWidth = (constraints.maxWidth - 4) / 2;
+          return Stack(
+            children: [
+              AnimatedPositioned(
+                duration: reduceMotion
+                    ? Duration.zero
+                    : const Duration(milliseconds: 240),
+                curve: Curves.easeOutCubic,
+                left: isExpense ? 0 : thumbWidth,
+                top: 0,
+                bottom: 0,
+                width: thumbWidth,
+                child: AnimatedContainer(
+                  duration: reduceMotion
+                      ? Duration.zero
+                      : const Duration(milliseconds: 240),
+                  curve: Curves.easeOutCubic,
+                  decoration: BoxDecoration(
+                    color: activeColor,
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: [
+                      BoxShadow(
+                        color: activeColor.withValues(alpha: 0.2),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Row(
+                children: [
+                  Expanded(
+                    child: _QuickAddToggleLabel(
+                      label: '支出',
+                      active: isExpense,
+                      onTap: () => onChanged('expense'),
+                    ),
+                  ),
+                  Expanded(
+                    child: _QuickAddToggleLabel(
+                      label: '收入',
+                      active: !isExpense,
+                      onTap: () => onChanged('income'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _QuickAddToggleLabel extends StatelessWidget {
   final String label;
   final bool active;
-  final Color activeColor;
   final VoidCallback onTap;
-  const _QuickAddToggle({
+
+  const _QuickAddToggleLabel({
     required this.label,
     required this.active,
-    required this.activeColor,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final reduceMotion = oneKeepReduceMotion(context);
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        decoration: BoxDecoration(
-          color: active ? activeColor : Colors.transparent,
-          borderRadius: BorderRadius.circular(10),
-          boxShadow: active
-              ? [
-                  BoxShadow(
-                    color: activeColor.withValues(alpha: 0.2),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : null,
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          label,
+      child: Center(
+        child: AnimatedDefaultTextStyle(
+          duration: reduceMotion
+              ? Duration.zero
+              : const Duration(milliseconds: 180),
+          curve: Curves.easeOutCubic,
           style: oneKeepManrope(
             color: active ? Colors.white : oneKeepTextSecondary(context),
             size: 13,
             weight: active ? FontWeight.w700 : FontWeight.w500,
           ),
+          child: Text(label),
         ),
       ),
     );
