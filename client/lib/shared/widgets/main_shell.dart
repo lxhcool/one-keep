@@ -1076,10 +1076,10 @@ Future<void> _showQuickAddSheet(BuildContext context) {
   return showGeneralDialog<void>(
     context: context,
     useRootNavigator: true,
-    barrierDismissible: true,
+    barrierDismissible: false,
     barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
     barrierColor: Colors.transparent,
-    transitionDuration: const Duration(milliseconds: 340),
+    transitionDuration: const Duration(milliseconds: 360),
     pageBuilder: (dialogContext, animation, secondaryAnimation) {
       return const Material(
         type: MaterialType.transparency,
@@ -1087,6 +1087,7 @@ Future<void> _showQuickAddSheet(BuildContext context) {
       );
     },
     transitionBuilder: (context, animation, secondaryAnimation, child) {
+      final screenHeight = MediaQuery.sizeOf(context).height;
       final sheetCurve = CurvedAnimation(
         parent: animation,
         curve: Curves.easeOutQuart,
@@ -1102,19 +1103,36 @@ Future<void> _showQuickAddSheet(BuildContext context) {
         child: Stack(
           children: [
             Positioned.fill(
-              child: FadeTransition(
-                opacity: Tween<double>(begin: 0, end: 1).animate(barrierCurve),
-                child: ColoredBox(color: Colors.black.withValues(alpha: 0.3)),
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => Navigator.of(context, rootNavigator: true).pop(),
+                child: FadeTransition(
+                  opacity: Tween<double>(
+                    begin: 0,
+                    end: 1,
+                  ).animate(barrierCurve),
+                  child: ColoredBox(color: Colors.black.withValues(alpha: 0.3)),
+                ),
               ),
             ),
             Align(
               alignment: Alignment.bottomCenter,
-              child: SlideTransition(
-                position: Tween<Offset>(
-                  begin: const Offset(0, 1),
-                  end: Offset.zero,
-                ).animate(sheetCurve),
-                child: const _QuickAddSheet(),
+              child: AnimatedBuilder(
+                animation: sheetCurve,
+                builder: (context, child) {
+                  return Transform.translate(
+                    offset: Offset(
+                      0,
+                      (1 - sheetCurve.value) * screenHeight * 0.7,
+                    ),
+                    child: child,
+                  );
+                },
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () {},
+                  child: const _QuickAddSheet(),
+                ),
               ),
             ),
           ],
