@@ -183,13 +183,7 @@ class _MainShellState extends ConsumerState<MainShell> {
   }
 
   void _showManualEntrySheet(BuildContext context) {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      barrierColor: Colors.black.withValues(alpha: 0.3),
-      builder: (_) => const _QuickAddSheet(),
-    );
+    _showQuickAddSheet(context);
   }
 
   Widget _buildFabItem(bool isDark) {
@@ -438,13 +432,7 @@ class _AddMethodSheet extends ConsumerWidget {
                   OneKeepBouncingCard(
                     onTap: () {
                       Navigator.pop(context);
-                      showModalBottomSheet<void>(
-                        context: context,
-                        isScrollControlled: true,
-                        backgroundColor: Colors.transparent,
-                        barrierColor: Colors.black.withValues(alpha: 0.3),
-                        builder: (_) => const _QuickAddSheet(),
-                      );
+                      _showQuickAddSheet(context);
                     },
                     child: Container(
                       width: double.infinity,
@@ -1082,6 +1070,43 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet>
       );
     }
   }
+}
+
+Future<void> _showQuickAddSheet(BuildContext context) {
+  return showGeneralDialog<void>(
+    context: context,
+    useRootNavigator: true,
+    barrierDismissible: true,
+    barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+    barrierColor: Colors.black.withValues(alpha: 0.3),
+    transitionDuration: const Duration(milliseconds: 280),
+    pageBuilder: (dialogContext, animation, secondaryAnimation) {
+      return const Material(
+        type: MaterialType.transparency,
+        child: Align(
+          alignment: Alignment.bottomCenter,
+          child: _QuickAddSheet(),
+        ),
+      );
+    },
+    transitionBuilder: (context, animation, secondaryAnimation, child) {
+      final curved = CurvedAnimation(
+        parent: animation,
+        curve: Curves.easeOutCubic,
+        reverseCurve: Curves.easeInCubic,
+      );
+      return FadeTransition(
+        opacity: curved,
+        child: SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0, 0.12),
+            end: Offset.zero,
+          ).animate(curved),
+          child: child,
+        ),
+      );
+    },
+  );
 }
 
 class _QuickAddDirectionToggle extends StatelessWidget {

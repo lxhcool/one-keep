@@ -1977,10 +1977,6 @@ class _BackgroundStudioSheet extends ConsumerWidget {
                       width: 112,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(18),
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.18),
-                          width: 1,
-                        ),
                       ),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(18),
