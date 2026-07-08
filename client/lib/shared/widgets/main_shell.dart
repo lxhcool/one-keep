@@ -232,6 +232,10 @@ class _MainShellState extends ConsumerState<MainShell> {
   void _showAddMethodSheet(BuildContext context) {
     showModalBottomSheet<void>(
       context: context,
+      useRootNavigator: true,
+      isScrollControlled: true,
+      isDismissible: true,
+      enableDrag: true,
       backgroundColor: Colors.transparent,
       barrierColor: Colors.black.withValues(alpha: 0.3),
       builder: (_) => const _AddMethodSheet(),
@@ -1073,58 +1077,15 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet>
 }
 
 Future<void> _showQuickAddSheet(BuildContext context) {
-  return showGeneralDialog<void>(
+  return showModalBottomSheet<void>(
     context: context,
     useRootNavigator: true,
-    barrierDismissible: true,
-    barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-    barrierColor: Colors.black.withValues(alpha: 0.25),
-    transitionDuration: const Duration(milliseconds: 260),
-    pageBuilder: (dialogContext, animation, secondaryAnimation) {
-      return Material(
-        type: MaterialType.transparency,
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => Navigator.of(dialogContext).pop(),
-              ),
-            ),
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () {},
-                onVerticalDragEnd: (details) {
-                  if ((details.primaryVelocity ?? 0) > 450) {
-                    Navigator.of(dialogContext).pop();
-                  }
-                },
-                child: const _QuickAddSheet(),
-              ),
-            ),
-          ],
-        ),
-      );
-    },
-    transitionBuilder: (context, animation, secondaryAnimation, child) {
-      final curved = CurvedAnimation(
-        parent: animation,
-        curve: Curves.easeOutCubic,
-        reverseCurve: Curves.easeInCubic,
-      );
-      return FadeTransition(
-        opacity: curved,
-        child: SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(0, 0.16),
-            end: Offset.zero,
-          ).animate(curved),
-          child: child,
-        ),
-      );
-    },
+    isScrollControlled: true,
+    isDismissible: true,
+    enableDrag: true,
+    backgroundColor: Colors.transparent,
+    barrierColor: Colors.black.withValues(alpha: 0.3),
+    builder: (_) => const _QuickAddSheet(),
   );
 }
 
