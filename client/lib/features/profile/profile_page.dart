@@ -164,6 +164,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     final t = (_scrollOffset / 150.0).clamp(0.0, 1.0);
     final topPadding = MediaQuery.of(context).padding.top;
     final bgHeight = 320.0 + topPadding;
+    const financeCardHeight = 174.0;
+    const financeCardOverlap = 22.0;
     const baseAvatarSize = 88.0;
     const minAvatarSize = 54.0;
     final avatarSize = baseAvatarSize - (baseAvatarSize - minAvatarSize) * t;
@@ -194,6 +196,12 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   t: t,
                   isDark: isDark,
                   defaultBackgroundIndex: defaultBackgroundIndex,
+                  totalExpense: totalExpense,
+                  totalIncome: totalIncome,
+                  balance: balance,
+                  isLoading: statsState.isLoading && statsOverview == null,
+                  financeCardHeight: financeCardHeight,
+                  financeCardOverlap: financeCardOverlap,
                 ),
               ),
               SliverToBoxAdapter(
@@ -202,18 +210,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Transform.translate(
-                        offset: const Offset(0, -21),
-                        child: _buildFinanceOverview(
-                          isDark: isDark,
-                          totalExpense: totalExpense,
-                          totalIncome: totalIncome,
-                          balance: balance,
-                          isLoading:
-                              statsState.isLoading && statsOverview == null,
-                        ),
-                      ),
-                      const SizedBox(height: 0),
                       _BentoGridMenu(
                         preferences: preferences,
                         onThemeTap: () {
@@ -247,49 +243,14 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               children: [
                 OneKeepBouncingCard(
                   onTap: _showAvatarStudio,
-                  child: Hero(
-                    tag: 'profile_avatar',
-                    child: SizedBox.square(
-                      dimension: avatarSize,
-                      child: RepaintBoundary(
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(
-                                  alpha: (0.25 * (1 - t * 0.5)).clamp(0, 0.25),
-                                ),
-                                blurRadius: 25 * (1 - t * 0.3),
-                                offset: Offset(0, 12 * (1 - t * 0.5)),
-                              ),
-                            ],
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.9),
-                              width: (3.5 - 1.5 * t).clamp(1.0, 3.5),
-                            ),
-                          ),
-                          child: ClipOval(
-                            child: SizedBox.expand(
-                              child: _avatarBytes != null
-                                  ? Image.memory(
-                                      _avatarBytes!,
-                                      fit: BoxFit.cover,
-                                      cacheWidth: avatarCacheSize,
-                                      cacheHeight: avatarCacheSize,
-                                      gaplessPlayback: true,
-                                    )
-                                  : Image.asset(
-                                      _defaultAvatarAsset,
-                                      fit: BoxFit.cover,
-                                      cacheWidth: avatarCacheSize,
-                                      cacheHeight: avatarCacheSize,
-                                    ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
+                  child: _ProfileAvatar(
+                    size: avatarSize,
+                    borderWidth: (3.5 - 1.5 * t).clamp(1.0, 3.5),
+                    shadowOpacity: (0.25 * (1 - t * 0.5)).clamp(0, 0.25),
+                    shadowBlur: 25 * (1 - t * 0.3),
+                    shadowOffsetY: 12 * (1 - t * 0.5),
+                    avatarBytes: _avatarBytes,
+                    cacheSize: avatarCacheSize,
                   ),
                 ),
                 SizedBox(width: (20 - 4 * t).clamp(12.0, 20.0)),
@@ -375,9 +336,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     required bool isLoading,
   }) {
     final textColor = isDark ? Colors.white : const Color(0xFF1C1C1E);
-    final subTextColor = isDark
-        ? const Color(0xFF8E8E93)
-        : const Color(0xFF8E8E93);
     final cardBg = isDark ? const Color(0xFF1C1C1E) : Colors.white;
 
     return Container(
@@ -408,15 +366,14 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Expanded(
-                child: Text(
-                  isLoading ? '--' : '¥${oneKeepCurrency(balance)}',
-                  style: TextStyle(
-                    color: textColor,
-                    fontSize: 32,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -1.5,
-                    height: 1.0,
-                  ),
+                child: _AdaptiveMoneyText(
+                  value: isLoading ? '--' : '¥${oneKeepCurrency(balance)}',
+                  color: textColor,
+                  maxFontSize: 32,
+                  minFontSize: 18,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: -1.5,
+                  height: 1.0,
                 ),
               ),
               Container(
@@ -488,6 +445,12 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     required double t,
     required bool isDark,
     required int defaultBackgroundIndex,
+    required double totalExpense,
+    required double totalIncome,
+    required double balance,
+    required bool isLoading,
+    required double financeCardHeight,
+    required double financeCardOverlap,
   }) {
     final topPadding = MediaQuery.of(context).padding.top;
     final bgHeight = 320.0 + topPadding;
@@ -497,7 +460,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     final bgCacheHeight = (bgHeight * devicePixelRatio).round();
     return SizedBox(
       width: double.infinity,
-      height: bgHeight,
+      height: bgHeight + financeCardHeight - financeCardOverlap,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
@@ -542,8 +505,22 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             ),
           ),
 
-          // ── Avatar & Nickname (anchored near bottom of background) ──
           // ── Finance Card (overlaps bottom of background) ──────────
+          Positioned(
+            top: bgHeight - financeCardOverlap,
+            left: 16,
+            right: 16,
+            child: SizedBox(
+              height: financeCardHeight,
+              child: _buildFinanceOverview(
+                isDark: isDark,
+                totalExpense: totalExpense,
+                totalIncome: totalIncome,
+                balance: balance,
+                isLoading: isLoading,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -754,6 +731,70 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 }
 
 // 用户信息卡片 - 沉浸式头部设计
+
+class _ProfileAvatar extends StatelessWidget {
+  final double size;
+  final double borderWidth;
+  final double shadowOpacity;
+  final double shadowBlur;
+  final double shadowOffsetY;
+  final Uint8List? avatarBytes;
+  final int cacheSize;
+
+  const _ProfileAvatar({
+    required this.size,
+    required this.borderWidth,
+    required this.shadowOpacity,
+    required this.shadowBlur,
+    required this.shadowOffsetY,
+    required this.avatarBytes,
+    required this.cacheSize,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final image = avatarBytes != null
+        ? Image.memory(
+            avatarBytes!,
+            width: double.infinity,
+            height: double.infinity,
+            fit: BoxFit.cover,
+            alignment: Alignment.center,
+            cacheWidth: cacheSize,
+            cacheHeight: cacheSize,
+            gaplessPlayback: true,
+          )
+        : Image.asset(
+            _defaultAvatarAsset,
+            width: double.infinity,
+            height: double.infinity,
+            fit: BoxFit.cover,
+            alignment: Alignment.center,
+            cacheWidth: cacheSize,
+            cacheHeight: cacheSize,
+          );
+
+    return RepaintBoundary(
+      child: Container(
+        width: size,
+        height: size,
+        padding: EdgeInsets.all(borderWidth),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.white.withValues(alpha: 0.95),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: shadowOpacity),
+              blurRadius: shadowBlur,
+              offset: Offset(0, shadowOffsetY),
+            ),
+          ],
+        ),
+        child: ClipOval(child: image),
+      ),
+    );
+  }
+}
 
 // 高级财务面板卡片
 class _FinanceDashboardCard extends StatelessWidget {
