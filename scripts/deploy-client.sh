@@ -6,7 +6,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 SERVER_USER="${SERVER_USER:-root}"
-SERVER_HOST="${SERVER_HOST:-119.45.243.103}"
+SERVER_HOST="${SERVER_HOST:?Set SERVER_HOST to the target server host}"
 SERVER_PATH="${SERVER_PATH:-/www/wwwroot/liqing.eatdesk.net/client/}"
 API_BASE_URL="${API_BASE_URL:-https://liqing.eatdesk.net}"
 SERVER_PASSWORD="${SERVER_PASSWORD:-}"
