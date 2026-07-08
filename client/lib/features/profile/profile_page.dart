@@ -60,7 +60,18 @@ class _DefaultProfileBackground extends StatelessWidget {
     final asset =
         _profileBackgroundPresetAssets[index %
             _profileBackgroundPresetAssets.length];
-    return Image.asset(asset, fit: BoxFit.cover, alignment: Alignment.center);
+    final devicePixelRatio = MediaQuery.devicePixelRatioOf(context);
+    final cacheWidth = (MediaQuery.sizeOf(context).width * devicePixelRatio)
+        .round();
+    final cacheHeight =
+        ((360 + MediaQuery.paddingOf(context).top) * devicePixelRatio).round();
+    return Image.asset(
+      asset,
+      fit: BoxFit.cover,
+      alignment: Alignment.center,
+      cacheWidth: cacheWidth,
+      cacheHeight: cacheHeight,
+    );
   }
 }
 
@@ -81,11 +92,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   }
 
   void _onScroll() {
-    if (mounted) {
-      setState(() {
-        _scrollOffset = _scrollController.offset.clamp(0.0, 180.0);
-      });
-    }
+    if (!mounted) return;
+    final next = _scrollController.offset.clamp(0.0, 180.0);
+    if ((next - _scrollOffset).abs() < 2) return;
+    setState(() => _scrollOffset = next);
   }
 
   @override
@@ -159,6 +169,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     final avatarSize = baseAvatarSize - (baseAvatarSize - minAvatarSize) * t;
     final fontSize = 28.0 - 8.0 * t;
     final profileBlockOffsetY = 6.0 * (1 - t);
+    final avatarCacheSize =
+        (baseAvatarSize * MediaQuery.devicePixelRatioOf(context)).round();
     final actualScrollOffset = _scrollController.hasClients
         ? _scrollController.offset.clamp(0.0, double.infinity)
         : 0.0;
@@ -277,10 +289,18 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       ),
                       child: ClipOval(
                         child: _avatarBytes != null
-                            ? Image.memory(_avatarBytes!, fit: BoxFit.cover)
+                            ? Image.memory(
+                                _avatarBytes!,
+                                fit: BoxFit.cover,
+                                cacheWidth: avatarCacheSize,
+                                cacheHeight: avatarCacheSize,
+                                gaplessPlayback: true,
+                              )
                             : Image.asset(
                                 _defaultAvatarAsset,
                                 fit: BoxFit.cover,
+                                cacheWidth: avatarCacheSize,
+                                cacheHeight: avatarCacheSize,
                               ),
                       ),
                     ),
@@ -485,6 +505,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   }) {
     final topPadding = MediaQuery.of(context).padding.top;
     final bgHeight = 320.0 + topPadding;
+    final devicePixelRatio = MediaQuery.devicePixelRatioOf(context);
+    final bgCacheWidth = (MediaQuery.sizeOf(context).width * devicePixelRatio)
+        .round();
+    final bgCacheHeight = (bgHeight * devicePixelRatio).round();
     return SizedBox(
       width: double.infinity,
       height: bgHeight,
@@ -497,30 +521,38 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             left: 0,
             right: 0,
             height: bgHeight,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                if (_backgroundBytes != null)
-                  Image.memory(_backgroundBytes!, fit: BoxFit.cover)
-                else
-                  _DefaultProfileBackground(
-                    index: defaultBackgroundIndex,
-                    isDark: isDark,
-                  ),
-                Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.black.withValues(alpha: 0.0),
-                        Colors.black.withValues(alpha: 0.55),
-                      ],
-                      stops: const [0.4, 1.0],
+            child: RepaintBoundary(
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (_backgroundBytes != null)
+                    Image.memory(
+                      _backgroundBytes!,
+                      fit: BoxFit.cover,
+                      cacheWidth: bgCacheWidth,
+                      cacheHeight: bgCacheHeight,
+                      gaplessPlayback: true,
+                    )
+                  else
+                    _DefaultProfileBackground(
+                      index: defaultBackgroundIndex,
+                      isDark: isDark,
+                    ),
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.black.withValues(alpha: 0.0),
+                          Colors.black.withValues(alpha: 0.55),
+                        ],
+                        stops: const [0.4, 1.0],
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
 
@@ -2095,7 +2127,19 @@ class _ProfileHeaderDelegate extends SliverPersistentHeaderDelegate {
   double get minExtent => 140.0;
 
   @override
-  bool shouldRebuild(covariant _ProfileHeaderDelegate oldDelegate) => true;
+  bool shouldRebuild(covariant _ProfileHeaderDelegate oldDelegate) {
+    return oldDelegate.totalExpense != totalExpense ||
+        oldDelegate.totalIncome != totalIncome ||
+        oldDelegate.balance != balance ||
+        oldDelegate.isLoading != isLoading ||
+        oldDelegate.preferences != preferences ||
+        oldDelegate.authState != authState ||
+        oldDelegate.isDark != isDark ||
+        oldDelegate.displayName != displayName ||
+        oldDelegate.username != username ||
+        oldDelegate.backgroundBytes != backgroundBytes ||
+        oldDelegate.avatarBytes != avatarBytes;
+  }
 
   @override
   Widget build(
@@ -2118,12 +2162,17 @@ class _ProfileHeaderDelegate extends SliverPersistentHeaderDelegate {
     final profileSeed = _stableProfileSeed(authState);
     final defaultBackgroundIndex =
         profileSeed % _profileBackgroundPresetAssets.length;
+    const bgHeight = 280.0;
+    final devicePixelRatio = MediaQuery.devicePixelRatioOf(context);
+    final bgCacheWidth = (MediaQuery.sizeOf(context).width * devicePixelRatio)
+        .round();
+    final bgCacheHeight = (bgHeight * devicePixelRatio).round();
+    final avatarCacheSize = (baseAvatarSize * devicePixelRatio).round();
 
     // The visible header height shrinks from maxExtent(500) to minExtent(140).
     // The BACKGROUND is always anchored at top=0, height=280.
     // Avatar is vertically centered in the 280px background area.
     // Card is at top=256, overlapping the bottom of the background.
-    const bgHeight = 280.0;
     // Avatar row height ~88px at t=0, ~54px at t=1
     // Center of avatar row in background: top = (bgHeight - avatarSize) / 2
     final avatarTop = (bgHeight - currentAvatarSize) / 2;
@@ -2136,30 +2185,38 @@ class _ProfileHeaderDelegate extends SliverPersistentHeaderDelegate {
           left: 0,
           right: 0,
           height: bgHeight,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              if (backgroundBytes != null)
-                Image.memory(backgroundBytes!, fit: BoxFit.cover)
-              else
-                _DefaultProfileBackground(
-                  index: defaultBackgroundIndex,
-                  isDark: isDark,
-                ),
-              Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.black.withValues(alpha: 0.0),
-                      Colors.black.withValues(alpha: 0.55),
-                    ],
-                    stops: const [0.4, 1.0],
+          child: RepaintBoundary(
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                if (backgroundBytes != null)
+                  Image.memory(
+                    backgroundBytes!,
+                    fit: BoxFit.cover,
+                    cacheWidth: bgCacheWidth,
+                    cacheHeight: bgCacheHeight,
+                    gaplessPlayback: true,
+                  )
+                else
+                  _DefaultProfileBackground(
+                    index: defaultBackgroundIndex,
+                    isDark: isDark,
+                  ),
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.black.withValues(alpha: 0.0),
+                        Colors.black.withValues(alpha: 0.55),
+                      ],
+                      stops: const [0.4, 1.0],
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
 
@@ -2196,11 +2253,22 @@ class _ProfileHeaderDelegate extends SliverPersistentHeaderDelegate {
                     ),
                     child: ClipOval(
                       child: avatarBytes != null
-                          ? Image.memory(avatarBytes!, fit: BoxFit.cover)
+                          ? Image.memory(
+                              avatarBytes!,
+                              fit: BoxFit.cover,
+                              cacheWidth: avatarCacheSize,
+                              cacheHeight: avatarCacheSize,
+                              gaplessPlayback: true,
+                            )
                           : (preferences.avatarImageData != null &&
                                 preferences.avatarImageData!.isNotEmpty)
                           ? const SizedBox.shrink()
-                          : Image.asset(_defaultAvatarAsset, fit: BoxFit.cover),
+                          : Image.asset(
+                              _defaultAvatarAsset,
+                              fit: BoxFit.cover,
+                              cacheWidth: avatarCacheSize,
+                              cacheHeight: avatarCacheSize,
+                            ),
                     ),
                   ),
                 ),

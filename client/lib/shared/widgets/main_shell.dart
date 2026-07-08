@@ -910,33 +910,7 @@ class _QuickAddSheetState extends ConsumerState<_QuickAddSheet>
                           .when(
                             data: (items) {
                               _syncSelectedCategory(items);
-                              return AnimatedSwitcher(
-                                duration: reduceMotion
-                                    ? Duration.zero
-                                    : const Duration(milliseconds: 220),
-                                switchInCurve: Curves.easeOutCubic,
-                                switchOutCurve: Curves.easeInCubic,
-                                transitionBuilder: (child, animation) {
-                                  final curved = CurvedAnimation(
-                                    parent: animation,
-                                    curve: Curves.easeOutCubic,
-                                  );
-                                  return FadeTransition(
-                                    opacity: curved,
-                                    child: SlideTransition(
-                                      position: Tween<Offset>(
-                                        begin: const Offset(0.04, 0),
-                                        end: Offset.zero,
-                                      ).animate(curved),
-                                      child: child,
-                                    ),
-                                  );
-                                },
-                                child: KeyedSubtree(
-                                  key: ValueKey(_direction),
-                                  child: _buildCategoryGrid(items),
-                                ),
-                              );
+                              return _buildCategoryGrid(items);
                             },
                             loading: () => const SizedBox(),
                             error: (error, _) => const SizedBox(),
