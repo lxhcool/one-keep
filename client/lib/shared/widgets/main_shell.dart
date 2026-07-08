@@ -183,6 +183,7 @@ class _MainShellState extends ConsumerState<MainShell> {
   }
 
   void _showManualEntrySheet(BuildContext context) {
+    ref.read(categoriesProvider);
     _showQuickAddSheet(context);
   }
 
@@ -192,16 +193,27 @@ class _MainShellState extends ConsumerState<MainShell> {
       child: GestureDetector(
         onTap: () {
           HapticFeedback.lightImpact();
+          ref.read(categoriesProvider);
           if (FeatureFlags.aiFeaturesEnabled) {
-            _showAddMethodSheet(context);
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!mounted) return;
+              _showAddMethodSheet(context);
+            });
           } else {
-            _showManualEntrySheet(context);
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!mounted) return;
+              _showManualEntrySheet(context);
+            });
           }
         },
         onLongPress: FeatureFlags.aiFeaturesEnabled
             ? () {
                 HapticFeedback.mediumImpact();
-                _showManualEntrySheet(context);
+                ref.read(categoriesProvider);
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (!mounted) return;
+                  _showManualEntrySheet(context);
+                });
               }
             : null,
         child: Container(

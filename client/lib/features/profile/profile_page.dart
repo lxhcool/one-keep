@@ -681,53 +681,15 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   }
 
   Future<T?> _showProfileRootSheet<T>({required WidgetBuilder builder}) {
-    return showGeneralDialog<T>(
+    return showModalBottomSheet<T>(
       context: context,
       useRootNavigator: true,
-      barrierDismissible: true,
-      barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+      isScrollControlled: true,
+      isDismissible: true,
+      enableDrag: true,
+      backgroundColor: Colors.transparent,
       barrierColor: Colors.black.withValues(alpha: 0.25),
-      transitionDuration: const Duration(milliseconds: 260),
-      pageBuilder: (dialogContext, animation, secondaryAnimation) {
-        return Material(
-          type: MaterialType.transparency,
-          child: Stack(
-            children: [
-              Positioned.fill(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () => Navigator.of(dialogContext).pop(),
-                ),
-              ),
-              Align(
-                alignment: Alignment.bottomCenter,
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () {},
-                  child: builder(dialogContext),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-      transitionBuilder: (context, animation, secondaryAnimation, child) {
-        final curved = CurvedAnimation(
-          parent: animation,
-          curve: Curves.easeOutCubic,
-          reverseCurve: Curves.easeInCubic,
-        );
-        return FadeTransition(
-          opacity: curved,
-          child: SlideTransition(
-            position: Tween<Offset>(
-              begin: const Offset(0, 0.16),
-              end: Offset.zero,
-            ).animate(curved),
-            child: child,
-          ),
-        );
-      },
+      builder: builder,
     );
   }
 }
