@@ -17,6 +17,12 @@ enum OneKeepToastType { success, error, info }
 
 OverlayEntry? _activeOneKeepToastEntry;
 
+bool oneKeepReduceMotion(BuildContext context) {
+  final media = MediaQuery.maybeOf(context);
+  if (media == null) return false;
+  return media.disableAnimations || media.accessibleNavigation;
+}
+
 // ── Google Fonts 已离线打包 ──
 const _fontFamilyInter = 'Inter';
 const _fontFamilyManrope = 'Manrope';
@@ -174,7 +180,28 @@ class _OneKeepToastOverlayState extends State<_OneKeepToastOverlay>
 
   @override
   Widget build(BuildContext context) {
+    final reduceMotion = oneKeepReduceMotion(context);
     final top = MediaQuery.paddingOf(context).top + 12;
+    if (reduceMotion) {
+      return Positioned(
+        left: 16,
+        right: 16,
+        top: top,
+        child: Material(
+          color: Colors.transparent,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: _dismiss,
+            onVerticalDragEnd: (details) {
+              if ((details.primaryVelocity ?? 0) < -80) {
+                _dismiss();
+              }
+            },
+            child: OneKeepToast(message: widget.message, type: widget.type),
+          ),
+        ),
+      );
+    }
     final curve = CurvedAnimation(
       parent: _controller,
       curve: Curves.easeOutCubic,
@@ -370,6 +397,8 @@ class OneKeepCategoryBadge extends StatelessWidget {
     final assetPath = resolveCategoryIconAsset(
       categoryIcon.isNotEmpty ? categoryIcon : categoryName,
     );
+    final iconCacheSize = (iconSize * MediaQuery.devicePixelRatioOf(context))
+        .round();
     const uniformBg = Color(0xFFF0F0F0);
 
     return Container(
@@ -384,6 +413,9 @@ class OneKeepCategoryBadge extends StatelessWidget {
           assetPath,
           width: iconSize,
           height: iconSize,
+          cacheWidth: iconCacheSize,
+          cacheHeight: iconCacheSize,
+          fit: BoxFit.contain,
           errorBuilder: (_, __, ___) => Icon(
             Icons.receipt_long_rounded,
             size: iconSize,
@@ -1082,54 +1114,38 @@ class OneKeepBouncingCard extends StatefulWidget {
   State<OneKeepBouncingCard> createState() => _OneKeepBouncingCardState();
 }
 
-class _OneKeepBouncingCardState extends State<OneKeepBouncingCard>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _scaleAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(vsync: this, duration: widget.duration);
-    _scaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: widget.scaleFactor,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
+class _OneKeepBouncingCardState extends State<OneKeepBouncingCard> {
+  bool _pressed = false;
 
   void _onTapDown(TapDownDetails details) {
-    if (widget.onTap != null) _controller.forward();
+    if (widget.onTap == null) return;
+    setState(() => _pressed = true);
   }
 
   void _onTapUp(TapUpDetails details) {
-    if (widget.onTap != null) {
-      _controller.reverse();
-      widget.onTap!();
-    }
+    if (widget.onTap == null) return;
+    setState(() => _pressed = false);
+    widget.onTap!();
   }
 
   void _onTapCancel() {
-    if (widget.onTap != null) _controller.reverse();
+    if (widget.onTap == null) return;
+    setState(() => _pressed = false);
   }
 
   @override
   Widget build(BuildContext context) {
+    final reduceMotion = oneKeepReduceMotion(context);
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTapDown: _onTapDown,
       onTapUp: _onTapUp,
       onTapCancel: _onTapCancel,
-      child: AnimatedBuilder(
-        animation: _scaleAnimation,
-        builder: (context, child) =>
-            Transform.scale(scale: _scaleAnimation.value, child: child),
-        child: widget.child,
+      child: AnimatedScale(
+        scale: _pressed && !reduceMotion ? widget.scaleFactor : 1,
+        duration: reduceMotion ? Duration.zero : widget.duration,
+        curve: Curves.easeOutCubic,
+        child: RepaintBoundary(child: widget.child),
       ),
     );
   }

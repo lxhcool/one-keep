@@ -791,6 +791,7 @@ class _EditorCategoryItem extends StatelessWidget {
       categoryName: item.name,
       categoryIcon: item.icon,
     );
+    final iconCacheSize = (24 * MediaQuery.devicePixelRatioOf(context)).round();
 
     return GestureDetector(
       onTap: onTap,
@@ -823,6 +824,8 @@ class _EditorCategoryItem extends StatelessWidget {
                 ),
                 width: 24,
                 height: 24,
+                cacheWidth: iconCacheSize,
+                cacheHeight: iconCacheSize,
                 fit: BoxFit.contain,
                 errorBuilder: (_, __, ___) => Icon(
                   Icons.receipt_long_rounded,
