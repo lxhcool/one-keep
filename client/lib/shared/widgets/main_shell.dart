@@ -584,27 +584,35 @@ class _QuickAddSheet extends ConsumerStatefulWidget {
 
 class _QuickAddSheetState extends ConsumerState<_QuickAddSheet>
     with SingleTickerProviderStateMixin {
+  static bool _hasRenderedHeavyContent = false;
+
   String _direction = 'expense';
   String _amount = '';
   String? _selectedCategoryId;
   String _remark = '';
   DateTime _occurredAt = DateTime.now();
   bool _isSubmitting = false;
-  bool _contentReady = false;
+  late bool _contentReady;
 
   late AnimationController _cursorController;
 
   @override
   void initState() {
     super.initState();
+    _contentReady = _hasRenderedHeavyContent;
     _cursorController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
     )..repeat(reverse: true);
-    Future<void>.delayed(const Duration(milliseconds: 180), () {
-      if (!mounted) return;
-      setState(() => _contentReady = true);
-    });
+    if (!_contentReady) {
+      Future<void>.delayed(const Duration(milliseconds: 180), () {
+        if (!mounted) return;
+        setState(() {
+          _contentReady = true;
+          _hasRenderedHeavyContent = true;
+        });
+      });
+    }
   }
 
   @override
