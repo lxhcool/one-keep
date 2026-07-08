@@ -210,6 +210,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      const SizedBox(height: 16),
                       _BentoGridMenu(
                         preferences: preferences,
                         onThemeTap: () {
@@ -761,7 +762,6 @@ class _ProfileAvatar extends StatelessWidget {
             fit: BoxFit.cover,
             alignment: Alignment.center,
             cacheWidth: cacheSize,
-            cacheHeight: cacheSize,
             gaplessPlayback: true,
           )
         : Image.asset(
@@ -771,7 +771,6 @@ class _ProfileAvatar extends StatelessWidget {
             fit: BoxFit.cover,
             alignment: Alignment.center,
             cacheWidth: cacheSize,
-            cacheHeight: cacheSize,
           );
 
     return RepaintBoundary(
@@ -790,7 +789,7 @@ class _ProfileAvatar extends StatelessWidget {
             ),
           ],
         ),
-        child: ClipOval(child: image),
+        child: ClipOval(child: SizedBox.expand(child: image)),
       ),
     );
   }
