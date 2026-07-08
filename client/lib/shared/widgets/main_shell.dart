@@ -35,6 +35,19 @@ class _MainShellState extends ConsumerState<MainShell> {
 
   static const _paths = ['/home', '/stats', '/bills', '/profile'];
   static const _navAccent = AppColors.emerald;
+  static const _sheetAnimationStyle = AnimationStyle(
+    duration: Duration(milliseconds: 380),
+    reverseDuration: Duration(milliseconds: 240),
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    Future<void>.delayed(Duration.zero, () {
+      if (!mounted) return;
+      ref.read(categoriesProvider);
+    });
+  }
 
   void _onTap(int index) {
     if (index == _currentIndex) return;
@@ -210,7 +223,6 @@ class _MainShellState extends ConsumerState<MainShell> {
       child: GestureDetector(
         onTap: () {
           HapticFeedback.lightImpact();
-          ref.read(categoriesProvider);
           if (FeatureFlags.aiFeaturesEnabled) {
             _openSheetOnce(() => _showAddMethodSheet(context));
           } else {
@@ -220,7 +232,6 @@ class _MainShellState extends ConsumerState<MainShell> {
         onLongPress: FeatureFlags.aiFeaturesEnabled
             ? () {
                 HapticFeedback.mediumImpact();
-                ref.read(categoriesProvider);
                 _showManualEntrySheet(context);
               }
             : null,
@@ -258,6 +269,7 @@ class _MainShellState extends ConsumerState<MainShell> {
       enableDrag: true,
       backgroundColor: Colors.transparent,
       barrierColor: Colors.black.withValues(alpha: 0.3),
+      sheetAnimationStyle: _sheetAnimationStyle,
       builder: (_) => const _AddMethodSheet(),
     );
   }
@@ -1105,6 +1117,7 @@ Future<void> _showQuickAddSheet(BuildContext context) {
     enableDrag: true,
     backgroundColor: Colors.transparent,
     barrierColor: Colors.black.withValues(alpha: 0.3),
+    sheetAnimationStyle: _MainShellState._sheetAnimationStyle,
     builder: (_) => const _QuickAddSheet(),
   );
 }
