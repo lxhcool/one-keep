@@ -4,12 +4,20 @@ node_modules/
 # build outputs
 dist/
 build/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
 coverage/
 snap/
 tmp/
+output/
 
 # local Codex/agent workflow files
-skills/
+/skills/
+
+# IDE/editor
+.idea/
+.vscode/
 
 # logs
 *.log
